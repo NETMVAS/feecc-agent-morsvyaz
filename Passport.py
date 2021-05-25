@@ -25,9 +25,31 @@ class Passports:
         self.passports_db_path: str = "issued_passports.csv"
 
     def _parse_passports(self) -> tp.Dict[int, str]:
+        """
+        Method takes data about passports from a CSV table and returns them as a dict
+
+        Returns:
+            Dict in format {id: hash}
+        """
         with open(self.passports_db_path, "r") as f:
             data = csv.reader(f, delimiter=";")
         return {_id: _hash for _id, _hash in data}
+
+    def _match_passport_id_with_hash(self, passport_id: int) -> tp.Optional[str]:
+        """
+        Method matches passport id and its hash from the database
+
+        Args:
+            passport_id: numeric value of passport id
+
+        Returns:
+            None or Passport hash (str)
+        """
+        try:
+            return self._parse_passports()[passport_id]
+        except KeyError:
+            logging.critical(f"Unable to match {passport_id} with passport")
+            return None
 
 
 class Passport(Passports):
