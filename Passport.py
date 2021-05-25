@@ -16,7 +16,11 @@ logging.basicConfig(
 )
 
 
-class Passport:
+class Passports:
+    instances = []
+
+
+class Passport(Passports):
     """handles form validation and unit passport issuing"""
 
     def __init__(self, rfid_card_id: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
@@ -51,6 +55,9 @@ class Passport:
         self.additional_info: tp.Dict[str, str] = {}
         self.video_ipfs_hash: tp.List[str] = []
         self.filename: str = ""
+
+        # append class instance to base class' all instances list
+        self.instances.append(self)
 
     def submit_form(self, form: tp.Dict[str, tp.Any]) -> bool:
         """
