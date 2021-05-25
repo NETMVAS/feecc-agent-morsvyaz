@@ -17,7 +17,17 @@ logging.basicConfig(
 
 
 class Passports:
+    """Base class for Passport contains different methods to work with them"""
     instances = []
+
+    def __init__(self):
+        self.employee_db_path: str = "employee_db.csv"
+        self.passports_db_path: str = "issued_passports.csv"
+
+    def _parse_passports(self) -> tp.Dict[int, str]:
+        with open(self.passports_db_path, "r") as f:
+            data = csv.reader(f, delimiter=";")
+        return {_id: _hash for _id, _hash in data}
 
 
 class Passport(Passports):
@@ -25,6 +35,7 @@ class Passport(Passports):
 
     def __init__(self, rfid_card_id: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
         # passport id and employee data based on employee ID
+        super().__init__()
         self.passport_id: str = uuid.uuid4().hex
         self.passport_ipfs_hash: str = ""
         self.config = config
@@ -147,7 +158,7 @@ class Passport(Passports):
         )
 
         # also save passport IPFS hash locally in case Robonomics datalog is not written
-        with open("issued_passports.csv", "a") as file:
+        with open(self.passports_db_path, "a") as file:
             file.writelines(
                 f"{self.passport_id};{self.passport_ipfs_hash}\n"
             )
@@ -158,10 +169,8 @@ class Passport(Passports):
         employee_data = []
 
         # open employee database
-        employee_db = "employee_db.csv"
-
         try:
-            with open(employee_db, "r") as file:
+            with open(self.employee_db_path, "r") as file:
                 reader = csv.reader(file)
 
                 # look for employee in the db
@@ -170,7 +179,7 @@ class Passport(Passports):
                         employee_data = row
                         break
         except FileNotFoundError:
-            logging.critical(f"File '{employee_db}' is not in the working directory, cannot retrieve employee data")
+            logging.critical(f"File '{self.employee_db_path}' is not in the working directory, cannot retrieve employee data")
 
         return employee_data
 
