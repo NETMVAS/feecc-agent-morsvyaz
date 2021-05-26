@@ -7,6 +7,7 @@ import hashlib
 from datetime import datetime as dt
 import os
 import modules.send_to_ipfs as ipfs
+from Employee import Employee
 
 # set up logging
 logging.basicConfig(
@@ -21,7 +22,6 @@ class Passports:
     instances = []
 
     def __init__(self) -> None:
-        self.employee_db_path: str = "employee_db.csv"
         self.passports_db_path: str = "issued_passports.csv"
         self.passports_matching_table: str = "matching_table.csv"
         self.active_passports: tp.Optional[tp.Dict[int, str]] = None
@@ -133,7 +133,7 @@ class Passport(Passports):
         self.passport_ipfs_hash: str = ""
         self.config = config
         self._employee_id: str = rfid_card_id
-        self._employee_db_entry: tp.List[str] = self._find_in_db()
+        self._employee_db_entry: tp.List[str] = Employee.find_in_db(rfid_card_id)
 
         # refuse service if employee unknown
         if not self._employee_db_entry:
@@ -256,26 +256,6 @@ class Passport(Passports):
             file.writelines(
                 f"{self.passport_id};{self.passport_ipfs_hash}\n"
             )
-
-    def _find_in_db(self) -> tp.List[str]:
-        """:returns employee data, incl. name, position and employee ID if employee found in DB"""
-
-        employee_data = []
-
-        # open employee database
-        try:
-            with open(self.employee_db_path, "r") as file:
-                reader = csv.reader(file)
-
-                # look for employee in the db
-                for row in reader:
-                    if self._employee_id in row:
-                        employee_data = row
-                        break
-        except FileNotFoundError:
-            logging.critical(f"File '{self.employee_db_path}' is not in the working directory, cannot retrieve employee data")
-
-        return employee_data
 
     def end_session(self, ipfs_hash: tp.List[str]) -> None:
         """wrap up the session when video recording stops an save video data as well as session end timestamp"""
