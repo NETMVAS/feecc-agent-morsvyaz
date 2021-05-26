@@ -33,17 +33,21 @@ class Passports:
         Args:
             passport_id (int):
         """
-        try:
-            self.active_passports.pop(passport_id)
-        except KeyError:
-            logging.critical(f"Value {passport_id} not found in active passports")
-            return None
-
         active_passports = self._parse_active_passports()
 
-        self._write_active_passports(active_passports)
+        try:
+            active_passports.pop(passport_id)
+        except KeyError:
+            logging.error(f"Value {passport_id} not found in active passports")
+            return None
 
-    def _write_active_passports(self, active_passports: tp.Dict[int, str]) -> None:
+        logging.info(f"Passport {passport_id} removed from active passports list")
+
+        self._write_active_passports(active_passports, rewrite=True)
+
+        self.active_passports = active_passports
+
+    def _write_active_passports(self, active_passports: tp.Dict[int, str], rewrite: bool = False) -> None:
         """
         Method that writes multiple active passports into csv file
 
@@ -53,8 +57,12 @@ class Passports:
         Returns:
 
         """
+        option = "w" if rewrite else "a"
+
+        logging.info(f"Active passports dumped into {self.passports_matching_table} (Rewrite={rewrite})")
+
         for key, value in active_passports.values():
-            with open(self.passports_matching_table, "a", newline="") as f:
+            with open(self.passports_matching_table, option, newline="") as f:
                 csv_writer = csv.writer(f, delimiter=";")
                 csv_writer.writerows([int(key), value])
 
@@ -82,7 +90,7 @@ class Passports:
         try:
             return self._parse_active_passports()[passport_id]
         except KeyError:
-            logging.critical(f"Unable to match {passport_id} with passport")
+            logging.error(f"Unable to match {passport_id} with passport")
             return None
 
     @staticmethod
@@ -102,7 +110,7 @@ class Passports:
                         passport
                     )
             except KeyError:
-                logging.critical("Can't find key 'Этап производства' in given dict")
+                logging.error("Can't find key 'Этап производства' in given dict")
             except IOError as E:
                 logging.critical(f"File unit-passport-{passport['Этап производства']}.yaml unavailable. {E}")
 
