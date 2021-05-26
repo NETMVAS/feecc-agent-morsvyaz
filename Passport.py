@@ -23,15 +23,49 @@ class Passports:
     def __init__(self) -> None:
         self.employee_db_path: str = "employee_db.csv"
         self.passports_db_path: str = "issued_passports.csv"
+        self.passports_matching_table: str = "matching_table.csv"
+        self.active_passports: tp.Optional[tp.Dict[int, str]] = None
 
-    def _parse_passports(self) -> tp.Dict[int, str]:
+    def _remove_active_passport(self, passport_id: int) -> None:
+        """
+        Method that removes the passport from the list of active
+
+        Args:
+            passport_id (int):
+        """
+        try:
+            self.active_passports.pop(passport_id)
+        except KeyError:
+            logging.critical(f"Value {passport_id} not found in active passports")
+            return None
+
+        active_passports = self._parse_active_passports()
+
+        self._write_active_passports(active_passports)
+
+    def _write_active_passports(self, active_passports: tp.Dict[int, str]) -> None:
+        """
+        Method that writes multiple active passports into csv file
+
+        Args:
+            active_passports (dict): dict in format of {id: hash, ..., idN: hashN}
+
+        Returns:
+
+        """
+        for key, value in active_passports.values():
+            with open(self.passports_matching_table, "a", newline="") as f:
+                csv_writer = csv.writer(f, delimiter=";")
+                csv_writer.writerows([int(key), value])
+
+    def _parse_active_passports(self) -> tp.Dict[int, str]:
         """
         Method takes data about passports from a CSV table and returns them as a dict
 
         Returns:
             Dict in format {id: hash}
         """
-        with open(self.passports_db_path, "r") as f:
+        with open(self.passports_matching_table, "r", newline="") as f:
             data = csv.reader(f, delimiter=";")
         return {_id: _hash for _id, _hash in data}
 
@@ -46,7 +80,7 @@ class Passports:
             None or Passport hash (str)
         """
         try:
-            return self._parse_passports()[passport_id]
+            return self._parse_active_passports()[passport_id]
         except KeyError:
             logging.critical(f"Unable to match {passport_id} with passport")
             return None
