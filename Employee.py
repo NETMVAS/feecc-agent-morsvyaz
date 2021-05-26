@@ -12,17 +12,20 @@ logging.basicConfig(
 
 
 class Employee:
-    def __init__(self):
-        self.employee_db_path: str = "employee_db.csv"
-
-    def validate_employee(self):
-        pass
-
     @staticmethod
-    def find_in_db(employee_id: str, db_path: str = "employee_db.csv") -> tp.List[str]:
-        """:returns employee data, incl. name, position and employee ID if employee found in DB"""
+    def find_in_db(employee_card_id: str, db_path: str = "employee_db.csv") -> tp.Optional[tp.List[str]]:
+        """
+        Method is used to get employee data (or confirm its absence)
 
-        employee_data = []
+        Args:
+            employee_card_id (str): Employee card rfid data
+            db_path (str): Optional argument. Path to employee db
+
+        Returns:
+            None if employee not found, if found returns list with full name and position.
+        """
+
+        employee_data: tp.Optional[tp.List[str]] = None
 
         # open employee database
         try:
@@ -31,10 +34,13 @@ class Employee:
 
                 # look for employee in the db
                 for row in reader:
-                    if employee_id in row:
+                    if employee_card_id in row:
                         employee_data = row
                         break
         except FileNotFoundError:
             logging.critical(f"File '{db_path}' is not in the working directory, cannot retrieve employee data")
+
+        if employee_data is None:
+            logging.error(f"Employee with card id {employee_card_id} not found. Access denied.")
 
         return employee_data
