@@ -20,7 +20,7 @@ class Passports:
     """Base class for Passport contains different methods to work with them"""
     instances = []
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.employee_db_path: str = "employee_db.csv"
         self.passports_db_path: str = "issued_passports.csv"
 
@@ -52,7 +52,13 @@ class Passports:
             return None
 
     @staticmethod
-    def append_to_yaml(passports_dict_list: tp.List[tp.Dict[str, tp.Dict[str, tp.Any]]]):
+    def append_to_yaml(passports_dict_list: tp.List[tp.Dict[str, tp.Dict[str, tp.Any]]]) -> None:
+        """
+        Method allows you to add values to an already created YAML file
+
+        Args:
+            passports_dict_list (list of dicts): Stores a list of dictionaries, with data about the product (passports)
+        """
         for passport in passports_dict_list:
             try:
                 yaml_name = f"unit-passports/unit-passport-{passport['Этап производства']}.yaml"
@@ -63,9 +69,10 @@ class Passports:
                     )
             except KeyError:
                 logging.critical("Can't find key 'Этап производства' in given dict")
-                return None
             except IOError as E:
                 logging.critical(f"File unit-passport-{passport['Этап производства']}.yaml unavailable. {E}")
+
+        return None
 
 
 class Passport(Passports):
