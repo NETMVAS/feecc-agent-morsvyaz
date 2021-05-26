@@ -161,14 +161,15 @@ class Passport(Passports):
         logging.debug(f"self.session_start_time = {self.session_start_time}")
 
         passport_dict = {
-            "Уникальный номер паспорта изделия": self.passport_id,
-            "Модель изделия": self.product_type,
-            "Комплектация": self.additional_info,
-            "Начало сборки": self.session_start_time,
-            "Окончание сборки": self.session_end_time,
-            "Этап производства": self.workplace_data,
-            "Изготовил": employee_passport_code,
-            "Видеозаписи процесса сборки в IPFS": self.video_ipfs_hash
+            self.workplace_data: {
+                "Уникальный номер паспорта изделия": self.passport_id,
+                "Модель изделия": self.product_type,
+                "Комплектация": self.additional_info,
+                "Начало сборки": self.session_start_time,
+                "Окончание сборки": self.session_end_time,
+                "Изготовил": employee_passport_code,
+                "Видеозаписи процесса сборки в IPFS": self.video_ipfs_hash
+            }
         }
 
         logging.debug(f"raw passport_dict = {passport_dict}")
