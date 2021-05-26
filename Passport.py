@@ -26,6 +26,8 @@ class Passports:
         self.passports_matching_table: str = "matching_table.csv"
         self.active_passports: tp.Optional[tp.Dict[int, str]] = None
 
+        self.final_state: str = "Упаковка"
+
     def _remove_active_passport(self, passport_id: int) -> None:
         """
         Method that removes the passport from the list of active
@@ -93,8 +95,7 @@ class Passports:
             logging.error(f"Unable to match {passport_id} with passport")
             return None
 
-    @staticmethod
-    def append_to_yaml(passports_dict_list: tp.List[tp.Dict[str, tp.Dict[str, tp.Any]]]) -> None:
+    def append_to_yaml(self, passports_dict_list: tp.List[tp.Dict[str, tp.Dict[str, tp.Any]]]) -> None:
         """
         Method allows you to add values to an already created YAML file
 
@@ -102,8 +103,9 @@ class Passports:
             passports_dict_list (list of dicts): Stores a list of dictionaries, with data about the product (passports)
         """
         for passport in passports_dict_list:
+            work_state = list(passport.keys())[0]
             try:
-                yaml_name = f"unit-passports/unit-passport-{passport['Этап производства']}.yaml"
+                yaml_name = f"unit-passports/unit-passport-{work_state}.yaml"
                 with open(yaml_name, "a") as f:
                     yaml.dump(
                         f,
@@ -112,7 +114,11 @@ class Passports:
             except KeyError:
                 logging.error("Can't find key 'Этап производства' in given dict")
             except IOError as E:
-                logging.critical(f"File unit-passport-{passport['Этап производства']}.yaml unavailable. {E}")
+                logging.critical(f"File unit-passport-{work_state}.yaml unavailable. {E}")
+
+            if work_state == self.final_state:
+                self._remove_active_passport(passport[work_state]["Уникальный номер паспорта изделия"])
+                break
 
         return None
 
