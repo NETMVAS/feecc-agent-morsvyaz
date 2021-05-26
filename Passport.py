@@ -51,6 +51,22 @@ class Passports:
             logging.critical(f"Unable to match {passport_id} with passport")
             return None
 
+    @staticmethod
+    def append_to_yaml(passports_dict_list: tp.List[tp.Dict[str, tp.Dict[str, tp.Any]]]):
+        for passport in passports_dict_list:
+            try:
+                yaml_name = f"unit-passports/unit-passport-{passport['Этап производства']}.yaml"
+                with open(yaml_name, "a") as f:
+                    yaml.dump(
+                        f,
+                        passport
+                    )
+            except KeyError:
+                logging.critical("Can't find key 'Этап производства' in given dict")
+                return None
+            except IOError as E:
+                logging.critical(f"File unit-passport-{passport['Этап производства']}.yaml unavailable. {E}")
+
 
 class Passport(Passports):
     """handles form validation and unit passport issuing"""
