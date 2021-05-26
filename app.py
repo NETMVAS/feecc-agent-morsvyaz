@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask, request, Response
 from flask_restful import Api, Resource
 import typing as tp
@@ -8,6 +10,7 @@ import threading
 
 from Agent import Agent
 from Passport import Passport
+from Employee import Employee
 
 # set up logging
 logging.basicConfig(
@@ -134,13 +137,27 @@ class StateUpdateHandler(Resource):
 class RFIDHandler(Resource):
     """handles RFID scanner events"""
 
-    def post(self) -> int:
+    def post(self) -> str:
 
         # parse RFID card ID from the request
         card_id = request.get_json()["string"]
 
         # log the event
         logging.info(f"read RFID card with ID {card_id}")
+
+        employee_data = Employee.find_in_db(card_id)
+
+        # check if employee in the database
+        if employee_data is None:
+            return json.dumps(
+                {
+                    "is_valid": False,
+                    "employee_name": "",
+                    "position": "",
+                    "comment": "Employee not found"
+                },
+                indent=4
+            )
 
         # start session
         if agent.state == 0:
@@ -167,7 +184,15 @@ class RFIDHandler(Resource):
         else:
             pass
 
-        return 200
+        return json.dumps(
+            {
+                "is_valid": True,
+                "employee_name": employee_data[0],
+                "position": employee_data[1],
+                "comment": ""
+            },
+            indent=4
+        )
 
 
 # REST API endpoints
