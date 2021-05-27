@@ -1,6 +1,7 @@
 import typing as tp
 import csv
 import logging
+import io
 
 
 # set up logging
@@ -29,7 +30,7 @@ class Employee:
 
         # open employee database
         try:
-            with open(db_path, "r") as file:
+            with io.open(db_path, "r", encoding="utf-8") as file:
                 reader = csv.reader(file)
 
                 # look for employee in the db
