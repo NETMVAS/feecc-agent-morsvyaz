@@ -237,16 +237,15 @@ class PassportAppendHandler(Resource):
             return False
 
         for key, entry in json_data.items():
-            if not len(entry):
+            if not entry:
                 logging.error(f"Passport form contains empty field: {entry}")
                 self.error_description = "Form contains empty field"
                 return False
 
-        matching_uuid = passport.match_passport_id_with_hash(passport_id=int(json_data["barcode_string"]))
+        matching_uuid = passport.match_passport_id_with_hash(passport_id=json_data["barcode_string"])
 
         if matching_uuid is None:
             self.error_description = "Matching passport not found"
-            logging.error(f"Not found matching passport with id {json_data['barcode_string']}")
             return False
 
         self.error_description = ""

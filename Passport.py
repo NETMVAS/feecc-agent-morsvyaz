@@ -75,11 +75,16 @@ class Passports:
         Returns:
             Dict in format {id: hash}
         """
+        passports = {}
+
         with open(self.passports_matching_table, "r", newline="") as f:
             data = csv.reader(f, delimiter=";")
-        return {_id: _hash for _id, _hash in data}
+            for _id, _hash in data:
+                passports[_id] = _hash
 
-    def match_passport_id_with_hash(self, passport_id: int) -> tp.Optional[str]:
+        return passports
+
+    def match_passport_id_with_hash(self, passport_id: str) -> tp.Optional[str]:
         """
         Method matches passport id and its hash from the database
 
@@ -90,9 +95,11 @@ class Passports:
             None or Passport hash (str)
         """
         try:
-            return self._parse_active_passports()[passport_id]
+            entry = self._parse_active_passports()[passport_id]
+            logging.info(f"id {passport_id} matched with {entry}")
+            return entry
         except KeyError:
-            logging.error(f"Unable to match {passport_id} with passport")
+            logging.error(f"Unable to match id {passport_id} with any passport")
             return None
 
     def append_to_yaml(self, passports_dict_list: tp.List[tp.Dict[str, tp.Dict[str, tp.Any]]]) -> None:
