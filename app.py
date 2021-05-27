@@ -195,10 +195,90 @@ class RFIDHandler(Resource):
         )
 
 
+class PassportAppendHandler(Resource):
+    """
+    Handles requests for additional recordings to unit passport
+
+    POST must contain JSON like:
+    {"barcode_string": "", "employee_name": "", "position": ""}
+
+    Response looks like:
+    {"status": true/false, "comment": "..."}
+    """
+
+    def __init__(self):
+        self.error_description: str = ""
+
+    def validate_form(self, json_data: tp.Dict[str, str]) -> bool:
+        """
+        Method used to validate additional recordings to unit passport form
+
+        Args:
+            json_data (str): JSON query.
+
+        Examples:
+            >>> x = '{"barcode_string": "123", "employee_name": "Nikolas", "position": "Engineer"}'
+            >>> PassportAppendHandler.validate_form(x)
+
+        Returns:
+            True if validation succeed, False if not
+        """
+        expected_keys = ["barcode_string", "employee_name", "position"]
+
+        try:
+            actual_keys = list(json_data.keys())
+        except json.decoder.JSONDecodeError as E:
+            logging.error(f"Failed to parse JSON. {E}")
+            self.error_description = "Unknown format (expected JSON)"
+            return False
+
+        if expected_keys != actual_keys:
+            self.error_description = "Form have extra/missing fields"
+            return False
+
+        for key, entry in json_data.items():
+            if not len(entry):
+                logging.error(f"Passport form contains empty field: {entry}")
+                self.error_description = "Form contains empty field"
+                return False
+
+        matching_uuid = passport.match_passport_id_with_hash(passport_id=int(json_data["barcode_string"]))
+
+        if matching_uuid is None:
+            self.error_description = "Matching passport not found"
+            logging.error(f"Not found matching passport with id {json_data['barcode_string']}")
+            return False
+
+        self.error_description = ""
+        return True
+
+    def post(self) -> str:
+        """"""
+        data = request.get_json()
+
+        is_valid = self.validate_form(data)
+
+        if is_valid:
+            return json.dumps(
+                {
+                    "status": True,
+                    "comment": ""
+                }
+            )
+
+        return json.dumps(
+            {
+                "status": False,
+                "comment": self.error_description
+            }
+        )
+
+
 # REST API endpoints
 api.add_resource(FormHandler, "/api/form-handler")
 api.add_resource(StateUpdateHandler, "/api/state-update")
 api.add_resource(RFIDHandler, "/api/rfid")
+api.add_resource(PassportAppendHandler, "/api/passport")
 
 if __name__ == "__main__":
     agent_thread.start()
