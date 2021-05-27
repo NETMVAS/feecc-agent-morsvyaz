@@ -79,7 +79,7 @@ class Passports:
             data = csv.reader(f, delimiter=";")
         return {_id: _hash for _id, _hash in data}
 
-    def _match_passport_id_with_hash(self, passport_id: int) -> tp.Optional[str]:
+    def match_passport_id_with_hash(self, passport_id: int) -> tp.Optional[str]:
         """
         Method matches passport id and its hash from the database
 
