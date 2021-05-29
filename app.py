@@ -252,18 +252,34 @@ class PassportAppendHandler(Resource):
         return True
 
     def post(self) -> str:
-        """"""
         data = request.get_json()
 
         is_valid = self.validate_form(data)
 
         if is_valid:
+            agent.associated_passport = passport
+            agent.state = 2
+
+            logging.info(
+                f"Form validation success. Current state: {agent.state}"
+            )
+
             return json.dumps(
                 {
                     "status": True,
                     "comment": ""
                 }
             )
+
+        agent.state = 0
+
+        logging.error(
+            f"""
+            Invalid form, state reset to 0
+            Form: {data}
+            Current state: {agent.state}
+            """
+        )
 
         return json.dumps(
             {
