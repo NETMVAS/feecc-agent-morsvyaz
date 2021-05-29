@@ -5,6 +5,8 @@ import csv
 import os
 import typing as tp
 
+from Printer import Task
+
 # set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +60,13 @@ class Barcode:
         logging.info(f"Barcode {ean_code.get_fullcode()} was saved to {filename}")
 
         return filename
+
+    @staticmethod
+    def print_barcode(barcode_path: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
+        try:
+            Task(barcode_path, config)
+        except Exception as E:
+            logging.error(f"Failed to print barcode: {E}")
 
     def _load_csv(self) -> tp.Dict[str, str]:
         matching_table = {}
