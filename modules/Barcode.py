@@ -14,16 +14,14 @@ logging.basicConfig(
 
 
 class Barcode:
-    def __init__(self, unit_code: tp.Union[str, int]):
+    def __init__(self, unit_code: str):
         self.matching_table_path = "matching_table.csv"
         self.unit_code = unit_code
-
-        if type(unit_code) is int:
-            self.unit_code = str(unit_code)
 
         try:
             self.barcode = self.generate_barcode(unit_code)
             self.barcode_path = self.save_barcode(self.barcode)
+            print(self.barcode_path)
         except Exception as E:
             logging.error(f"Barcode error: {E}")
 
@@ -41,7 +39,7 @@ class Barcode:
         return barcode.get('ean13', num)
 
     @staticmethod
-    def save_barcode(ean_code: barcode.EAN13, dir_path: str = '/barcode') -> str:
+    def save_barcode(ean_code: barcode.EAN13, dir_path: str = 'barcode') -> str:
         """
         Method that saves barcode picture
 
@@ -55,7 +53,11 @@ class Barcode:
         if not os.path.exists(dir_path):
             os.mkdir(dir_path)
 
-        return ean_code.save(dir_path + "/" + str(ean_code))
+        filename = ean_code.save(dir_path + "/" + str(ean_code))
+
+        logging.info(f"Barcode {ean_code.get_fullcode()} was saved to {filename}")
+
+        return filename
 
     def _load_csv(self) -> tp.Dict[str, str]:
         matching_table = {}
