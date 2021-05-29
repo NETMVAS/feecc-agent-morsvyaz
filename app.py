@@ -206,10 +206,8 @@ class PassportAppendHandler(Resource):
     {"status": true/false, "comment": "..."}
     """
 
-    def __init__(self):
-        self.error_description: str = ""
-
-    def validate_form(self, json_data: tp.Dict[str, str]) -> bool:
+    @staticmethod
+    def validate_form(json_data: tp.Dict[str, str]) -> tp.Tuple[bool, str]:
         """
         Method used to validate additional recordings to unit passport form
 
@@ -217,7 +215,7 @@ class PassportAppendHandler(Resource):
             json_data (str): JSON query.
 
         Examples:
-            >>> x = '{"barcode_string": "123", "employee_name": "Nikolas", "position": "Engineer"}'
+            >>> x = {"barcode_string": "123", "employee_name": "Nikolas", "position": "Engineer"}
             >>> PassportAppendHandler.validate_form(x)
 
         Returns:
@@ -229,32 +227,27 @@ class PassportAppendHandler(Resource):
             actual_keys = list(json_data.keys())
         except json.decoder.JSONDecodeError as E:
             logging.error(f"Failed to parse JSON. {E}")
-            self.error_description = "Unknown format (expected JSON)"
-            return False
+            return False, "Unknown format (expected JSON)"
 
         if expected_keys != actual_keys:
-            self.error_description = "Form have extra/missing fields"
-            return False
+            return False, "Form have extra/missing fields"
 
         for key, entry in json_data.items():
             if not entry:
                 logging.error(f"Passport form contains empty field: {entry}")
-                self.error_description = "Form contains empty field"
-                return False
+                return False, "Form contains empty field"
 
         matching_uuid = passport.match_passport_id_with_hash(passport_id=json_data["barcode_string"])
 
         if matching_uuid is None:
-            self.error_description = "Matching passport not found"
-            return False
+            return False, "Matching passport not found"
 
-        self.error_description = ""
-        return True
+        return True, ""
 
     def post(self) -> str:
         data = request.get_json()
 
-        is_valid = self.validate_form(data)
+        is_valid, comment = self.validate_form(data)
 
         if is_valid:
             agent.associated_passport = passport
@@ -267,7 +260,7 @@ class PassportAppendHandler(Resource):
             return json.dumps(
                 {
                     "status": True,
-                    "comment": ""
+                    "comment": comment
                 }
             )
 
@@ -284,7 +277,7 @@ class PassportAppendHandler(Resource):
         return json.dumps(
             {
                 "status": False,
-                "comment": self.error_description
+                "comment": comment
             }
         )
 
