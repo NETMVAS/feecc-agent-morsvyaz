@@ -221,7 +221,7 @@ class PassportAppendHandler(Resource):
         Returns:
             True if validation succeed, False if not
         """
-        expected_keys = ["barcode_string", "employee_name", "position"]
+        expected_keys = ["barcode_string", "employee_name", "position", "spoke_num"]
 
         try:
             actual_keys = list(json_data.keys())
