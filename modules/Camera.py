@@ -1,3 +1,4 @@
+import csv
 import logging
 import subprocess
 import time
@@ -76,3 +77,12 @@ class Camera:
             logging.info(f"Finished recording video")
             self.recording_ongoing = False
             time.sleep(1)  # some time to finish the process
+
+    @staticmethod
+    def match_camera_with_table(camera_id: int, table_path: str = "camera_table.csv") -> tp.Optional[int]:
+        with open(table_path, "r") as f:
+            reader = csv.reader(f, delimiter=";")
+            for camera, table in reader:
+                if camera == camera_id:
+                    return table
+
