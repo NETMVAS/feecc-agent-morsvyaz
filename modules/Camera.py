@@ -79,10 +79,9 @@ class Camera:
             time.sleep(1)  # some time to finish the process
 
     @staticmethod
-    def match_camera_with_table(camera_id: int, table_path: str = "camera_table.csv") -> tp.Optional[str]:
+    def match_camera_with_table(camera_id: int, table_path: str = "camera_table.csv") -> tp.Optional[tp.Dict[str, str]]:
         with open(table_path, "r") as f:
             reader = csv.reader(f, delimiter=";")
-            for camera, table in reader:
-                if camera == camera_id:
-                    return table
-
+            for table_id, ip, port, login, password in reader:
+                if table_id == camera_id:
+                    return {"ip": ip, "port": port, "login": login, "password": password}

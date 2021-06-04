@@ -257,7 +257,7 @@ class PassportAppendHandler(Resource):
             agent.state = 2
 
             logging.info(
-                f"Form validation success. Current state: {agent.state}"
+                f"Form validation success. Current state: {agent.state}, camera data: {matching_camera}"
             )
 
             return json.dumps(
