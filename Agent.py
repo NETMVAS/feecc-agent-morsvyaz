@@ -21,14 +21,14 @@ logging.basicConfig(
 class Agent:
     """Handles agent's state management and high level operation"""
 
-    def __init__(self, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
+    def __init__(self, config: tp.Dict[str, tp.Dict[str, tp.Any]], camera_config: tp.Dict[str, str]) -> None:
         """agent is initialized with state 0 and has an instance of Passport and Camera associated with it"""
 
         self.state: int = 0
         self.config: tp.Dict[str, tp.Dict[str, tp.Any]] = config
         self.backend_api_address: str = config["api_address"]["backend_api_address"]
         self.associated_passport: tp.Optional[Passport] = None
-        self.associated_camera: Camera = Camera(self.config)
+        self.associated_camera: Camera = Camera(camera_config)
         self.latest_record_filename: str = ""
         self.latest_record_short_link: str = ""
         self.latest_record_qrpic_filename: str = ""

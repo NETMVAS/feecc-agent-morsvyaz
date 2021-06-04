@@ -14,7 +14,7 @@ logging.basicConfig(
 
 
 class Camera:
-    def __init__(self, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
+    def __init__(self, config: tp.Dict[str, str]) -> None:
         """
         :param config: dictionary containing all the configurations
         :type config: dict
@@ -23,10 +23,10 @@ class Camera:
         """
         self.qrpic = None  # future path to qr-code picture file. This will be used to create a labels
         self.keyword = None  # shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
-        self.ip = config["camera"]["ip"]  # dictionary containing all the configurations
-        self.port = config["camera"]["port"]  # port where the camera streams, required for rtsp
-        self.login = config["camera"]["login"]  # camera login to obtain access to the stream
-        self.password = config["camera"]["password"]  # camera password to obtain access to the stream
+        self.ip = config["ip"]  # dictionary containing all the configurations
+        self.port = config["port"]  # port where the camera streams, required for rtsp
+        self.login = config["login"]  # camera login to obtain access to the stream
+        self.password = config["password"]  # camera password to obtain access to the stream
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg = None  # popen object o ffmpeg subprocess
 
