@@ -11,6 +11,7 @@ import threading
 from Agent import Agent
 from Passport import Passport
 from Employee import Employee
+from modules.Camera import Camera
 
 # set up logging
 logging.basicConfig(
@@ -249,7 +250,9 @@ class PassportAppendHandler(Resource):
 
         is_valid, comment = self.validate_form(data)
 
-        if is_valid:
+        matching_camera = Camera.match_camera_with_table(data["spoke_num"])
+
+        if is_valid and matching_camera is not None:
             agent.associated_passport = passport
             agent.state = 2
 
