@@ -6,8 +6,8 @@ import typing as tp
 import logging
 import yaml
 from sys import exit
-import threading
 
+import State
 from Agent import Agent
 from Passport import Passport
 from Employee import Employee
@@ -53,8 +53,7 @@ config: tp.Dict[str, tp.Dict[str, tp.Any]] = read_configuration()
 backend_api_address: str = config["api_address"]["backend_api_address"]
 
 # instantiate objects
-agent = Agent(config=config)
-agent_thread = threading.Thread(target=agent.run)
+agent = Agent(config=config, camera_config=config["camera"])
 agent.backend_api_address = backend_api_address
 passport = Passport("0008368511", config)
 logging.debug(f"Created dummy passport: {passport}")
@@ -66,7 +65,8 @@ api = Api(app)
 class FormHandler(Resource):
     """accepts a filled form from the backend and uses it to form a unit passport"""
 
-    def post(self) -> int:
+    @staticmethod
+    def post() -> int:
         logging.info(
             f"Received a form. Parsing and validating"
         )
@@ -80,14 +80,14 @@ class FormHandler(Resource):
         # validate the form and change own state
         if passport.submit_form(form_data):
             agent.associated_passport = passport
-            agent.state = 2
+            agent.execute_state(State.State2)
 
             logging.info(
                 f"Form validation success. Current state: {agent.state}"
             )
 
         else:
-            agent.state = 0
+            agent.execute_state(State.State0)
 
             logging.error(
                 f"""
@@ -103,7 +103,8 @@ class FormHandler(Resource):
 class StateUpdateHandler(Resource):
     """handles a state update request"""
 
-    def post(self):
+    @staticmethod
+    def post():
         logging.info(
             f"Received a request to update the state."
         )
@@ -126,7 +127,10 @@ class StateUpdateHandler(Resource):
             )
 
         # change own state to the one specified by the sender
-        agent.state = data["change_state_to"]
+        # garbage temporary solution
+        states = [State.State0, State.State1, State.State2, State.State3]
+        new_state = states[data["change_state_to"]]
+        agent.execute_state(new_state)
 
         logging.info(
             f"Successful state transition to {data['change_state_to']}"
@@ -138,7 +142,8 @@ class StateUpdateHandler(Resource):
 class RFIDHandler(Resource):
     """handles RFID scanner events"""
 
-    def post(self) -> str:
+    @staticmethod
+    def post() -> str:
 
         # parse RFID card ID from the request
         card_id = request.get_json()["string"]
@@ -168,18 +173,18 @@ class RFIDHandler(Resource):
                 global passport
                 passport = Passport(card_id, config)
                 logging.debug(f"Created passport for {card_id}: {passport}")
-                agent.state = 1
+                agent.execute_state(State.State1)
 
             except ValueError:
                 logging.info(f"Passport creation failed, staying at state 0")
 
         # cancel session
         elif agent.state == 1:
-            agent.state = 0
+            agent.execute_state(State.State0)
 
         # end session
         elif agent.state == 2:
-            agent.state = 3
+            agent.execute_state(State.State3)
 
         # ignore interaction when in state 3
         else:
@@ -254,7 +259,7 @@ class PassportAppendHandler(Resource):
 
         if is_valid and matching_camera is not None:
             agent.associated_passport = passport
-            agent.state = 2
+            agent.execute_state(State.State2)
 
             logging.info(
                 f"Form validation success. Current state: {agent.state}, camera data: {matching_camera}"
@@ -267,7 +272,7 @@ class PassportAppendHandler(Resource):
                 }
             )
 
-        agent.state = 0
+        agent.execute_state(State.State0)
 
         logging.error(
             f"""
@@ -292,6 +297,4 @@ api.add_resource(RFIDHandler, "/api/rfid")
 api.add_resource(PassportAppendHandler, "/api/passport")
 
 if __name__ == "__main__":
-    agent_thread.start()
     app.run(host="127.0.0.1", port=5000)
-    agent_thread.join()
