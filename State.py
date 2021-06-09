@@ -143,4 +143,4 @@ class State3(AbstractState):
         self._context.associated_passport.export_yaml()
 
         # change own state back to 0
-        self._context.state = 0
+        self._context.execute_state(State0)
