@@ -120,7 +120,7 @@ class StateUpdateHandler(Resource):
             )
 
             return Response(
-                response='{"status": 406, "msg": "invalid state"}',
+                response={"status": 406, "msg": "invalid state"},
                 status=406
             )
 
@@ -134,7 +134,7 @@ class StateUpdateHandler(Resource):
             f"Successful state transition to {data['change_state_to']}"
         )
 
-        return 200
+        return Response(status=200)
 
 
 class RFIDHandler(Resource):
@@ -153,14 +153,14 @@ class RFIDHandler(Resource):
 
         # check if employee in the database
         if employee_data is None:
-            return json.dumps(
+            return Response(
                 {
                     "is_valid": False,
                     "employee_name": "",
                     "position": "",
                     "comment": "Employee not found"
                 },
-                indent=4
+                status=404
             )
 
         # start session
@@ -188,14 +188,14 @@ class RFIDHandler(Resource):
         else:
             pass
 
-        return json.dumps(
+        return Response(
             {
                 "is_valid": True,
                 "employee_name": employee_data[0],
                 "position": employee_data[1],
                 "comment": ""
             },
-            indent=4
+            status=200
         )
 
 
@@ -263,11 +263,12 @@ class PassportAppendHandler(Resource):
                 f"Form validation success. Current state: {agent.state}, camera data: {matching_camera}"
             )
 
-            return json.dumps(
+            return Response(
                 {
                     "status": True,
                     "comment": comment
-                }
+                },
+                status=200
             )
 
         agent.execute_state(State.State0)
@@ -280,11 +281,12 @@ class PassportAppendHandler(Resource):
             """
         )
 
-        return json.dumps(
+        return Response(
             {
                 "status": False,
                 "comment": comment
-            }
+            },
+            status=400
         )
 
 
