@@ -1,12 +1,14 @@
+import csv
+import hashlib
 import logging
+import os
 import typing as tp
 import uuid
-import csv
-import yaml
-import hashlib
 from datetime import datetime as dt
-import os
-import modules.send_to_ipfs as ipfs
+
+import yaml
+
+import modules.external_io_operations as external_io
 from Employee import Employee
 
 # set up logging
@@ -253,7 +255,7 @@ class Passport(Passports):
         logging.info(f"Unit passport with UUID {self.passport_id} has been dumped successfully")
 
         # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
-        self.passport_ipfs_hash = ipfs.send(
+        self.passport_ipfs_hash = external_io.send(
             filename=self.filename,
             config=self.config
         )

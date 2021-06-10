@@ -1,14 +1,8 @@
 import ast
 import logging
-import requests
 import typing as tp
 
-# set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    filename="agent.log",
-    format="%(asctime)s %(levelname)s: %(message)s"
-)
+import requests
 
 
 def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[tp.Any, tp.Any]:
@@ -28,7 +22,7 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
             "password": config["yourls"]["password"],
             "action": "shorturl",
             "format": "json",
-            "url": config["ipfs"]["gateway_address"],
+            "url": config["external_io"]["gateway_address"],
         }  # api call to the yourls server. More on yourls.org
         payload = ""  # payload. Server creates a short url and returns it as a response
         response = requests.request("GET", url, data=payload, params=querystring)  # get the created url keyword.
@@ -51,7 +45,7 @@ def update_short_url(keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[
     :param config: dictionary containing all the configurations
     :type config: dict
 
-    Update redirecting service so that now the short url points to the  gateway to a video in ipfs
+    Update redirecting service so that now the short url points to the  gateway to a video in external_io
     """
 
     try:
@@ -61,7 +55,7 @@ def update_short_url(keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[
             "password": config["yourls"]["password"],
             "action": "update",
             "format": "json",
-            "url": config["ipfs"]["gateway_address"] + ipfs_hash,
+            "url": config["external_io"]["gateway_address"] + ipfs_hash,
             "shorturl": keyword,
         }
         payload = ""  # another api call with no payload just to update the link. More on yourls.org. Call created with

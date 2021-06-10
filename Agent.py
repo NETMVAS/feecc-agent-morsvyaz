@@ -4,7 +4,7 @@ import typing as tp
 
 import requests
 
-import modules.send_to_ipfs as ipfs
+import modules.external_io_operations as external_io
 from Passport import Passport
 from modules.Camera import Camera
 
@@ -21,7 +21,7 @@ class Agent:
         self.backend_api_address: str = config["api_address"]["backend_api_address"]
         self.associated_passport: tp.Optional[Passport] = None
         self.associated_camera: Camera = Camera(camera_config)
-        self.ipfsworker: ipfs.IPFSWorker = ipfs.IPFSWorker(self.config)
+        self.ipfsworker: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.latest_record_filename: str = ""
         self.latest_record_short_link: str = ""
         self.latest_record_qrpic_filename: str = ""
