@@ -38,11 +38,9 @@ def read_configuration() -> tp.Dict[str, tp.Dict[str, tp.Any]]:
             config_f: tp.Dict[str, tp.Dict[str, tp.Any]] = yaml.load(content, Loader=yaml.FullLoader)
             logging.debug(f"Configuration dict: {content}")
             return config_f
-    except Exception as e:
-        while True:
-            logging.error("Error in configuration file!")
-            logging.error(e)
-            exit()
+    except Exception as E:
+        logging.error(f"Error in configuration file! {E}")
+        exit()
 
 
 logging.info('Agent API listener started')

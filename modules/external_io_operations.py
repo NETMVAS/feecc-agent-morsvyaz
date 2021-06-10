@@ -131,12 +131,12 @@ class BaseIoWorker(ABC):
     def name(self) -> str:
         return self.__class__.__name__
 
-    def post(self) -> None:
+    def post(self, **kwargs) -> None:
         """uploading data to the target"""
 
         pass
 
-    def get(self) -> None:
+    def get(self, **kwargs) -> None:
         """getting data from the target"""
 
         pass
