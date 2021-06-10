@@ -30,16 +30,19 @@ class Agent:
     def state(self) -> int:
         return self._state.number
 
-    def execute_state(self, state) -> None:
+    def execute_state(self, state, background: bool = True) -> None:
         """execute provided state in the background"""
 
         self._state = state(self)
         self._update_backend_state(priority=1)
         logging.info(f"Agent state is now {self._state.name}")
 
-        # execute state in the background
-        self._state_thread = threading.Thread(target=self._state.run)
-        self._state_thread.start()
+        if background:
+            # execute state in the background
+            self._state_thread = threading.Thread(target=self._state.run)
+            self._state_thread.start()
+        else:
+            self._state.run()
 
     def _update_backend_state(self, priority: int = 1) -> None:
         """post an updated system state to the backend to keep it synced with the local state"""
