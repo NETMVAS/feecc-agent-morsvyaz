@@ -49,11 +49,16 @@ class Camera:
 
     @staticmethod
     def match_camera_with_table(camera_id: int, table_path: str = "camera_table.csv") -> tp.Optional[tp.Dict[str, str]]:
+        logging.debug(f"Looking for camera with ID {camera_id} in {table_path}")
         with open(table_path, "r") as f:
             reader = csv.reader(f, delimiter=";")
             for table_id, ip, port, login, password in reader:
                 if table_id == camera_id:
-                    return {"ip": ip, "port": port, "login": login, "password": password}
+                    data_entry = {"ip": ip, "port": port, "login": login, "password": password}
+                    logging.debug(f"Found an entry for camera {camera_id} in {table_path}:\n{data_entry}")
+                    return data_entry
+
+        logging.error(f"Could not find an entry for camera {camera_id} in {table_path}")
 
 
 class Recording:
@@ -64,6 +69,7 @@ class Recording:
         self.unit_uuid: str = unit_uuid
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg = None  # popen object o ffmpeg subprocess
+        logging.debug(f"New Recording object initialized at {self}")
         self._start_record()
 
     def _start_record(self) -> str:
@@ -77,6 +83,7 @@ class Recording:
         """
 
         unit_uuid: str = self.unit_uuid
+        logging.info(f"Recording started for the unit with UUID {unit_uuid}")
 
         # new video filepath. It is to be saved in a separate directory
         # with a UUID and number in case a unit has more than one video associated with it
@@ -97,7 +104,7 @@ class Recording:
 
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
-            logging.info(f"Finished recording video")
+            logging.info(f"Finished recording video for unit {self.unit_uuid}")
             self.recording_ongoing = False
             time.sleep(1)  # some time to finish the process
 
@@ -117,4 +124,4 @@ class Recording:
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,  # to get access to all the flows
         )
-        logging.info(f"Started recording video '{filename}'")
+        logging.info(f"Started recording video '{filename}' using ffmpeg")

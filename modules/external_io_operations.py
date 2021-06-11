@@ -124,6 +124,7 @@ class BaseIoWorker(ABC):
         :param context: object of type IoGateway which makes use of the class methods
         """
 
+        logging.debug(f"An instance of {self.name} initialized at {self}")
         self.target: str = target
         self._context: ExternalIoGateway = context
 
