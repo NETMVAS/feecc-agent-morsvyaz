@@ -4,17 +4,15 @@ import logging
 import io
 
 
-# set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    filename="agent.log",
-    format="%(asctime)s %(levelname)s: %(message)s"
-)
-
-
 class Employee:
+    def __init__(self, rfid_card_id: str) -> None:
+        self.id: str = rfid_card_id
+        self.employee_db_entry: tp.List[str] = self._find_in_db(rfid_card_id)
+        self.name: str = self.employee_db_entry[1]
+        self.position: str = self.employee_db_entry[2]
+
     @staticmethod
-    def find_in_db(employee_card_id: str, db_path: str = "employee_db.csv") -> tp.Optional[tp.List[str]]:
+    def _find_in_db(employee_card_id: str, db_path: str = "employee_db.csv") -> tp.Optional[tp.List[str]]:
         """
         Method is used to get employee data (or confirm its absence)
 
