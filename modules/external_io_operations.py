@@ -9,11 +9,12 @@ from pinatapy import PinataPy
 
 from modules.VideoEditor import VideoEditor
 from modules.short_url_generator import update_short_url
+from Types import Config
 
 
 class ExternalIoGateway:
 
-    def __init__(self, config: tp.Dict[str, tp.Dict[str, tp.Any]]):
+    def __init__(self, config: Config):
         self.config = config
         self.ipfs_hash: tp.Optional[str] = None
 
@@ -84,7 +85,7 @@ class BaseIoWorker(ABC):
 class IpfsWorker(BaseIoWorker):
     """IPFS worker handles interactions with IPFS"""
 
-    def __init__(self, context, config) -> None:
+    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="IPFS")
         self.config = config
 
@@ -105,7 +106,7 @@ class IpfsWorker(BaseIoWorker):
 class RobonomicsWorker(BaseIoWorker):
     """Robonomics worker handles interactions with Robonomics network"""
 
-    def __init__(self, context, config) -> None:
+    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Robonomics Network")
         self.config = config["transaction"]
 
@@ -130,7 +131,7 @@ class RobonomicsWorker(BaseIoWorker):
 class PinataWorker(BaseIoWorker):
     """Pinata worker handles interactions with Pinata"""
 
-    def __init__(self, context, config) -> None:
+    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Pinata cloud")
         self.config = config["pinata"]
 
