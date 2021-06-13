@@ -20,29 +20,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s: %(message)s"
 )
 
-
-def read_configuration() -> tp.Dict[str, tp.Dict[str, tp.Any]]:
-    """
-    :return: dictionary containing all the configurations
-    :rtype: dict
-
-    Reading config, containing all the required data, such as filepath, robonomics parameters (remote wss, seed),
-    camera parameters (ip, login, password, port), etc
-    """
-    config_path = "config/config.yaml"
-    logging.debug(f"Looking for config in {config_path}")
-
-    try:
-        with open(config_path) as f:
-            content = f.read()
-            config_f: tp.Dict[str, tp.Dict[str, tp.Any]] = yaml.load(content, Loader=yaml.FullLoader)
-            logging.debug(f"Configuration dict: {content}")
-            return config_f
-    except Exception as E:
-        logging.error(f"Error in configuration file! {E}")
-        exit()
-
-
 logging.info('Agent API listener started')
 
 # global variables
