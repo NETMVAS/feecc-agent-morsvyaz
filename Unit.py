@@ -17,6 +17,7 @@ class Unit:
 
     def __init__(self, config: Config, associated_employee: Employee, uuid: str = "") -> None:
         self.uuid: str = uuid or self._generate_uuid()
+        self.internal_id: str = ""
         self.employee: Employee = associated_employee
         self.product_data: tp.Optional[ProductData] = self._get_product_data()
         self.passport = Passport(self)
