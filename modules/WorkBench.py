@@ -1,11 +1,12 @@
-from Hub import Hub
-from Agent import Agent
-from modules.Camera import Camera
 import logging
 import typing as tp
-from Types import Config
-from Employee import Employee
+
 import State
+from Agent import Agent
+from Employee import Employee
+from Hub import Hub
+from Types import Config
+from modules.Camera import Camera
 
 
 class WorkBench:
@@ -32,6 +33,10 @@ class WorkBench:
         return self._associated_employee
 
     @property
+    def camera(self) -> Camera:
+        return self._associated_camera
+
+    @property
     def unit_in_operation(self):
         return self._associated_agent.associated_unit.internal_id
 
@@ -40,7 +45,7 @@ class WorkBench:
         return camera
 
     def _get_agent(self) -> Agent:
-        agent = Agent(self, self.config, self._associated_camera)
+        agent = Agent(self)
         agent.execute_state(State.State0)
         return agent
 

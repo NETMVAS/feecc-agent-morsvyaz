@@ -129,7 +129,7 @@ class State3(AbstractState):
 
         # publish video into IPFS and pin to Pinata
         # update the short link to point to an actual recording
-        ipfs_hash = self._context.ipfsworker.send(
+        ipfs_hash = self._context._iogateway.send(
             filename=self._context.latest_record_filename,
             qrpic=self._context.latest_record_qrpic_filename,
             config=self._context.config,
