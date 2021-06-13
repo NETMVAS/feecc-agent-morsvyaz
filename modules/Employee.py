@@ -12,7 +12,7 @@ class Employee:
         self.position: str = self.employee_db_entry[2]
 
     @staticmethod
-    def _find_in_db(employee_card_id: str, db_path: str = "employee_db.csv") -> tp.Optional[tp.List[str]]:
+    def _find_in_db(employee_card_id: str, db_path: str = "config/employee_db.csv") -> tp.Optional[tp.List[str]]:
         """
         Method is used to get employee data (or confirm its absence)
 

@@ -48,7 +48,7 @@ class Camera:
         return filename
 
     @staticmethod
-    def match_camera_with_table(camera_id: int, table_path: str = "camera_table.csv") -> tp.Optional[tp.Dict[str, str]]:
+    def match_camera_with_table(camera_id: int, table_path: str = "config/camera_table.csv") -> tp.Optional[tp.Dict[str, str]]:
         logging.debug(f"Looking for camera with ID {camera_id} in {table_path}")
         with open(table_path, "r") as f:
             reader = csv.reader(f, delimiter=";")
