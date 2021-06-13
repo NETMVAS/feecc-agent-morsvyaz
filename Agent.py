@@ -6,21 +6,23 @@ import requests
 
 import modules.external_io_operations as external_io
 from Passport import Passport
+from Unit import Unit
 from modules.Camera import Camera
 
 
 class Agent:
     """Handles agent's state management and high level operation"""
 
-    def __init__(self, config: tp.Dict[str, tp.Dict[str, tp.Any]], camera_config: tp.Dict[str, str]) -> None:
+    def __init__(self, workbench, config: tp.Dict[str, tp.Dict[str, tp.Any]], camera: Camera) -> None:
         """agent is initialized with state 0 and has an instance of Passport and Camera associated with it"""
 
+        self._workbench = workbench
         self._state = None
         self._state_thread: tp.Optional[threading.Thread] = None
         self.config: tp.Dict[str, tp.Dict[str, tp.Any]] = config
         self.backend_api_address: str = config["api_address"]["backend_api_address"]
-        self.associated_passport: tp.Optional[Passport] = None
-        self.associated_camera: Camera = Camera(camera_config)
+        self.associated_unit: tp.Optional[Unit] = None
+        self.associated_camera: Camera = camera
         self.ipfsworker: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.latest_record_filename: str = ""
         self.latest_record_short_link: str = ""
