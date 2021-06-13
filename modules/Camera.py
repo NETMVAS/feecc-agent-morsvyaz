@@ -110,8 +110,7 @@ class Recording:
 
     def _execute_ffmpeg(self, filename: str) -> None:
         """Execute ffmpeg command"""
-        program_ffmpeg = \
-            f'ffmpeg -rtsp_transport tcp -i "rtsp://{self._camera.login}:{self._camera.password}@{self._camera.ip}:\
+        program_ffmpeg = f'ffmpeg -rtsp_transport tcp -i "rtsp://{self._camera.login}:{self._camera.password}@{self._camera.ip}:\
 {self._camera.port}/Streaming/Channels/101" -r 25 -c copy -map 0 {filename}'
 
         # the entire line looks like

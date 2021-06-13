@@ -55,17 +55,11 @@ class Agent:
         logging.info(f"Changing backend state to {self.state}")
         logging.debug(f"self.backend_api_address = {self.backend_api_address}")
         target_url = f"{self.backend_api_address}/state-update"
-        payload = {
-            "change_state_to": self.state,
-            "priority": priority
-        }
+        payload = {"change_state_to": self.state, "priority": priority}
 
         logging.debug(f"Sending request to:\n {target_url}\nWith payload:\n{payload}")
 
-        response = requests.post(
-            url=target_url,
-            json=payload
-        )
+        response = requests.post(url=target_url, json=payload)
 
         if response.status_code == 200:
             logging.info(f"Send backend state transition request: success")

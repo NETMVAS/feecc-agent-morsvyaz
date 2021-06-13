@@ -18,7 +18,7 @@ class VideoEditor:
                 logging.error(f"File {path} not found. Cannot concatenate.")
                 return ""
 
-        concat_string = "file \'" + intro_path + "/media/intro.mp4\'\nfile \'" + video_path + "\'"
+        concat_string = "file '" + intro_path + "/media/intro.mp4'\nfile '" + video_path + "'"
         # it should look like:
         #   file './media/intro.mp4'
         #   file './media/vid.mp4'

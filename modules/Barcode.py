@@ -9,9 +9,7 @@ from Printer import Task
 
 # set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    filename="agent.log",
-    format="%(asctime)s %(levelname)s: %(message)s"
+    level=logging.INFO, filename="agent.log", format="%(asctime)s %(levelname)s: %(message)s"
 )
 
 
@@ -38,10 +36,10 @@ class Barcode:
         Returns:
             EAN13 Class
         """
-        return barcode.get('ean13', num)
+        return barcode.get("ean13", num)
 
     @staticmethod
-    def save_barcode(ean_code: barcode.EAN13, dir_path: str = 'barcode') -> str:
+    def save_barcode(ean_code: barcode.EAN13, dir_path: str = "barcode") -> str:
         """
         Method that saves barcode picture
 

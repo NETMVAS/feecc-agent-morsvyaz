@@ -72,51 +72,33 @@ def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
         seal_tag_path: str = f"output/seal_tag_{tag_timestamp}.png"
     else:
         seal_tag_path: str = f"output/seal_tag_base.png"
-        
+
     # check if seal tag has already been created
     if os.path.exists(seal_tag_path):
         return seal_tag_path
-    
+
     # make a basic security tag with needed dimensions
     image_height = 200
     image_width = 554
-    seal_tag_image = Image.new(
-        mode="RGB",
-        size=(image_width, image_height),
-        color=(255, 255, 255)
-    )
+    seal_tag_image = Image.new(mode="RGB", size=(image_width, image_height), color=(255, 255, 255))
     seal_tag_draw = ImageDraw.Draw(seal_tag_image)
 
     # specify fonts
     font_path = "media/helvetica-cyrillic-bold.ttf"
 
-    large_font = ImageFont.truetype(
-        font=font_path,
-        size=52
-    )
+    large_font = ImageFont.truetype(font=font_path, size=52)
 
-    small_font = ImageFont.truetype(
-        font=font_path,
-        size=18
-    )
+    small_font = ImageFont.truetype(font=font_path, size=18)
 
     # add text to the image
     seal_tag_draw.text(
-        xy=(20, 30),
-        text=u"ОПЛОМБИРОВАНО",
-        fill=(0, 0, 0),
-        font=large_font,
-        align="center"
+        xy=(20, 30), text="ОПЛОМБИРОВАНО", fill=(0, 0, 0), font=large_font, align="center"
     )
 
     # add a timestamp to the seal tag if needed
     if config["print_security_tag"]["enable_timestamp"]:
         seal_tag_draw.text(
-            xy=(20, 82),
-            text=tag_timestamp,
-            fill=(0, 0, 0),
-            font=large_font,
-            align="center"
+            xy=(20, 82), text=tag_timestamp, fill=(0, 0, 0), font=large_font, align="center"
         )
 
     # save the image in the output folder

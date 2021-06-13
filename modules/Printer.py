@@ -6,9 +6,7 @@ from brother_ql.backends.helpers import send
 
 # set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    filename="agent.log",
-    format="%(asctime)s %(levelname)s: %(message)s"
+    level=logging.INFO, filename="agent.log", format="%(asctime)s %(levelname)s: %(message)s"
 )
 
 
@@ -31,7 +29,7 @@ class Task:
 
         logging.info("Printing...")
         qlr = BrotherQLRaster(printer_config["printer_model"])
-        red: bool = (label_name == "62")
+        red: bool = label_name == "62"
         conversion.convert(qlr, [qr], label_name, red=red)
         send(qlr.data, printer)  # this is some standard code for printing with brother label printer with python,
         # red = True means that black and red printing will be done. Only for 62 label paper

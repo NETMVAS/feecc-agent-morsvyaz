@@ -23,7 +23,7 @@ class Passport:
     def _encode_employee(self) -> str:
         """
         returns encoded employee name to put into the passport
-        
+
         since unit passport will be published to IPFS, employee name is replaced with
         "employee passport code" - an SHA256 checksum of a string, which is a space-separated
         combination of employee's ID, name and position. since this data is unique for every

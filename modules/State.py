@@ -53,7 +53,7 @@ class State0(AbstractState):
 
 class State1(AbstractState):
     """
-    at state 1 agent awaits for an incoming RFID event OR form post, thus operation is    
+    at state 1 agent awaits for an incoming RFID event OR form post, thus operation is
     primarily done in app.py handlers, sleeping
     """
 
@@ -80,33 +80,31 @@ class State2(AbstractState):
         except AttributeError as E:
             logging.error(
                 f"Failed to start video recording: error retrieving associated passport ID.\n\
-                        self._context.associated_passport = {self._context.associated_passport}\n{E}")
+                        self._context.associated_passport = {self._context.associated_passport}\n{E}"
+            )
             return
 
         # generate a video short link (a dummy for now)
-        self._context.latest_record_short_link = url_generator.generate_short_url(self._context.config)[1]
+        self._context.latest_record_short_link = url_generator.generate_short_url(
+            self._context.config
+        )[1]
 
         # generate a QR code with the short link
         self._context.latest_record_qrpic_filename = image_generation.create_qr(
-            link=self._context.latest_record_short_link,
-            config=self._context.config
+            link=self._context.latest_record_short_link, config=self._context.config
         )
 
         # print the QR code onto a sticker if set to do so in the config
         if self._context.config["print_qr"]["enable"]:
             Printer.Task(
-                picname=self._context.latest_record_qrpic_filename,
-                config=self._context.config
+                picname=self._context.latest_record_qrpic_filename, config=self._context.config
             )
 
         # print the seal tag onto a sticker if set to do so in the config
         if self._context.config["print_security_tag"]["enable"]:
             seal_file_path = image_generation.create_seal_tag(self._context.config)
 
-            Printer.Task(
-                picname=seal_file_path,
-                config=self._context.config
-            )
+            Printer.Task(picname=seal_file_path, config=self._context.config)
 
         # start recording a video
         self._context.latest_record_filename = self._context.associated_camera.start_record(passport_id)
@@ -133,7 +131,7 @@ class State3(AbstractState):
             filename=self._context.latest_record_filename,
             qrpic=self._context.latest_record_qrpic_filename,
             config=self._context.config,
-            keyword=self._context.latest_record_short_link.split('/')[-1]
+            keyword=self._context.latest_record_short_link.split("/")[-1],
         )
 
         # add video IPFS hash to the passport

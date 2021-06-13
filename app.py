@@ -15,12 +15,10 @@ from modules.Camera import Camera
 
 # set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    filename="agent.log",
-    format="%(asctime)s %(levelname)s: %(message)s"
+    level=logging.INFO, filename="agent.log", format="%(asctime)s %(levelname)s: %(message)s"
 )
 
-logging.info('Agent API listener started')
+logging.info("Agent API listener started")
 
 # global variables
 valid_states = [0, 1, 2, 3]
@@ -42,9 +40,7 @@ class FormHandler(Resource):
 
     @staticmethod
     def post() -> int:
-        logging.info(
-            f"Received a form. Parsing and validating"
-        )
+        logging.info(f"Received a form. Parsing and validating")
 
         # parse the form data
         form_data = request.get_json()
@@ -57,9 +53,7 @@ class FormHandler(Resource):
             agent.associated_passport = passport
             agent.execute_state(State.State2)
 
-            logging.info(
-                f"Form validation success. Current state: {agent.state}"
-            )
+            logging.info(f"Form validation success. Current state: {agent.state}")
 
         else:
             agent.execute_state(State.State0)
@@ -80,9 +74,7 @@ class StateUpdateHandler(Resource):
 
     @staticmethod
     def post():
-        logging.info(
-            f"Received a request to update the state."
-        )
+        logging.info(f"Received a request to update the state.")
 
         # parse the request data
         data = request.get_json()
@@ -96,10 +88,7 @@ class StateUpdateHandler(Resource):
                 f"Invalid state transition: '{data['change_state_to']}' is not a valid state. Staying at {agent.state}"
             )
 
-            return Response(
-                response={"status": 406, "msg": "invalid state"},
-                status=406
-            )
+            return Response(response={"status": 406, "msg": "invalid state"}, status=406)
 
         # change own state to the one specified by the sender
         # garbage temporary solution
@@ -107,9 +96,7 @@ class StateUpdateHandler(Resource):
         new_state = states[data["change_state_to"]]
         agent.execute_state(new_state)
 
-        logging.info(
-            f"Successful state transition to {data['change_state_to']}"
-        )
+        logging.info(f"Successful state transition to {data['change_state_to']}")
 
         return Response(status=200)
 
@@ -135,9 +122,9 @@ class RFIDHandler(Resource):
                     "is_valid": False,
                     "employee_name": "",
                     "position": "",
-                    "comment": "Employee not found"
+                    "comment": "Employee not found",
                 },
-                status=404
+                status=404,
             )
 
         # start session
@@ -170,9 +157,9 @@ class RFIDHandler(Resource):
                 "is_valid": True,
                 "employee_name": employee_data[0],
                 "position": employee_data[1],
-                "comment": ""
+                "comment": "",
             },
-            status=200
+            status=200,
         )
 
 
@@ -218,7 +205,9 @@ class PassportAppendHandler(Resource):
                 logging.error(f"Passport form contains empty field: {entry}")
                 return False, "Form contains empty field"
 
-        matching_uuid = passport.match_passport_id_with_hash(passport_id=json_data["barcode_string"])
+        matching_uuid = passport.match_passport_id_with_hash(
+            passport_id=json_data["barcode_string"]
+        )
 
         if matching_uuid is None:
             return False, "Matching passport not found"
@@ -240,13 +229,7 @@ class PassportAppendHandler(Resource):
                 f"Form validation success. Current state: {agent.state}, camera data: {matching_camera}"
             )
 
-            return Response(
-                {
-                    "status": True,
-                    "comment": comment
-                },
-                status=200
-            )
+            return Response({"status": True, "comment": comment}, status=200)
 
         agent.execute_state(State.State0)
 
@@ -258,13 +241,7 @@ class PassportAppendHandler(Resource):
             """
         )
 
-        return Response(
-            {
-                "status": False,
-                "comment": comment
-            },
-            status=400
-        )
+        return Response({"status": False, "comment": comment}, status=400)
 
 
 # REST API endpoints

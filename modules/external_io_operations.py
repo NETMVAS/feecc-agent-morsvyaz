@@ -13,7 +13,6 @@ from Types import Config
 
 
 class ExternalIoGateway:
-
     def __init__(self, config: Config):
         self.config = config
         self.ipfs_hash: tp.Optional[str] = None
@@ -23,8 +22,7 @@ class ExternalIoGateway:
         if self.config["intro"]["enable"]:
             try:
                 filename = VideoEditor.concatenate(
-                    filename,
-                    delete_source=self.config["general"]["delete_after_record"]
+                    filename, delete_source=self.config["general"]["delete_after_record"]
                 )  # get concatenated video filename
             except Exception as e:
                 logging.error("Failed to concatenate. Error: ", e)
@@ -39,9 +37,7 @@ class ExternalIoGateway:
                     worker.post(filename)
 
             except Exception as e:
-                logging.error(
-                    "Error while publishing to IPFS or pinning to pinata. Error: ", e
-                )
+                logging.error("Error while publishing to IPFS or pinning to pinata. Error: ", e)
 
         if self.config["datalog"]["enable"] and self.config["external_io"]["enable"]:
             try:
@@ -114,17 +110,19 @@ class RobonomicsWorker(BaseIoWorker):
         if self._context.ipfs_hash is None:
             raise ValueError(*"ipfs_hash is None")
         program = (
-                'echo \"' + self._context.ipfs_hash + '\" | '  # send external_io hash
-                + self.config["path_to_robonomics_file"] + " io write datalog "  # to robonomics chain
-                + self.config["remote"]  # specify remote wss, if calling remote node
-                + " -s "
-                + self._context.config["camera"]["key"]  # sing transaction with camera seed
+            'echo "'
+            + self._context.ipfs_hash
+            + '" | '  # send external_io hash
+            + self.config["path_to_robonomics_file"]
+            + " io write datalog "  # to robonomics chain
+            + self.config["remote"]  # specify remote wss, if calling remote node
+            + " -s "
+            + self._context.config["camera"]["key"]  # sing transaction with camera seed
         )  # line of form  echo "Qm…" | ./robonomics io write datalog -s seed. See robonomics wiki for more
         process = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
         output = process.stdout.readline()  # execute the command in shell and wait for it to complete
         logging.info(
-            "Published data to chain. Transaction hash is "
-            + output.strip().decode("utf8")
+            "Published data to chain. Transaction hash is " + output.strip().decode("utf8")
         )  # get transaction hash to use it further if needed
 
 
@@ -139,10 +137,7 @@ class PinataWorker(BaseIoWorker):
         logging.info("Camera is sending file to Pinata in the background")
 
         # create a thread for the function to run in
-        pinata_thread = threading.Thread(
-            target=self._pin_to_pinata,
-            args=filename
-        )
+        pinata_thread = threading.Thread(target=self._pin_to_pinata, args=filename)
 
         # start the pinning operation
         pinata_thread.start()
@@ -159,6 +154,7 @@ class PinataWorker(BaseIoWorker):
         if pinata_api and pinata_secret_api:
             pinata = PinataPy(pinata_api, pinata_secret_api)
             pinata.pin_file_to_ipfs(
-                filename)  # here we actually send the entire file to pinata, not just its hash. It will
+                filename
+            )  # here we actually send the entire file to pinata, not just its hash. It will
             # remain the same as if published locally, cause the content is the same.
             logging.info(f"File {filename} published to Pinata")
