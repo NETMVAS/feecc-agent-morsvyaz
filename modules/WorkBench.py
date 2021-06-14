@@ -37,8 +37,23 @@ class WorkBench:
         return self._associated_camera
 
     @property
-    def unit_in_operation(self):
-        return self._associated_agent.associated_unit.internal_id
+    def unit_in_operation(self) -> str:
+        if self._associated_agent.associated_unit is None:
+            return ""
+        else:
+            return self._associated_agent.associated_unit.internal_id
+
+    @property
+    def is_operation_ongoing(self) -> bool:
+        return not self.unit_in_operation == ""
+
+    @property
+    def state_number(self) -> int:
+        return self._associated_agent.state
+
+    @property
+    def state_description(self) -> str:
+        return self._associated_agent.state_description
 
     def _get_camera(self) -> Camera:
         camera = Camera(self.config["camera"])

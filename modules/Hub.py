@@ -37,6 +37,16 @@ class Hub:
             logging.error(f"Error in configuration file! {E}")
             exit()
 
+    def get_workbench_by_number(self, workbench_no: int) -> tp.Optional[WorkBench]:
+        """find the get_workbench_by_number with the provided number"""
+
+        for workbench in self._workbenches:
+            if workbench.number == workbench_no:
+                return workbench
+
+        logging.error(f"Could not find get_workbench_by_number with number {workbench_no}. Does it exist?")
+        return None
+
     # todo
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         pass

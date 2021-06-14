@@ -17,6 +17,7 @@ class AbstractState(ABC):
         :param context: object of type Agent which executes the provided state
         """
 
+        self.state_description: str = "Abstract State Object"
         self._context = context
 
     @property
@@ -46,6 +47,7 @@ class State0(AbstractState):
 
     def __init__(self, context) -> None:
         super().__init__(context)
+        self.state_description: str = "At state 0 agent awaits for an incoming RFID event and is practically sleeping"
 
     def run(self) -> None:
         pass
@@ -59,6 +61,11 @@ class State1(AbstractState):
 
     def __init__(self, context) -> None:
         super().__init__(context)
+        self.state_description: str = \
+            """
+            at state 1 agent awaits for an incoming RFID event OR form post, thus operation is
+            primarily done in app.py handlers, sleeping
+            """
 
     def run(self) -> None:
         pass
@@ -72,6 +79,11 @@ class State2(AbstractState):
 
     def __init__(self, context) -> None:
         super().__init__(context)
+        self.state_description: str = \
+            """
+            at state 2 agent is recording the work process using an IP camera and awaits an
+            RFID event which would stop the recording
+            """
 
     def run(self) -> None:
         # start the recording in the background and send the path to the video
@@ -120,6 +132,7 @@ class State3(AbstractState):
 
     def __init__(self, context) -> None:
         super().__init__(context)
+        self.state_description: str = "at state 3 Unit is wrapped up, it's passport is published online"
 
     def run(self) -> None:
         # stop recording and save the file

@@ -29,7 +29,17 @@ class Agent:
 
     @property
     def state(self) -> int:
-        return self._state.number
+        if self._state is None:
+            return -1
+        else:
+            return self._state.number
+
+    @property
+    def state_description(self) -> str:
+        if self._state is not None:
+            return self._state.state_description
+        else:
+            return ""
 
     @property
     def config(self) -> Config:

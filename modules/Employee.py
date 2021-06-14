@@ -11,6 +11,19 @@ class Employee:
         self.name: str = self.employee_db_entry[1]
         self.position: str = self.employee_db_entry[2]
 
+    @property
+    def is_logged_in(self) -> bool:
+        return not self.id == ""
+
+    @property
+    def data(self) -> tp.Dict[str, str]:
+        data = {
+            "name": self.name,
+            "position": self.position
+        }
+
+        return data
+
     @staticmethod
     def _find_in_db(employee_card_id: str, db_path: str = "config/employee_db.csv") -> tp.Optional[tp.List[str]]:
         """
