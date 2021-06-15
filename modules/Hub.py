@@ -16,7 +16,7 @@ class Hub:
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
 
     @staticmethod
-    def _get_config(config_path: str = "config/config.yaml") -> Config:
+    def _get_config(config_path: str = "config/hub_config.yaml") -> Config:
         """
         :return: dictionary containing all the configurations
         :rtype: dict

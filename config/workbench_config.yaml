@@ -1,0 +1,17 @@
+# Configuration file for all the WorkBenches, served by the Hub
+
+- workbench number: 1
+  description: Монтажный стол  # optional description, leave blank if you don't need it
+  api socket: 192.168.1.12:5000  # a socket, at which the REST API of the device is listening on
+  hardware:  # list of attached devices to make use of
+    camera:  # an ip camera capable of RTSP steaming
+      ip: 192.168.1.14  # static IP of the camera
+      port: 563  # camera RTSP broadcast port
+      login: Username  # login to access camera RTSP stream
+      password: Password123  # password to access camera RTSP stream
+
+- workbench number: 2
+  description: Упаковочный стол
+  api socket: 192.168.1.22:5000
+  hardware:
+    camera: null  # no camera at the workbench, thus null

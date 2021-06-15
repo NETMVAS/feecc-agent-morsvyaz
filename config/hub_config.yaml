@@ -3,11 +3,7 @@ general:
 transaction:
   path_to_robonomics_file: "robonomics" # where lies the binary file, ends with a binary filename
   remote: '--remote wss://earth.rpc.robonomics.network' # e.g. ws://127.0.0.1:9944
-camera: # Info about the used RTSP-capable IP camera
-  ip: '' # static IP of the camera
-  port: ''
-  login: ''
-  password: ''
+camera:
   key: '' # secret key in robonomics network
 print_qr: # Whether to print QR code stickers pointing to a video in IPFS
   enable: true
