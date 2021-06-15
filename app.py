@@ -99,4 +99,5 @@ api.add_resource(EmployeeLogOutHandler, "/api/employee/logout")
 api.add_resource(WorkBenchStatusHandler, "/api/workbench/<int:workbench_no>")
 
 if __name__ == "__main__":
+    #TODO: Socket cfg
     app.run(host="127.0.0.1", port=5000)

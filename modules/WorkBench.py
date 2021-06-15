@@ -45,7 +45,7 @@ class WorkBench:
 
     @property
     def is_operation_ongoing(self) -> bool:
-        return not self.unit_in_operation == ""
+        return bool(self.unit_in_operation)
 
     @property
     def state_number(self) -> int:
@@ -80,7 +80,7 @@ class WorkBench:
         self._associated_agent.execute_state(State.State0)
 
     # todo
-    def start_operation(self, unit_id: str = "") -> None:
+    def start_operation(self, unit_internal_id: str = "") -> None:
         """begin work on the provided unit or set up a new unit"""
 
         pass
