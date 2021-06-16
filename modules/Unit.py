@@ -2,7 +2,6 @@ import csv
 import logging
 import os
 import typing as tp
-from collections import defaultdict
 from datetime import datetime as dt
 from uuid import uuid4
 
@@ -19,7 +18,7 @@ class Unit:
 
     def __init__(self, config: Config, uuid: str = "") -> None:
         self.uuid: str = uuid or self._generate_uuid()
-        self.internal_id: int = self._get_internal_id()
+        self.internal_id: str = self._get_internal_id()
         self.employee: tp.Optional[Employee] = None
         self.product_data: tp.Optional[ProductData] = self._get_product_data()
         self.passport = Passport(self)
@@ -35,18 +34,18 @@ class Unit:
     def _generate_uuid() -> str:
         return uuid4().hex
 
-    def _get_internal_id(self) -> int:
+    def _get_internal_id(self) -> str:
         """get own internal id using own uuid"""
         ids_dict = self._load_internal_ids()
 
         if not len(ids_dict):
             self._save_internal_id(self.uuid, 1)
-            return 1
+            return "1"
 
         internal_id = list(ids_dict.values())[-1] + 1
         self._save_internal_id(self.uuid, internal_id)
 
-        return internal_id
+        return str(internal_id)
 
     def _get_product_data(self) -> ProductData:
         filename = f"unit-passports/unit-passport-{self.uuid}.yaml"
