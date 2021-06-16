@@ -51,6 +51,13 @@ class Hub:
         logging.error(f"Could not find the workbench with number {workbench_no}. Does it exist?")
         return None
 
+    def create_new_unit(self) -> str:
+        """initialize a new instance of the Unit class"""
+
+        unit = Unit(self.config)
+        self._units.append(unit)
+        return unit.internal_id
+
     def get_unit_by_internal_id(self, unit_internal_id: str) -> tp.Union[Unit, None]:
         """find the unit with the provided internal id"""
 

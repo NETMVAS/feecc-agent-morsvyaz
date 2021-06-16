@@ -1,7 +1,7 @@
 import logging
 import typing as tp
 
-from flask import Flask, Response
+from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
 from modules.Hub import Hub
@@ -21,9 +21,38 @@ api = Api(app)
 # REST API request handlers
 
 # Unit operations handling
-# todo
 class UnitCreationHandler(Resource):
     """handle new Unit creation"""
+
+    @staticmethod
+    def post() -> Response:
+        try:
+            workbench_no: int = request.get_json()["workbench_no"]
+            logging.debug(f"Received a request to create a new Unit from workbench no. {workbench_no}")
+
+        except Exception as E:
+            logging.error(f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred:\n{E}")
+            return Response(status=500)
+
+        global hub
+
+        try:
+            new_unit_internal_id: str = hub.create_new_unit()
+            response = {
+                "status": True,
+                "comment": "New unit created successfully",
+                "unit_internal_id": new_unit_internal_id
+            }
+            logging.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
+            return Response(response=response, status=200)
+
+        except Exception as E:
+            logging.error(f"Exception occurred while creating new Unit:\n{E}")
+            response = {
+                "status": False,
+                "comment": "Could not create a new Unit. Internal error occurred",
+            }
+            return Response(response=response, status=502)
 
 
 # todo
