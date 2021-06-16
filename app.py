@@ -1,10 +1,11 @@
 import logging
 import typing as tp
 
-from flask import Flask, Response
+from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
 from modules.Hub import Hub
+from modules.Unit import Unit
 from modules.WorkBench import WorkBench
 
 # set up logging
@@ -21,14 +22,71 @@ api = Api(app)
 # REST API request handlers
 
 # Unit operations handling
-# todo
 class UnitCreationHandler(Resource):
     """handle new Unit creation"""
 
+    @staticmethod
+    def post() -> Response:
+        try:
+            workbench_no: int = request.get_json()["workbench_no"]
+            logging.debug(f"Received a request to create a new Unit from workbench no. {workbench_no}")
 
-# todo
+        except Exception as E:
+            logging.error(f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred:\n{E}")
+            return Response(status=500)
+
+        global hub
+
+        try:
+            new_unit_internal_id: str = hub.create_new_unit()
+            response = {
+                "status": True,
+                "comment": "New unit created successfully",
+                "unit_internal_id": new_unit_internal_id
+            }
+            logging.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
+            return Response(response=response, status=200)
+
+        except Exception as E:
+            logging.error(f"Exception occurred while creating new Unit:\n{E}")
+            response = {
+                "status": False,
+                "comment": "Could not create a new Unit. Internal error occurred",
+            }
+            return Response(response=response, status=500)
+
+
 class UnitStartRecordHandler(Resource):
     """handle start recording operation on a Unit"""
+
+    @staticmethod
+    def post(unit_internal_id: str) -> Response:
+        global hub
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+
+        try:
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+            workbench.start_operation(unit, request_payload["production_stage_name"],
+                                      request_payload["additional_info"])
+            message = f"Started operation '{request_payload['production_stage_name']}' on Unit {unit_internal_id} at " \
+                      f"Workbench no. {request_payload['workbench_no']} "
+            response_data = {
+                "status": True,
+                "comment": message
+            }
+            logging.info(message)
+            return Response(status=200, response=response_data)
+
+        except Exception as E:
+            message = f"Couldn't handle request. An error occurred: {E}"
+            logging.error(message)
+            logging.debug(request_payload)
+            response_data = {
+                "status": False,
+                "comment": message
+            }
+            return Response(response=response_data, status=500)
 
 
 # todo
