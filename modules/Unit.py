@@ -15,10 +15,10 @@ from modules import external_io_operations
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    def __init__(self, config: Config, associated_employee: Employee, uuid: str = "") -> None:
+    def __init__(self, config: Config, uuid: str = "") -> None:
         self.uuid: str = uuid or self._generate_uuid()
-        self.internal_id: str = ""
-        self.employee: Employee = associated_employee
+        self.internal_id: str = self._get_internal_id
+        self.employee: tp.Union[Employee, None] = None
         self.product_data: tp.Optional[ProductData] = self._get_product_data()
         self.passport = Passport(self)
         self._keyword = ""
@@ -32,6 +32,12 @@ class Unit:
     @staticmethod
     def _generate_uuid() -> str:
         return uuid4().hex
+
+    # todo
+    def _get_internal_id(self) -> str:
+        """get own internal id using own uuid"""
+
+        pass
 
     def _get_product_data(self) -> ProductData:
         filename = f"unit-passports/unit-passport-{self.uuid}.yaml"
