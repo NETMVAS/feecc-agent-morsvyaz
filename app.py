@@ -5,6 +5,7 @@ from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
 from modules.Hub import Hub
+from modules.Unit import Unit
 from modules.WorkBench import WorkBench
 
 # set up logging
@@ -52,12 +53,40 @@ class UnitCreationHandler(Resource):
                 "status": False,
                 "comment": "Could not create a new Unit. Internal error occurred",
             }
-            return Response(response=response, status=502)
+            return Response(response=response, status=500)
 
 
-# todo
 class UnitStartRecordHandler(Resource):
     """handle start recording operation on a Unit"""
+
+    @staticmethod
+    def post(unit_internal_id: str) -> Response:
+        global hub
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+
+        try:
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+            workbench.start_operation(unit, request_payload["production_stage_name"],
+                                      request_payload["additional_info"])
+            message = f"Started operation '{request_payload['production_stage_name']}' on Unit {unit_internal_id} at " \
+                      f"Workbench no. {request_payload['workbench_no']} "
+            response_data = {
+                "status": True,
+                "comment": message
+            }
+            logging.info(message)
+            return Response(status=200, response=response_data)
+
+        except Exception as E:
+            message = f"Couldn't handle request. An error occurred: {E}"
+            logging.error(message)
+            logging.debug(request_payload)
+            response_data = {
+                "status": False,
+                "comment": message
+            }
+            return Response(response=response_data, status=500)
 
 
 # todo

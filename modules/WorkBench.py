@@ -88,7 +88,7 @@ class WorkBench:
         self._associated_agent.execute_state(State.State0)
 
     # todo
-    def start_operation(self, unit: Unit) -> None:
+    def start_operation(self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]) -> None:
         """begin work on the provided unit"""
 
         pass
