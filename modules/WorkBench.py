@@ -6,6 +6,7 @@ from Agent import Agent
 from Employee import Employee
 from Hub import Hub
 from Types import Config
+from Unit import Unit
 from modules.Camera import Camera
 
 
@@ -16,16 +17,18 @@ class WorkBench:
     It provides highly abstract interface for interaction with them
     """
 
-    def __init__(self, associated_hub: Hub, workbench_no: int) -> None:
-        self.number: int = workbench_no
+    def __init__(self, associated_hub: Hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
+        self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
+        self.number: int = self._workbench_config["workbench number"]
         self._associated_agent: Agent = self._get_agent()
-        self._associated_employee: tp.Optional[Employee] = None
+        self._associated_employee: tp.Union[Employee, None] = None
         self._associated_hub: Hub = associated_hub
-        self._associated_camera: Camera = self._get_camera()
+        self._associated_camera: tp.Union[Camera, None] = self._get_camera()
         logging.info(f"Workbench no. {self.number} initialized")
+        logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
 
     @property
-    def config(self) -> Config:
+    def hub_config(self) -> Config:
         return self._associated_hub.config
 
     @property
@@ -55,9 +58,14 @@ class WorkBench:
     def state_description(self) -> str:
         return self._associated_agent.state_description
 
-    def _get_camera(self) -> Camera:
-        camera = Camera(self.config["camera"])
-        return camera
+    def _get_camera(self) -> tp.Union[Camera, None]:
+        camera_config: tp.Union[tp.Dict[str, tp.Any], None] = self._workbench_config["hardware"]["camera"]
+
+        if camera_config is None:
+            return None
+        else:
+            camera = Camera(camera_config)
+            return camera
 
     def _get_agent(self) -> Agent:
         agent = Agent(self)
@@ -80,8 +88,8 @@ class WorkBench:
         self._associated_agent.execute_state(State.State0)
 
     # todo
-    def start_operation(self, unit_id: str = "") -> None:
-        """begin work on the provided unit or set up a new unit"""
+    def start_operation(self, unit: Unit) -> None:
+        """begin work on the provided unit"""
 
         pass
 
