@@ -89,14 +89,55 @@ class UnitStartRecordHandler(Resource):
             return Response(response=response_data, status=500)
 
 
-# todo
 class UnitEndRecordHandler(Resource):
     """handle end recording operation on a Unit"""
 
+    @staticmethod
+    def post(unit_internal_id: str):
+        global hub
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()
 
-# todo
+        logging.debug(request_payload)
+
+        try:
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench.end_operation(unit_internal_id)
+            return Response(status=200, response={"status": True, "comment": "ok"})
+        except Exception as e:
+            logging.error(f"Couldn't handle end record request. An error occurred: {e}")
+            return Response(
+                response={
+                    "status": False,
+                    "comment": "Couldn't handle end record request."
+                },
+                status=500)
+
+
 class UnitUploadHandler(Resource):
     """handle Unit lifecycle end"""
+
+    @staticmethod
+    def post(unit_internal_id: str):
+        global hub
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+
+        logging.debug(request_payload)
+
+        try:
+            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+            unit.upload()
+            return Response(
+                response={
+                    "status": True,
+                    "comment": f"uploaded data for unit {unit_internal_id}",
+                },
+                status=200)
+        except Exception as e:
+            logging.error(f"Can't handle unit upload. An error occurred: {e}")
+
+        return Response(
+            response={'status': False, "comment": "Can't handle unit upload"}, status=500
+        )
 
 
 # Employee operations handling
@@ -157,5 +198,5 @@ api.add_resource(EmployeeLogOutHandler, "/api/employee/logout")
 api.add_resource(WorkBenchStatusHandler, "/api/workbench/<int:workbench_no>")
 
 if __name__ == "__main__":
-    #TODO: Socket cfg
+    # TODO: Socket cfg
     app.run(host="127.0.0.1", port=5000)
