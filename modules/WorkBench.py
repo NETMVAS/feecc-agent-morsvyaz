@@ -1,13 +1,12 @@
 import logging
 import typing as tp
 
-import State
-from Agent import Agent
-from Employee import Employee
-from Hub import Hub
-from Types import Config
-from Unit import Unit
+import modules.State as State
+from modules.Agent import Agent
 from modules.Camera import Camera
+from modules.Employee import Employee
+from modules.Types import Config
+from modules.Unit import Unit
 
 
 class WorkBench:
@@ -17,18 +16,18 @@ class WorkBench:
     It provides highly abstract interface for interaction with them
     """
 
-    def __init__(self, associated_hub: Hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
+    def __init__(self, associated_hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
         self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
         self.number: int = self._workbench_config["workbench number"]
-        self._associated_agent: Agent = self._get_agent()
-        self._associated_employee: tp.Union[Employee, None] = None
-        self._associated_hub: Hub = associated_hub
+        self._associated_hub = associated_hub
         self._associated_camera: tp.Union[Camera, None] = self._get_camera()
+        self._associated_employee: tp.Union[Employee, None] = None
+        self._associated_agent: Agent = self._get_agent()
         logging.info(f"Workbench no. {self.number} initialized")
         logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
 
     @property
-    def hub_config(self) -> Config:
+    def config(self) -> Config:
         return self._associated_hub.config
 
     @property

@@ -1,11 +1,12 @@
-import sys
-
-from Types import Config
 import logging
-import yaml
+import sys
 import typing as tp
-from WorkBench import WorkBench
-from Unit import Unit
+
+import yaml
+
+from modules.Types import Config
+from modules.Unit import Unit
+from modules.WorkBench import WorkBench
 
 
 class Hub:

@@ -4,13 +4,11 @@ import os
 
 import yaml
 
-from Unit import Unit
-
 
 class Passport:
     """handles form validation and unit passport issuing"""
 
-    def __init__(self, unit: Unit) -> None:
+    def __init__(self, unit) -> None:
         self._unit = unit
         self.filename: str = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
 

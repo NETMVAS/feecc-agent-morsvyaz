@@ -7,9 +7,9 @@ from uuid import uuid4
 
 import yaml
 
-from Employee import Employee
-from Passport import Passport
-from Types import Config, ProductData
+from modules.Employee import Employee
+from modules.Passport import Passport
+from modules.Types import Config, ProductData
 from modules import external_io_operations
 
 
