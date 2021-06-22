@@ -31,11 +31,11 @@ class WorkBench:
         return self._associated_hub.config
 
     @property
-    def employee(self) -> Employee:
+    def employee(self) -> tp.Union[Employee, None]:
         return self._associated_employee
 
     @property
-    def camera(self) -> Camera:
+    def camera(self) -> tp.Union[Camera, None]:
         return self._associated_camera
 
     @property

@@ -15,9 +15,9 @@ from modules.short_url_generator import update_short_url
 class ExternalIoGateway:
     def __init__(self, config: Config):
         self.config = config
-        self.ipfs_hash: tp.Optional[str] = None
+        self.ipfs_hash: tp.Union[str, None] = None
 
-    def send(self, filename: str, keyword: str = "") -> str:
+    def send(self, filename: str, keyword: str = "") -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
         if self.config["intro"]["enable"]:
             try:
@@ -67,12 +67,12 @@ class BaseIoWorker(ABC):
     def name(self) -> str:
         return self.__class__.__name__
 
-    def post(self, **kwargs) -> None:
+    def post(self, *args, **kwargs) -> None:
         """uploading data to the target"""
 
         pass
 
-    def get(self, **kwargs) -> None:
+    def get(self, *args, **kwargs) -> None:
         """getting data from the target"""
 
         pass
@@ -89,7 +89,7 @@ class IpfsWorker(BaseIoWorker):
         client = ipfshttpclient.connect()  # establish connection to local external_io node
         res = client.add(filename)  # publish video locally
         self._context.ipfs_hash = res["Hash"]  # get its hash of form Qm....
-        logging.info("Published to IPFS, hash: " + self._context.ipfs_hash)
+        logging.info(f"Published to IPFS, hash: {self._context.ipfs_hash}")
 
         if keyword:
             logging.info("Updating URL")

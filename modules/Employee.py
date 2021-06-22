@@ -25,7 +25,7 @@ class Employee:
         return data
 
     @staticmethod
-    def _find_in_db(employee_card_id: str, db_path: str = "config/employee_db.csv") -> tp.Optional[tp.List[str]]:
+    def _find_in_db(employee_card_id: str, db_path: str = "config/employee_db.csv") -> tp.Union[tp.List[str], None]:
         """
         Method is used to get employee data (or confirm its absence)
 
@@ -37,7 +37,7 @@ class Employee:
             None if employee not found, if found returns list with full name and position.
         """
 
-        employee_data: tp.Optional[tp.List[str]] = None
+        employee_data: tp.Union[tp.List[str], None] = None
 
         # open employee database
         try:
