@@ -20,6 +20,8 @@ brother-ql = "^0.9.4"
 [tool.poetry.dev-dependencies]
 mypy = "^0.902"
 black = "^21.6b0"
+bandit = "^1.7.0"
+flake8 = "^3.9.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
