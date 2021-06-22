@@ -41,7 +41,7 @@ class Hub:
             logging.error(f"Error parsing configuration file {config_path}:\n{E}")
             sys.exit(1)
 
-    def get_workbench_by_number(self, workbench_no: int) -> tp.Optional[WorkBench]:
+    def get_workbench_by_number(self, workbench_no: int) -> tp.Union[WorkBench, None]:
         """find the workbench with the provided number"""
 
         for workbench in self._workbenches:

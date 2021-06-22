@@ -93,10 +93,11 @@ class UnitEndRecordHandler(Resource):
     """handle end recording operation on a Unit"""
 
     @staticmethod
-    def post(unit_internal_id: str):
+    def post(unit_internal_id: str) -> Response:
         global hub
         request_payload: tp.Dict[str, tp.Any] = request.get_json()
 
+        logging.info(f"Received a request to end record for unit with int. id {unit_internal_id}")
         logging.debug(request_payload)
 
         try:
@@ -117,10 +118,11 @@ class UnitUploadHandler(Resource):
     """handle Unit lifecycle end"""
 
     @staticmethod
-    def post(unit_internal_id: str):
+    def post(unit_internal_id: str) -> Response:
         global hub
         request_payload: tp.Dict[str, tp.Any] = request.get_json()
 
+        logging.info(f"Received a request to upload unit with int. id {unit_internal_id}")
         logging.debug(request_payload)
 
         try:
@@ -141,14 +143,92 @@ class UnitUploadHandler(Resource):
 
 
 # Employee operations handling
-# todo
 class EmployeeLogInHandler(Resource):
-    """handle logging out the Employee at a given Workbench"""
+    """handle logging in the Employee at a given Workbench"""
+
+    @staticmethod
+    def post() -> Response:
+        global hub
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+
+        logging.info("Handling logging in the employee")
+        logging.debug(request_payload)
+
+        try:
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench.start_shift(request_payload["employee_rfid_card_no"])
+
+            if workbench.employee is not None:
+                response_data = {
+                    "status": True,
+                    "comment": "Employee logged in successfully",
+                    "employee_data": workbench.employee.data
+                }
+
+                return Response(response=response_data, status=200)
+
+            else:
+                raise ValueError
+
+        except ValueError:
+            message = "Could not log in the Employee. Authentication failed."
+            logging.error(message)
+
+            response_data = {
+                "status": False,
+                "comment": message
+            }
+
+            return Response(response=response_data, status=401)
+
+        except Exception as e:
+            message = f"An error occurred while logging in the Employee:\n{e}"
+            logging.error(message)
+
+            response_data = {
+                "status": False,
+                "comment": message
+            }
+
+            return Response(response=response_data, status=500)
 
 
-# todo
 class EmployeeLogOutHandler(Resource):
     """handle logging out the Employee at a given Workbench"""
+
+    @staticmethod
+    def post() -> Response:
+        global hub
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+
+        logging.info("Handling logging out the employee")
+        logging.debug(request_payload)
+
+        try:
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench.end_shift()
+
+            if workbench.employee is None:
+                response_data = {
+                    "status": True,
+                    "comment": "Employee logged out successfully",
+                }
+
+                return Response(response=response_data, status=200)
+
+            else:
+                raise ValueError
+
+        except Exception as e:
+            message = f"An error occurred while logging out the Employee:\n{e}"
+            logging.error(message)
+
+            response_data = {
+                "status": False,
+                "comment": message
+            }
+
+            return Response(response=response_data, status=500)
 
 
 # Employee operations handling
@@ -198,5 +278,7 @@ api.add_resource(EmployeeLogOutHandler, "/api/employee/logout")
 api.add_resource(WorkBenchStatusHandler, "/api/workbench/<int:workbench_no>")
 
 if __name__ == "__main__":
-    # TODO: Socket cfg
-    app.run(host="127.0.0.1", port=5000)
+    # start the server
+    host: str = hub.config["api_server"]["ip"]
+    port: int = hub.config["api_server"]["port"]
+    app.run(host=host, port=port)
