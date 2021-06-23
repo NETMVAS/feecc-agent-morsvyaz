@@ -7,6 +7,7 @@ from ._Agent import Agent
 from ._Camera import Camera
 from ._Employee import Employee
 from ._Types import Config
+from .exceptions import EmployeeUnauthorizedError, AgentBusyError
 
 
 class WorkBench:
@@ -91,7 +92,7 @@ class WorkBench:
             unit: Unit,
             production_stage_name: str,
             additional_info: tp.Dict[str, tp.Any]
-    ) -> bool:
+    ) -> None:
         """begin work on the provided unit"""
 
         logging.info(
@@ -100,13 +101,15 @@ class WorkBench:
 
         # check if employee is logged in
         if not (self.employee and self.employee.is_logged_in):
-            logging.error(f"Cannot start an operation: No employee is logged in at the Workbench {self.number}")
-            return False
+            message = f"Cannot start an operation: No employee is logged in at the Workbench {self.number}"
+            logging.error(message)
+            raise EmployeeUnauthorizedError(message)
 
         # check if there are no ongoing operations
         if self.is_operation_ongoing:
-            logging.error(f"Cannot start an operation: An operation is already ongoing at the Workbench {self.number}")
-            return False
+            message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self.number}"
+            logging.error(message)
+            raise AgentBusyError(message)
 
         # assign unit
         self._associated_agent.associated_unit = unit
