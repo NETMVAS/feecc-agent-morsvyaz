@@ -5,7 +5,7 @@ import csv
 import os
 import typing as tp
 
-from modules.Printer import Task
+from ._Printer import Task
 
 # set up logging
 logging.basicConfig(

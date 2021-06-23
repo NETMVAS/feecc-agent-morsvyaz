@@ -4,9 +4,9 @@ import typing as tp
 
 import yaml
 
-from modules.Types import Config
-from modules.Unit import Unit
-from modules.WorkBench import WorkBench
+from ._Types import Config
+from .Unit import Unit
+from .WorkBench import WorkBench
 
 
 class Hub:

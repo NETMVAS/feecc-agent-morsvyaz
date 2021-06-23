@@ -4,11 +4,6 @@ from PIL import Image
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send
 
-# set up logging
-logging.basicConfig(
-    level=logging.INFO, filename="agent.log", format="%(asctime)s %(levelname)s: %(message)s"
-)
-
 
 class Task:
     def __init__(self, picname: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:

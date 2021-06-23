@@ -7,9 +7,9 @@ from abc import ABC
 import ipfshttpclient
 from pinatapy import PinataPy
 
-from modules.Types import Config
-from modules.VideoEditor import VideoEditor
-from modules.short_url_generator import update_short_url
+from ._Types import Config
+from ._VideoEditor import VideoEditor
+from ._short_url_generator import update_short_url
 
 
 class ExternalIoGateway:

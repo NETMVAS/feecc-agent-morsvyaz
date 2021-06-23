@@ -7,10 +7,10 @@ from uuid import uuid4
 
 import yaml
 
-from modules.Employee import Employee
-from modules.Passport import Passport
-from modules.Types import Config, ProductData
-from modules import external_io_operations
+from . import _external_io_operations as external_io
+from ._Employee import Employee
+from ._Passport import Passport
+from ._Types import Config, ProductData
 
 
 class Unit:
@@ -88,5 +88,5 @@ class Unit:
     def upload(self) -> None:
 
         # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
-        gateway = external_io_operations.ExternalIoGateway(self._config)
+        gateway = external_io.ExternalIoGateway(self._config)
         gateway.send(self.passport.filename, self._keyword)

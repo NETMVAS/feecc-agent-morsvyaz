@@ -1,12 +1,12 @@
 import logging
 import typing as tp
 
-import modules.State as State
-from modules.Agent import Agent
-from modules.Camera import Camera
-from modules.Employee import Employee
-from modules.Types import Config
-from modules.Unit import Unit
+from . import _State as State
+from .Unit import Unit
+from ._Agent import Agent
+from ._Camera import Camera
+from ._Employee import Employee
+from ._Types import Config
 
 
 class WorkBench:

@@ -2,10 +2,10 @@ import logging
 import threading
 import typing as tp
 
-import modules.external_io_operations as external_io
-from modules.Camera import Camera
-from modules.Types import Config
-from modules.Unit import Unit
+from . import _external_io_operations as external_io
+from ._Camera import Camera
+from ._Types import Config
+from .Unit import Unit
 
 
 class Agent:

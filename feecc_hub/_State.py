@@ -2,9 +2,9 @@ import logging
 import re
 from abc import ABC, abstractmethod
 
-import modules.Printer as Printer
-import modules.image_generation as image_generation
-import modules.short_url_generator as url_generator
+from . import _Printer as Printer
+from . import _image_generation as image_generation
+from . import _short_url_generator as url_generator
 
 
 class AbstractState(ABC):

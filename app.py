@@ -4,9 +4,9 @@ import typing as tp
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
-from modules.Hub import Hub
-from modules.Unit import Unit
-from modules.WorkBench import WorkBench
+from feecc_hub.Hub import Hub
+from feecc_hub.Unit import Unit
+from feecc_hub.WorkBench import WorkBench
 
 # set up logging
 logging.basicConfig(
