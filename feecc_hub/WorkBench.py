@@ -86,11 +86,40 @@ class WorkBench:
         self._associated_employee = None
         self._associated_agent.execute_state(State.State0)
 
-    # todo
-    def start_operation(self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]) -> None:
+    def start_operation(
+            self,
+            unit: Unit,
+            production_stage_name: str,
+            additional_info: tp.Dict[str, tp.Any]
+    ) -> bool:
         """begin work on the provided unit"""
 
-        pass
+        logging.info(
+            f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
+        )
+
+        # check if employee is logged in
+        if not (self.employee and self.employee.is_logged_in):
+            logging.error(f"Cannot start an operation: No employee is logged in at the Workbench {self.number}")
+            return False
+
+        # check if there are no ongoing operations
+        if self.is_operation_ongoing:
+            logging.error(f"Cannot start an operation: An operation is already ongoing at the Workbench {self.number}")
+            return False
+
+        # assign unit
+        self._associated_agent.associated_unit = unit
+
+        # start operation at the unit
+        self._associated_agent.associated_unit.start_session(production_stage_name, additional_info)
+
+        # start recording video
+        self._associated_agent.execute_state(State.State2)
+
+        logging.info(
+            f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
+        )
 
     # todo
     def end_operation(self, unit_internal_id: str) -> None:
