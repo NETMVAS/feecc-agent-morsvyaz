@@ -148,7 +148,7 @@ class State3(AbstractState):
         )
 
         # add video IPFS hash to the passport
-        self._context.associated_passport.end_session([ipfs_hash])
+        self._context.associated_unit.end_session([ipfs_hash])
 
         # save the passport into a file
         self._context.associated_passport.export_yaml()

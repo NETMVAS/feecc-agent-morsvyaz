@@ -124,8 +124,14 @@ class WorkBench:
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
 
-    # todo
     def end_operation(self, unit_internal_id: str) -> None:
         """end work on the provided unit"""
 
-        pass
+        # make sure requested unit is associated with this workbench
+        if unit_internal_id == self.unit_in_operation:
+            self._associated_agent.execute_state(State.State3)
+
+        else:
+            message = f"Unit with int. id {unit_internal_id} is not associated with the Workbench no.{self.number}"
+            logging.error(message)
+            raise ValueError(message)
