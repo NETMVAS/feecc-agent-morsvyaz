@@ -1,12 +1,13 @@
 import logging
+import shelve
 import sys
 import typing as tp
 
 import yaml
 
-from ._Types import Config
 from .Unit import Unit
 from .WorkBench import WorkBench
+from ._Types import Config
 
 
 class Hub:
@@ -18,7 +19,7 @@ class Hub:
     def __init__(self) -> None:
         self.config: Config = self._get_config()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
-        self._units: tp.List[Unit] = self._initialize_units()
+        self._units: tp.List[Unit] = self._unshelve_units()
 
     @staticmethod
     def _get_config(config_path: str = "config/hub_config.yaml") -> tp.Any:
@@ -41,6 +42,11 @@ class Hub:
         except Exception as E:
             logging.error(f"Error parsing configuration file {config_path}:\n{E}")
             sys.exit(1)
+
+    def end_session(self) -> None:
+        """a method to execute when daemon exits"""
+
+        self._dump_open_units()
 
     def get_workbench_by_number(self, workbench_no: int) -> tp.Union[WorkBench, None]:
         """find the workbench with the provided number"""
@@ -85,8 +91,33 @@ class Hub:
 
         return workbenches
 
-    # todo
-    def _initialize_units(self) -> tp.List[Unit]:
+    @staticmethod
+    def _unshelve_units(shelve_path: str = "config/Unit.shelve") -> tp.List[Unit]:
         """initialize a Unit object for every unfinished Unit using it's data files"""
 
-        pass
+        try:
+            with shelve.open(shelve_path) as unit_shelve:
+                units: tp.List[Unit] = unit_shelve["unfinished_units"]
+
+            logging.info(f"Unshelved {len(units)} from {shelve_path}")
+            logging.debug(units)
+            return units
+
+        except Exception as e:
+            logging.error(f"An error occurred during unshelving units from {shelve_path}:\n{e}")
+            return []
+
+    def _dump_open_units(self, shelve_path: str = "config/Unit.shelve") -> None:
+        """shelve every unfinished Unit"""
+
+        if not len(self._units):
+            logging.info("Shelving stopped: no units to shelve.")
+
+        try:
+            logging.info(f"Shelving {len(self._units)} to {shelve_path}")
+            with shelve.open(shelve_path) as unit_shelve:
+                unit_shelve["unfinished_units"] = self._units
+            logging.info(f"Successfully shelved {len(self._units)} units to {shelve_path}")
+
+        except Exception as e:
+            logging.error(f"An error occurred during shelving units to {shelve_path}:\n{e}")

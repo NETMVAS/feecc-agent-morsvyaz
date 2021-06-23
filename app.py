@@ -1,5 +1,6 @@
 import logging
 import typing as tp
+import atexit
 
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
@@ -17,6 +18,16 @@ logging.basicConfig(
 hub = Hub()
 app = Flask(__name__)
 api = Api(app)
+
+
+@atexit.register
+def end_session() -> None:
+    """a function to execute when daemon exits"""
+
+    logging.info("Sigterm registered. Handling.")
+    global hub
+    hub.end_session()
+    logging.info("Sigterm handling success")
 
 
 # REST API request handlers
