@@ -13,7 +13,8 @@ class Passport:
         self._unit = unit
         self.filename: str = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
 
-        logging.info(f"Passport {self._unit.uuid} initialized by employee with ID {self._unit.employee.id}")
+        # TODO: падает если _unit.employee None
+        logging.info(f"Passport {self._unit.uuid} initialized by employee with ID {self._unit.employee}")
 
     def _construct_passport_dict(self) -> tp.Dict[str, tp.Any]:
         """
@@ -58,6 +59,7 @@ class Passport:
         employee, it is safe to assume, that collision is impossible.
         """
 
+        # TODO: не работает если _unit.employee None
         employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
         employee_passport_string_encoded: bytes = employee_passport_string.encode()
         employee_passport_code: str = hashlib.sha256(employee_passport_string_encoded).hexdigest()

@@ -1,5 +1,6 @@
 import csv
 import logging
+import os
 import typing as tp
 from dataclasses import dataclass
 from datetime import datetime as dt
@@ -59,7 +60,7 @@ class Unit:
             self._save_internal_id(self.uuid, 1)
             return "1"
 
-        internal_id = list(ids_dict.values())[-1] + 1
+        internal_id = int(list(ids_dict.values())[-1]) + 1
         self._save_internal_id(self.uuid, internal_id)
 
         return str(internal_id)
@@ -69,21 +70,29 @@ class Unit:
         """Loads internal ids matching table, returns dict in format {uuid: internal_id}"""
         internal_ids = {}
 
-        with open(path, "r", newline="") as f:
-            data = csv.reader(f, delimiter=";")
-            for uuid, id_ in data:
-                internal_ids[uuid] = id_
+        try:
+            with open(path, "r", newline="") as f:
+                data = csv.reader(f, delimiter=";")
+                for uuid, id_ in data:
+                    internal_ids[uuid] = id_
+
+        except Exception as E:
+            logging.info("Not found internal ids table")
 
         return internal_ids
 
     @staticmethod
-    def _save_internal_id(uuid: str, internal_id: int, path: str = "config/internal_ids"):
+    def _save_internal_id(uuid: str, internal_id: int, path: str = "config/internal_ids.csv"):
         """Saves internal id matching table, returns dict in format {uuid: internal_id}"""
-        with open(path, "w", newline="") as f:
+        logging.debug(f"Saving {uuid[:6]}:{internal_id} to matching table")
+
+        if not os.path.exists(path):
+            with open(path, 'w') as _:
+                pass
+
+        with open(path, "a", newline="") as f:
             writer = csv.writer(f, delimiter=";")
             writer.writerow([uuid, internal_id])
-
-        logging.debug(f"Saved {uuid[:6]}:{internal_id} to matching table")
 
     @staticmethod
     def _current_timestamp() -> str:

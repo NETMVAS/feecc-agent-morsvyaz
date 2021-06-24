@@ -1,6 +1,7 @@
+import atexit
+import json
 import logging
 import typing as tp
-import atexit
 
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
@@ -56,7 +57,7 @@ class UnitCreationHandler(Resource):
                 "unit_internal_id": new_unit_internal_id
             }
             logging.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
-            return Response(response=response, status=200)
+            return Response(response=json.dumps(response), status=200)
 
         except Exception as E:
             logging.error(f"Exception occurred while creating new Unit:\n{E}")
@@ -64,7 +65,7 @@ class UnitCreationHandler(Resource):
                 "status": False,
                 "comment": "Could not create a new Unit. Internal error occurred",
             }
-            return Response(response=response, status=500)
+            return Response(response=json.dumps(response), status=500)
 
 
 class UnitStartRecordHandler(Resource):
@@ -87,7 +88,7 @@ class UnitStartRecordHandler(Resource):
                 "comment": message
             }
             logging.info(message)
-            return Response(status=200, response=response_data)
+            return Response(status=200, response=json.dumps(response_data))
 
         except Exception as E:
             message = f"Couldn't handle request. An error occurred: {E}"
@@ -97,7 +98,7 @@ class UnitStartRecordHandler(Resource):
                 "status": False,
                 "comment": message
             }
-            return Response(response=response_data, status=500)
+            return Response(response=json.dumps(response_data), status=500)
 
 
 class UnitEndRecordHandler(Resource):
@@ -114,14 +115,14 @@ class UnitEndRecordHandler(Resource):
         try:
             workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
             workbench.end_operation(unit_internal_id)
-            return Response(status=200, response={"status": True, "comment": "ok"})
+            return Response(status=200, response=json.dumps({"status": True, "comment": "ok"}))
         except Exception as e:
             logging.error(f"Couldn't handle end record request. An error occurred: {e}")
             return Response(
-                response={
+                response=json.dumps({
                     "status": False,
                     "comment": "Couldn't handle end record request."
-                },
+                }),
                 status=500)
 
 
@@ -140,16 +141,16 @@ class UnitUploadHandler(Resource):
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
             unit.upload()
             return Response(
-                response={
+                json.dumps(response={
                     "status": True,
                     "comment": f"uploaded data for unit {unit_internal_id}",
-                },
+                }),
                 status=200)
         except Exception as e:
             logging.error(f"Can't handle unit upload. An error occurred: {e}")
 
         return Response(
-            response={'status': False, "comment": "Can't handle unit upload"}, status=500
+            response=json.dumps({'status': False, "comment": "Can't handle unit upload"}), status=500
         )
 
 
@@ -176,7 +177,7 @@ class EmployeeLogInHandler(Resource):
                     "employee_data": workbench.employee.data
                 }
 
-                return Response(response=response_data, status=200)
+                return Response(response=json.dumps(response_data), status=200)
 
             else:
                 raise ValueError
@@ -190,7 +191,7 @@ class EmployeeLogInHandler(Resource):
                 "comment": message
             }
 
-            return Response(response=response_data, status=401)
+            return Response(response=json.dumps(response_data), status=401)
 
         except Exception as e:
             message = f"An error occurred while logging in the Employee:\n{e}"
@@ -201,7 +202,7 @@ class EmployeeLogInHandler(Resource):
                 "comment": message
             }
 
-            return Response(response=response_data, status=500)
+            return Response(response=json.dumps(response_data), status=500)
 
 
 class EmployeeLogOutHandler(Resource):
@@ -225,7 +226,7 @@ class EmployeeLogOutHandler(Resource):
                     "comment": "Employee logged out successfully",
                 }
 
-                return Response(response=response_data, status=200)
+                return Response(response=json.dumps(response_data), status=200)
 
             else:
                 raise ValueError
@@ -239,7 +240,7 @@ class EmployeeLogOutHandler(Resource):
                 "comment": message
             }
 
-            return Response(response=response_data, status=500)
+            return Response(response=json.dumps(response_data), status=500)
 
 
 # Employee operations handling

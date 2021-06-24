@@ -11,6 +11,8 @@ class Employee:
         self.name: str = self.employee_db_entry[1]
         self.position: str = self.employee_db_entry[2]
 
+        logging.info(f"Initialized Employee class with id {self.id}, data: {self.employee_db_entry}")
+
     @property
     def is_logged_in(self) -> bool:
         return not self.id == ""
