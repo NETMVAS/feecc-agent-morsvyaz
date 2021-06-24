@@ -34,11 +34,14 @@ def test_unit_record_unlogged_employee(test_server):
     resp = requests.post(test_server + "/api/unit/1/start",
                          json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}})
 
+    # FIXME: когда сотрудник не залогинен, система падает :)
+
     assert resp.status_code == 500
     assert resp.json()["status"] is False
 
 
 def test_employee_login(test_server):
+    """Test to check if employee could be logged in system"""
     resp = requests.post(test_server + "/api/employee/log-in",
                          json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"})
 
@@ -48,3 +51,18 @@ def test_employee_login(test_server):
     employee_data = resp.json()["employee_data"]
     assert employee_data["name"] is not None
     assert employee_data["position"] is not None
+
+
+def test_employee_logout(test_server):
+    """Test to check if employee could be logged out"""
+    login_resp = requests.post(test_server + "/api/employee/log-in",
+                         json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"})
+
+    assert login_resp.ok
+
+    logout_resp = requests.post(test_server + "/api/employee/log-out",
+                         json={"workbench_no": 1})
+
+    # FIXME: почему-то возвращается 404, допилить логгинг, ибо непонятно. Сотрудник какбе есть, а разлогиниться не получается
+    assert logout_resp.ok
+    assert logout_resp.json()["status"] is True
