@@ -65,7 +65,7 @@ class Unit:
         return str(internal_id)
 
     @staticmethod
-    def _load_internal_ids(path: str = "config/internal_ids") -> tp.Dict[str, int]:
+    def _load_internal_ids(path: str = "config/internal_ids.csv") -> tp.Dict[str, int]:
         """Loads internal ids matching table, returns dict in format {uuid: internal_id}"""
         internal_ids = {}
 
