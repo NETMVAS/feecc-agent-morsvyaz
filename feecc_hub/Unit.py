@@ -1,17 +1,14 @@
 import csv
 import logging
-import os
 import typing as tp
 from dataclasses import dataclass
 from datetime import datetime as dt
 from uuid import uuid4
 
-import yaml
-
 from . import _external_io_operations as external_io
 from ._Employee import Employee
 from ._Passport import Passport
-from ._Types import Config, ProductData
+from ._Types import Config
 
 
 @dataclass
@@ -28,31 +25,27 @@ class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
     def __init__(self, config: Config, uuid: str = "") -> None:
+        self._config = config
+
+        # product data
         self.uuid: str = uuid or self._generate_uuid()
         self.internal_id: str = self._get_internal_id()
         self.employee: tp.Optional[Employee] = None
-        self.product_data: tp.Optional[ProductData] = self._get_product_data()
-        self.passport = Passport(self)
+        self.model: str = ""
+        self.unit_biography: tp.List[ProductionStage] = []
         self._keyword = ""
-        self._config = config
-        self.workplace_data: str = ""
-        self.product_type: str = ""
-        self._unit_biography: tp.List[ProductionStage] = []
-
-    @property
-    def employee_name(self) -> str:
-        return self.employee.name
+        self._associated_passport = Passport(self)
 
     @property
     def current_operation(self) -> tp.Union[ProductionStage, None]:
-        if self._unit_biography:
-            return self._unit_biography[-1]
+        if self.unit_biography:
+            return self.unit_biography[-1]
         else:
             return None
 
     @current_operation.setter
     def current_operation(self, current_operation: ProductionStage) -> None:
-        self._unit_biography.append(current_operation)
+        self.unit_biography.append(current_operation)
 
     @staticmethod
     def _generate_uuid() -> str:
@@ -70,20 +63,6 @@ class Unit:
         self._save_internal_id(self.uuid, internal_id)
 
         return str(internal_id)
-
-    def _get_product_data(self) -> ProductData:
-        filename = f"unit-passports/unit-passport-{self.uuid}.yaml"
-        if os.path.exists(filename):
-            with open(filename, "r") as f:
-                content = f.read()
-                product_data: ProductData = yaml.load(content, Loader=yaml.FullLoader)
-
-            logging.info(f"Loaded up product data for a unit with UUID {self.uuid}")
-        else:
-            logging.info(f"Passport for the unit with uuid {self.uuid} not found. New one was generated.")
-            product_data = {}
-
-        return product_data
 
     @staticmethod
     def _load_internal_ids(path: str = "config/internal_ids") -> tp.Dict[str, int]:
@@ -123,7 +102,7 @@ class Unit:
         logging.info(f"Starting production stage {production_stage_name} for unit with int. id {self.internal_id}")
         operation = ProductionStage(
             production_stage_name=production_stage_name,
-            employee_name=self.employee_name,
+            employee_name=self._associated_passport.encode_employee(),
             session_start_time=self._current_timestamp(),
             session_end_time=self._current_timestamp(),
             additional_info=additional_info
@@ -147,8 +126,11 @@ class Unit:
         if additional_info:
             self.current_operation.additional_info = additional_info
 
+        self._associated_passport.save()
+
     def upload(self) -> None:
 
         # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
+        self._associated_passport.save()
         gateway = external_io.ExternalIoGateway(self._config)
-        gateway.send(self.passport.filename, self._keyword)
+        gateway.send(self._associated_passport.filename, self._keyword)

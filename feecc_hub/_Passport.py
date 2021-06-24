@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import typing as tp
 
 import yaml
 
@@ -14,11 +15,40 @@ class Passport:
 
         logging.info(f"Passport {self._unit.uuid} initialized by employee with ID {self._unit.employee.id}")
 
-    @property
-    def product_data(self):
-        return self._unit.product_data
+    def _construct_passport_dict(self) -> tp.Dict[str, tp.Any]:
+        """
+        form a nested dictionary containing all the unit
+        data to dump it into a passport in a human friendly form
+        """
 
-    def _encode_employee(self) -> str:
+        biography: tp.List[tp.Dict[str, tp.Any]] = []
+
+        for prod_stage in self._unit.unit_biography:
+            stage = {
+                "Этап производства": prod_stage.production_stage_name,
+                "Сотрудник": prod_stage.employee_name,
+                "Время начала": prod_stage.session_start_time,
+                "Время окончания": prod_stage.session_end_time
+            }
+
+            if prod_stage.video_hashes is not None:
+                stage["Видеозаписи процесса сборки в IPFS"] = prod_stage.video_hashes
+
+            if prod_stage.additional_info is not None:
+                stage["Дополнительная информация"] = prod_stage.additional_info
+
+            biography.append(stage)
+
+        passport_dict = {
+            "Уникальный номер паспорта изделия": self._unit.uuid,
+            "Модель изделия:": self._unit.model,
+            "Этапы производства": biography
+        }
+
+        logging.debug(f"Constructed passport dict for the unit with int. id {self._unit.internal_id}:\n{passport_dict}")
+        return passport_dict
+
+    def encode_employee(self) -> str:
         """
         returns encoded employee name to put into the passport
 
@@ -36,9 +66,7 @@ class Passport:
     def save(self) -> None:
         """makes a unit passport and dumps it in a form of a YAML file"""
 
-        employee_passport_code = self._encode_employee
-        passport_dict = self._unit.product_data
-        passport_dict["Employee name"] = employee_passport_code
+        passport_dict = self._construct_passport_dict()
 
         # make directory if it is missing
         if not os.path.isdir("unit-passports"):
