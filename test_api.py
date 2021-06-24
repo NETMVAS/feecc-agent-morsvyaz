@@ -1,13 +1,5 @@
-import dataclasses
-import os
-import tempfile
-from pprint import pprint
-
 import pytest
 import requests
-import responses
-
-from app import hub
 
 
 @pytest.fixture
@@ -21,12 +13,38 @@ def test_api_working(test_server):
     assert r.ok is False
 
 
-@responses.activate
-def test_unit_creation_handler_responding(test_server):
-    """test unit creation handler"""
-    responses.add(responses.POST, test_server + "/api/unit/new", json={"status": True}, status=200)
-    resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 0})
+def test_unit_creation(test_server):
+    """Test to check if one unit could be created"""
+    resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
 
-    assert resp.json() == {"status": True}
+    assert resp.json()["status"] is True
 
-    assert len(responses.calls) == 1
+
+def test_multiple_unit_creation(test_server):
+    """Test to check if multiple units could be created"""
+    for i in range(1, 4):
+        resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": i})
+        assert resp.json()["status"] is True
+
+        assert int(resp.json()["unit_internal_id"])
+
+
+def test_unit_record_unlogged_employee(test_server):
+    """Test to check if recording couldn't be started when employee unlogged"""
+    resp = requests.post(test_server + "/api/unit/1/start",
+                         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}})
+
+    assert resp.status_code == 500
+    assert resp.json()["status"] is False
+
+
+def test_employee_login(test_server):
+    resp = requests.post(test_server + "/api/employee/log-in",
+                         json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"})
+
+    assert resp.ok
+    assert resp.json()["status"] is True
+
+    employee_data = resp.json()["employee_data"]
+    assert employee_data["name"] is not None
+    assert employee_data["position"] is not None
