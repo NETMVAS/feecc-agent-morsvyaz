@@ -12,7 +12,9 @@ from feecc_hub.WorkBench import WorkBench
 
 # set up logging
 logging.basicConfig(
-    level=logging.INFO, filename="agent.log", format="%(asctime)s %(levelname)s: %(message)s"
+    level=logging.DEBUG,
+    filename="hub.log",
+    format="%(asctime)s %(levelname)s: %(message)s"
 )
 
 # global variables
@@ -79,6 +81,11 @@ class UnitStartRecordHandler(Resource):
         try:
             workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+
+            if unit is None:
+                err_msg = f"No unit with internal id {unit_internal_id}"
+                raise ValueError(err_msg)
+
             workbench.start_operation(unit, request_payload["production_stage_name"],
                                       request_payload["additional_info"])
             message = f"Started operation '{request_payload['production_stage_name']}' on Unit {unit_internal_id} at " \
@@ -141,7 +148,7 @@ class UnitUploadHandler(Resource):
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
             unit.upload()
             return Response(
-                json.dumps(response={
+                response=json.dumps({
                     "status": True,
                     "comment": f"uploaded data for unit {unit_internal_id}",
                 }),

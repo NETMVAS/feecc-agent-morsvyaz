@@ -12,9 +12,7 @@ class Passport:
     def __init__(self, unit) -> None:
         self._unit = unit
         self.filename: str = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
-
-        # TODO: падает если _unit.employee None
-        logging.info(f"Passport {self._unit.uuid} initialized by employee with ID {self._unit.employee}")
+        logging.info(f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}")
 
     def _construct_passport_dict(self) -> tp.Dict[str, tp.Any]:
         """

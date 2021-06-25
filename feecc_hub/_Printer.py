@@ -16,6 +16,15 @@ class Task:
         """
 
         logging.info("Initializing printer")
+        logging.debug(f"picname: {picname},\nconfig for printer: {config['printer']}")
+
+        basewidth = 554
+
+        qr = Image.open(picname)
+
+        wpercent = (basewidth / float(qr.size[0]))
+        hsize = int((float(qr.size[1]) * float(wpercent)))
+        qr = qr.resize((basewidth, hsize), Image.ANTIALIAS)
 
         qr = Image.open(picname)
         printer_config: tp.Dict[str, tp.Any] = config["printer"]
@@ -24,8 +33,10 @@ class Task:
 
         logging.info("Printing...")
         qlr = BrotherQLRaster(printer_config["printer_model"])
-        red: bool = label_name == "62"
+        red: bool = label_name == 62
         conversion.convert(qlr, [qr], label_name, red=red)
+
+        logging.debug(f"Sending task to printer")
         send(qlr.data, printer)  # this is some standard code for printing with brother label printer with python,
         # red = True means that black and red printing will be done. Only for 62 label paper
         logging.info("Printed!")

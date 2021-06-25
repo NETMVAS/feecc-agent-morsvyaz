@@ -1,32 +1,26 @@
 import logging
-
-import barcode
-import csv
 import os
 import typing as tp
 
-from ._Printer import Task
+import barcode
+from barcode.writer import ImageWriter
 
-# set up logging
-logging.basicConfig(
-    level=logging.INFO, filename="agent.log", format="%(asctime)s %(levelname)s: %(message)s"
-)
+from ._Printer import Task
 
 
 class Barcode:
     def __init__(self, unit_code: str):
         self.matching_table_path = "matching_table.csv"
         self.unit_code = unit_code
+        self.filename: tp.Optional[str] = None
 
         try:
             self.barcode = self.generate_barcode(unit_code)
             self.barcode_path = self.save_barcode(self.barcode)
-            print(self.barcode_path)
         except Exception as E:
             logging.error(f"Barcode error: {E}")
 
-    @staticmethod
-    def generate_barcode(num: str) -> barcode.EAN13:
+    def generate_barcode(self, int_id: str) -> barcode.EAN13:
         """
         Method used to generate EAN13 class
 
@@ -36,25 +30,24 @@ class Barcode:
         Returns:
             EAN13 Class
         """
-        return barcode.get("ean13", num)
+        self.filename = f"output/barcode/{int_id}_barcode"
+        return barcode.get("ean13", int_id, writer=ImageWriter())
 
-    @staticmethod
-    def save_barcode(ean_code: barcode.EAN13, dir_path: str = "barcode") -> str:
+    def save_barcode(self, ean_code: barcode.EAN13) -> str:
         """
         Method that saves barcode picture
 
         Args:
             ean_code (EAN13): EAN13 barcode class
-            dir_path (str): Where barcode will be saved
-
         Returns:
-            Path to barcode .svg file
+            Path to barcode .png file
         """
-        if not os.path.exists(dir_path):
-            os.mkdir(dir_path)
 
-        filename = ean_code.save(dir_path + "/" + str(ean_code))
+        dir_: str = os.path.dirname(self.filename)
+        if not os.path.isdir(dir_):
+            os.mkdir(dir_)
 
+        filename = ean_code.save(self.filename)
         logging.info(f"Barcode {ean_code.get_fullcode()} was saved to {filename}")
 
         return filename
@@ -62,7 +55,7 @@ class Barcode:
     @staticmethod
     def print_barcode(barcode_path: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
         try:
-            Task(barcode_path, config)
+            Task(f"{self.filename}.png", config)
         except Exception as E:
             logging.error(f"Failed to print barcode: {E}")
 

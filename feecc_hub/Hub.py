@@ -1,4 +1,5 @@
 import logging
+import os
 import shelve
 import sys
 import typing as tp
@@ -96,11 +97,16 @@ class Hub:
         """initialize a Unit object for every unfinished Unit using it's data files"""
 
         try:
+            if not os.path.exists(shelve_path):
+                logging.info(f"File {shelve_path} doesn't exist. Assuming there are no units to unshelve")
+                return []
+
             with shelve.open(shelve_path) as unit_shelve:
                 units: tp.List[Unit] = unit_shelve["unfinished_units"]
 
-            logging.info(f"Unshelved {len(units)} from {shelve_path}")
-            logging.debug(units)
+            logging.info(f"Unshelved {len(units)} units from {shelve_path}")
+            units_ids = [unit.internal_id for unit in units]
+            logging.debug(f"internal ids of the units initialised: {units_ids}")
             return units
 
         except Exception as e:
@@ -114,7 +120,7 @@ class Hub:
             logging.info("Shelving stopped: no units to shelve.")
 
         try:
-            logging.info(f"Shelving {len(self._units)} to {shelve_path}")
+            logging.info(f"Shelving {len(self._units)} units to {shelve_path}")
             with shelve.open(shelve_path) as unit_shelve:
                 unit_shelve["unfinished_units"] = self._units
             logging.info(f"Successfully shelved {len(self._units)} units to {shelve_path}")
