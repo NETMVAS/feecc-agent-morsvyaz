@@ -26,12 +26,12 @@ class Task:
         hsize = int((float(qr.size[1]) * float(wpercent)))
         qr = qr.resize((basewidth, hsize), Image.ANTIALIAS)
 
-        qr = Image.open(picname)
         printer_config: tp.Dict[str, tp.Any] = config["printer"]
         printer: str = printer_config["address"]  # link to device
         label_name = str(printer_config["paper_width"])  # that depends on paper used for printing
 
         logging.info("Printing...")
+
         qlr = BrotherQLRaster(printer_config["printer_model"])
         red: bool = label_name == 62
         conversion.convert(qlr, [qr], label_name, red=red)

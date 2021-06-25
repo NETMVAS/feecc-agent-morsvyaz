@@ -8,6 +8,7 @@ from . import _external_io_operations as external_io
 from ._Employee import Employee
 from ._Passport import Passport
 from ._Types import Config
+from ._Barcode import Barcode
 
 
 @dataclass
@@ -31,7 +32,7 @@ class Unit:
         self.employee: tp.Optional[Employee] = None
         self.model: str = ""
         self.unit_biography: tp.List[ProductionStage] = []
-        self._keyword = ""
+        self._keyword: str = ""
         self._associated_passport = Passport(self)
         self._print_barcode()
 
@@ -70,7 +71,7 @@ class Unit:
     def start_session(
             self,
             production_stage_name: str,
-            additional_info: tp.Union[tp.Dict[str, tp.Any], None] = None
+            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     ) -> None:
         """begin the provided operation and save data about it"""
 
@@ -88,8 +89,8 @@ class Unit:
 
     def end_session(
             self,
-            video_hashes: tp.Union[tp.List[str], None] = None,
-            additional_info: tp.Union[tp.Dict[str, tp.Any], None] = None
+            video_hashes: tp.Optional[tp.List[str]] = None,
+            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
 

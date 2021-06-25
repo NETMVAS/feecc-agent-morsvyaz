@@ -7,6 +7,11 @@ def test_server():
     return "http://127.0.0.1:5000"
 
 
+@pytest.fixture
+def cleanup():
+    pass
+
+
 def test_api_working(test_server):
     """Can't connect to server means server down"""
     r = requests.get(test_server)
@@ -22,8 +27,8 @@ def test_unit_creation(test_server):
 
 def test_multiple_unit_creation(test_server):
     """Test to check if multiple units could be created"""
-    for i in range(1, 4):
-        resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": i})
+    for _ in range(3):
+        resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
         assert resp.json()["status"] is True
 
         assert int(resp.json()["unit_internal_id"])
@@ -55,10 +60,10 @@ def test_employee_login(test_server):
 
 def test_employee_logout(test_server):
     """Test to check if employee could be logged out"""
-    login_resp = requests.post(test_server + "/api/employee/log-in",
-                         json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"})
-
-    assert login_resp.ok
+    # login_resp = requests.post(test_server + "/api/employee/log-in",
+    #                      json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"})
+    #
+    # assert login_resp.ok
 
     logout_resp = requests.post(test_server + "/api/employee/log-out",
                          json={"workbench_no": 1})

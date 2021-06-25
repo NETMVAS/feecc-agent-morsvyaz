@@ -9,8 +9,7 @@ from ._Printer import Task
 
 
 class Barcode:
-    def __init__(self, unit_code: str):
-        self.matching_table_path = "matching_table.csv"
+    def __init__(self, unit_code: str) -> None:
         self.unit_code = unit_code
         self.filename: tp.Optional[str] = None
 
@@ -25,7 +24,7 @@ class Barcode:
         Method used to generate EAN13 class
 
         Args:
-            num (int): value which will be on barcode
+            int_id (str): value which will be on barcode
 
         Returns:
             EAN13 Class
@@ -52,19 +51,8 @@ class Barcode:
 
         return filename
 
-    @staticmethod
-    def print_barcode(barcode_path: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
+    def print_barcode(self, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
         try:
             Task(f"{self.filename}.png", config)
         except Exception as E:
             logging.error(f"Failed to print barcode: {E}")
-
-    def _load_csv(self) -> tp.Dict[str, str]:
-        matching_table = {}
-
-        with open(self.matching_table_path, newline="") as f:
-            reader = csv.reader(f, delimiter=";")
-            for key, val in reader:
-                matching_table[key] = val
-
-        return matching_table

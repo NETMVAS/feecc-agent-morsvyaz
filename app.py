@@ -254,7 +254,7 @@ class EmployeeLogOutHandler(Resource):
 class WorkBenchStatusHandler(Resource):
     """handle providing status of the given Workbench"""
 
-    def get(self, workbench_no: int) -> tp.Union[Response, dict[str, tp.Any]]:
+    def get(self, workbench_no: int) -> Response:
         # find the WorkBench with the provided number
         try:
             workbench = self._get_workbench(workbench_no)
@@ -271,7 +271,7 @@ class WorkBenchStatusHandler(Resource):
             "unit_internal_id": workbench.unit_in_operation
         }
 
-        return workbench_status_dict
+        return Response(response=json.dumps(workbench_status_dict), status=200)
 
     @staticmethod
     def _get_workbench(workbench_no: int) -> WorkBench:

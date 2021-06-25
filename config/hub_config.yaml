@@ -14,7 +14,7 @@ print_security_tag: # Whether to print seal tags with optional timestamp on them
 printer: # Info about the Brother Label printer used in your operation
   printer_model: "QL-800"
   paper_width: 50 # paper width in mm
-  address: "usb://0x04f9:0x209b" # usually static
+  address: "usb://0x04f9:0x209e" # usually static
 yourls: # Information about the yourls node used for short link creation
   server: ''
   username: ''
