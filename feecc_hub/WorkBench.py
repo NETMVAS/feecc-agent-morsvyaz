@@ -81,7 +81,7 @@ class WorkBench:
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
 
-        if self._associated_agent.state == 2:
+        if self._associated_agent.state_no == 2:
             self.end_operation(self.unit_in_operation)
 
         self._associated_employee = None
