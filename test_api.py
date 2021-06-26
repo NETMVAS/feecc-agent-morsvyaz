@@ -24,13 +24,13 @@ def test_unit_creation(unit):
     assert unit.json()["status"] is True
 
 
-def test_multiple_unit_creation(test_server):
-    """Test to check if multiple units could be created"""
-    for _ in range(3):
-        resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
-        assert resp.json()["status"] is True
-
-        assert int(resp.json()["unit_internal_id"])
+# def test_multiple_unit_creation(test_server):
+#     """Test to check if multiple units could be created"""
+#     for _ in range(3):
+#         resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
+#         assert resp.json()["status"] is True
+#
+#         assert int(resp.json()["unit_internal_id"])
 
 
 def test_unit_record_not_logged_in_employee(test_server, unit):
