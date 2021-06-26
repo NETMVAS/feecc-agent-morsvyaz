@@ -27,7 +27,7 @@ class ExternalIoGateway:
             except Exception as e:
                 logging.error("Failed to concatenate. Error: ", e)
 
-        if self.config["external_io"]["enable"]:
+        if self.config["ipfs"]["enable"]:
             try:
                 worker = IpfsWorker(self, self.config)
                 worker.post(filename, keyword)
@@ -37,14 +37,14 @@ class ExternalIoGateway:
                     worker.post(filename)
 
             except Exception as e:
-                logging.error("Error while publishing to IPFS or pinning to pinata. Error: ", e)
+                logging.error(f"Error while publishing to IPFS or pinning to pinata. Error: {e}")
 
-        if self.config["datalog"]["enable"] and self.config["external_io"]["enable"]:
+        if self.config["datalog"]["enable"] and self.config["ipfs"]["enable"]:
             try:
                 worker = RobonomicsWorker(self, self.config)
                 worker.post()
             except Exception as e:
-                logging.error("Error while sending IPFS hash to chain, error: ", e)
+                logging.error(f"Error while sending IPFS hash to chain, error: {e}")
 
             return self.ipfs_hash
 

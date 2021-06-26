@@ -88,11 +88,11 @@ class State2(AbstractState):
     def run(self) -> None:
         # start the recording in the background and send the path to the video
         try:
-            passport_id = self._context.associated_passport.passport_id
+            passport_id = self._context.associated_unit.uuid
         except AttributeError as E:
             logging.error(
                 f"Failed to start video recording: error retrieving associated passport ID.\n\
-                        self._context.associated_passport = {self._context.associated_passport}\n{E}"
+                        self._context.associated_passport = {self._context.associated_unit}\n{E}"
             )
             return
 

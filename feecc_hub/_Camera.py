@@ -28,7 +28,7 @@ class Camera:
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
 
-    def stop_record(self, unit_uuid: str) -> str:
+    def stop_record(self) -> str:
         """stop recording a video for the requested unit"""
 
         if self._ongoing_records:
