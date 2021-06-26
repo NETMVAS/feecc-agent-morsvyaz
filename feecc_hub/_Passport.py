@@ -12,7 +12,9 @@ class Passport:
     def __init__(self, unit) -> None:
         self._unit = unit
         self.filename: str = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
-        logging.info(f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}")
+        logging.info(
+            f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
+        )
 
     def _construct_passport_dict(self) -> tp.Dict[str, tp.Any]:
         """
@@ -27,7 +29,7 @@ class Passport:
                 "Этап производства": prod_stage.production_stage_name,
                 "Сотрудник": prod_stage.employee_name,
                 "Время начала": prod_stage.session_start_time,
-                "Время окончания": prod_stage.session_end_time
+                "Время окончания": prod_stage.session_end_time,
             }
 
             if prod_stage.video_hashes is not None:
@@ -41,10 +43,12 @@ class Passport:
         passport_dict = {
             "Уникальный номер паспорта изделия": self._unit.uuid,
             "Модель изделия:": self._unit.model,
-            "Этапы производства": biography
+            "Этапы производства": biography,
         }
 
-        logging.debug(f"Constructed passport dict for the unit with int. id {self._unit.internal_id}:\n{passport_dict}")
+        logging.debug(
+            f"Constructed passport dict for the unit with int. id {self._unit.internal_id}:\n{passport_dict}"
+        )
         return passport_dict
 
     def encode_employee(self) -> tp.Optional[str]:
@@ -60,7 +64,9 @@ class Passport:
         if self._unit.employee is not None:
             employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
             employee_passport_string_encoded: bytes = employee_passport_string.encode()
-            employee_passport_code: str = hashlib.sha256(employee_passport_string_encoded).hexdigest()
+            employee_passport_code: str = hashlib.sha256(
+                employee_passport_string_encoded
+            ).hexdigest()
             return employee_passport_code
         else:
             return None

@@ -22,7 +22,7 @@ class Task:
 
         qr = Image.open(picname)
 
-        wpercent = (basewidth / float(qr.size[0]))
+        wpercent = basewidth / float(qr.size[0])
         hsize = int((float(qr.size[1]) * float(wpercent)))
         qr = qr.resize((basewidth, hsize), Image.ANTIALIAS)
 
@@ -37,6 +37,8 @@ class Task:
         conversion.convert(qlr, [qr], label_name, red=red)
 
         logging.debug(f"Sending task to printer")
-        send(qlr.data, printer)  # this is some standard code for printing with brother label printer with python,
+        send(
+            qlr.data, printer
+        )  # this is some standard code for printing with brother label printer with python,
         # red = True means that black and red printing will be done. Only for 62 label paper
         logging.info("Printed!")

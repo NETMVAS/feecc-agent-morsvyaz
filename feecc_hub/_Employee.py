@@ -11,7 +11,9 @@ class Employee:
         self.name: str = self.employee_db_entry[1]
         self.position: str = self.employee_db_entry[2]
 
-        logging.info(f"Initialized Employee class with id {self.id}, data: {self.employee_db_entry}")
+        logging.info(
+            f"Initialized Employee class with id {self.id}, data: {self.employee_db_entry}"
+        )
 
     @property
     def is_logged_in(self) -> bool:
@@ -19,15 +21,14 @@ class Employee:
 
     @property
     def data(self) -> tp.Dict[str, str]:
-        data = {
-            "name": self.name,
-            "position": self.position
-        }
+        data = {"name": self.name, "position": self.position}
 
         return data
 
     @staticmethod
-    def _find_in_db(employee_card_id: str, db_path: str = "config/employee_db.csv") -> tp.Optional[tp.List[str]]:
+    def _find_in_db(
+        employee_card_id: str, db_path: str = "config/employee_db.csv"
+    ) -> tp.Optional[tp.List[str]]:
         """
         Method is used to get employee data (or confirm its absence)
 
@@ -52,7 +53,9 @@ class Employee:
                         employee_data = row
                         break
         except FileNotFoundError:
-            logging.critical(f"File '{db_path}' is not in the working directory, cannot retrieve employee data")
+            logging.critical(
+                f"File '{db_path}' is not in the working directory, cannot retrieve employee data"
+            )
 
         if employee_data is None:
             logging.error(f"Employee with card id {employee_card_id} not found. Access denied.")

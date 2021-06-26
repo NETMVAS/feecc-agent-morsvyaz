@@ -36,8 +36,10 @@ def test_unit_creation(unit):
 def test_unit_record_not_logged_in_employee(test_server, unit):
     """Test to check if recording couldn't be started when employee unlogged"""
     unit_id = unit.json()["unit_internal_id"]
-    resp = requests.post(test_server + f"/api/unit/{unit_id}/start",
-                         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}})
+    resp = requests.post(
+        test_server + f"/api/unit/{unit_id}/start",
+        json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
+    )
 
     assert resp.status_code == 500
     assert resp.json()["status"] is False
@@ -45,8 +47,10 @@ def test_unit_record_not_logged_in_employee(test_server, unit):
 
 def test_employee_login(test_server):
     """Test to check if employee could be logged in system"""
-    resp = requests.post(test_server + "/api/employee/log-in",
-                         json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"})
+    resp = requests.post(
+        test_server + "/api/employee/log-in",
+        json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"},
+    )
 
     assert resp.ok
     assert resp.json()["status"] is True
@@ -59,8 +63,10 @@ def test_employee_login(test_server):
 def test_unit_record_logged_employee(test_server, unit):
     """Test to check if recording couldn't be started when employee is not logged in"""
     unit_id = unit.json()["unit_internal_id"]
-    resp = requests.post(test_server + f"/api/unit/{unit_id}/start",
-                         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}})
+    resp = requests.post(
+        test_server + f"/api/unit/{unit_id}/start",
+        json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
+    )
 
     assert resp.status_code == 200
     assert resp.json()["status"] is True
@@ -68,8 +74,7 @@ def test_unit_record_logged_employee(test_server, unit):
 
 def test_employee_logout(test_server):
     """Test to check if employee could be logged out"""
-    logout_resp = requests.post(test_server + "/api/employee/log-out",
-                                json={"workbench_no": 1})
+    logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
 
     assert logout_resp.ok
     assert logout_resp.json()["status"] is True

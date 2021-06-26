@@ -25,7 +25,9 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
             "url": config["ipfs"]["gateway_address"],
         }  # api call to the yourls server. More on yourls.org
         payload = ""  # payload. Server creates a short url and returns it as a response
-        response = requests.request("GET", url, data=payload, params=querystring)  # get the created url keyword.
+        response = requests.request(
+            "GET", url, data=payload, params=querystring
+        )  # get the created url keyword.
 
         logging.debug(response.text)
         keyword = ast.literal_eval(response._content.decode("utf-8"))["url"]["keyword"]
@@ -33,10 +35,15 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
         return keyword, link
     except Exception as e:
         logging.error("Failed to create URL, replaced by url.today/55. Error: ", e)
-        return "55", "url.today/55"  # time to time creating url fails. To go on just set a dummy url and keyword
+        return (
+            "55",
+            "url.today/55",
+        )  # time to time creating url fails. To go on just set a dummy url and keyword
 
 
-def update_short_url(keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
+def update_short_url(
+    keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]
+) -> None:
     """
     :param keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str

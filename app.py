@@ -12,9 +12,7 @@ from feecc_hub.WorkBench import WorkBench
 
 # set up logging
 logging.basicConfig(
-    level=logging.DEBUG,
-    filename="hub.log",
-    format="%(asctime)s %(levelname)s: %(message)s"
+    level=logging.DEBUG, filename="hub.log", format="%(asctime)s %(levelname)s: %(message)s"
 )
 
 # global variables
@@ -43,10 +41,14 @@ class UnitCreationHandler(Resource):
     def post() -> Response:
         try:
             workbench_no: int = request.get_json()["workbench_no"]
-            logging.debug(f"Received a request to create a new Unit from workbench no. {workbench_no}")
+            logging.debug(
+                f"Received a request to create a new Unit from workbench no. {workbench_no}"
+            )
 
         except Exception as E:
-            logging.error(f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred:\n{E}")
+            logging.error(
+                f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred:\n{E}"
+            )
             return Response(status=500)
 
         global hub
@@ -56,7 +58,7 @@ class UnitCreationHandler(Resource):
             response = {
                 "status": True,
                 "comment": "New unit created successfully",
-                "unit_internal_id": new_unit_internal_id
+                "unit_internal_id": new_unit_internal_id,
             }
             logging.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
             return Response(response=json.dumps(response), status=200)
@@ -86,14 +88,14 @@ class UnitStartRecordHandler(Resource):
                 err_msg = f"No unit with internal id {unit_internal_id}"
                 raise ValueError(err_msg)
 
-            workbench.start_operation(unit, request_payload["production_stage_name"],
-                                      request_payload["additional_info"])
-            message = f"Started operation '{request_payload['production_stage_name']}' on Unit {unit_internal_id} at " \
-                      f"Workbench no. {request_payload['workbench_no']} "
-            response_data = {
-                "status": True,
-                "comment": message
-            }
+            workbench.start_operation(
+                unit, request_payload["production_stage_name"], request_payload["additional_info"]
+            )
+            message = (
+                f"Started operation '{request_payload['production_stage_name']}' on Unit {unit_internal_id} at "
+                f"Workbench no. {request_payload['workbench_no']} "
+            )
+            response_data = {"status": True, "comment": message}
             logging.info(message)
             return Response(status=200, response=json.dumps(response_data))
 
@@ -101,10 +103,7 @@ class UnitStartRecordHandler(Resource):
             message = f"Couldn't handle request. An error occurred: {E}"
             logging.error(message)
             logging.debug(request_payload)
-            response_data = {
-                "status": False,
-                "comment": message
-            }
+            response_data = {"status": False, "comment": message}
             return Response(response=json.dumps(response_data), status=500)
 
 
@@ -126,11 +125,11 @@ class UnitEndRecordHandler(Resource):
         except Exception as e:
             logging.error(f"Couldn't handle end record request. An error occurred: {e}")
             return Response(
-                response=json.dumps({
-                    "status": False,
-                    "comment": "Couldn't handle end record request."
-                }),
-                status=500)
+                response=json.dumps(
+                    {"status": False, "comment": "Couldn't handle end record request."}
+                ),
+                status=500,
+            )
 
 
 class UnitUploadHandler(Resource):
@@ -148,16 +147,20 @@ class UnitUploadHandler(Resource):
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
             unit.upload()
             return Response(
-                response=json.dumps({
-                    "status": True,
-                    "comment": f"uploaded data for unit {unit_internal_id}",
-                }),
-                status=200)
+                response=json.dumps(
+                    {
+                        "status": True,
+                        "comment": f"uploaded data for unit {unit_internal_id}",
+                    }
+                ),
+                status=200,
+            )
         except Exception as e:
             logging.error(f"Can't handle unit upload. An error occurred: {e}")
 
         return Response(
-            response=json.dumps({'status': False, "comment": "Can't handle unit upload"}), status=500
+            response=json.dumps({"status": False, "comment": "Can't handle unit upload"}),
+            status=500,
         )
 
 
@@ -181,7 +184,7 @@ class EmployeeLogInHandler(Resource):
                 response_data = {
                     "status": True,
                     "comment": "Employee logged in successfully",
-                    "employee_data": workbench.employee.data
+                    "employee_data": workbench.employee.data,
                 }
 
                 return Response(response=json.dumps(response_data), status=200)
@@ -193,10 +196,7 @@ class EmployeeLogInHandler(Resource):
             message = "Could not log in the Employee. Authentication failed."
             logging.error(message)
 
-            response_data = {
-                "status": False,
-                "comment": message
-            }
+            response_data = {"status": False, "comment": message}
 
             return Response(response=json.dumps(response_data), status=401)
 
@@ -204,10 +204,7 @@ class EmployeeLogInHandler(Resource):
             message = f"An error occurred while logging in the Employee:\n{e}"
             logging.error(message)
 
-            response_data = {
-                "status": False,
-                "comment": message
-            }
+            response_data = {"status": False, "comment": message}
 
             return Response(response=json.dumps(response_data), status=500)
 
@@ -242,10 +239,7 @@ class EmployeeLogOutHandler(Resource):
             message = f"An error occurred while logging out the Employee:\n{e}"
             logging.error(message)
 
-            response_data = {
-                "status": False,
-                "comment": message
-            }
+            response_data = {"status": False, "comment": message}
 
             return Response(response=json.dumps(response_data), status=500)
 
@@ -268,7 +262,7 @@ class WorkBenchStatusHandler(Resource):
             "employee_logged_in": workbench.employee.is_logged_in,
             "employee": workbench.employee.data,
             "operation_ongoing": workbench.is_operation_ongoing,
-            "unit_internal_id": workbench.unit_in_operation
+            "unit_internal_id": workbench.unit_in_operation,
         }
 
         return Response(response=json.dumps(workbench_status_dict), status=200)

@@ -25,7 +25,9 @@ def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     qr_big = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
     qr_big.add_data("https://" + link)
     qr_big.make()
-    img_qr_big = qr_big.make_image().convert("RGB")  # some standard code to create qr-code with a python lib
+    img_qr_big = qr_big.make_image().convert(
+        "RGB"
+    )  # some standard code to create qr-code with a python lib
 
     pos = (
         (img_qr_big.size[0] - robonomics.size[0]) // 2,
@@ -33,13 +35,19 @@ def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     )  # position to insert to logo right in the center of a qr-code
 
     qr_s = 200  # size of the entire qr-code
-    border_s = int((554 - qr_s) / 2)  # 696 comes from a brother_ql label size accordance. Label of 62 mm corresponds to
+    border_s = int(
+        (554 - qr_s) / 2
+    )  # 696 comes from a brother_ql label size accordance. Label of 62 mm corresponds to
     # 696 pixels picture size
     img_qr_big.paste(robonomics, pos)  # insert logo
     img_qr_big = img_qr_big.resize((qr_s, qr_s))  # resize qr
-    img_qr_big = ImageOps.expand(img_qr_big, border=border_s, fill="white")  # add borders. it makes a square picture
+    img_qr_big = ImageOps.expand(
+        img_qr_big, border=border_s, fill="white"
+    )  # add borders. it makes a square picture
     left, top, right, bottom = 0, border_s - 2, qr_s + border_s * 2, border_s + qr_s + 2
-    img_qr_big = img_qr_big.crop((left, top, right, bottom))  # crop top and bottom borders to make image rectangular
+    img_qr_big = img_qr_big.crop(
+        (left, top, right, bottom)
+    )  # crop top and bottom borders to make image rectangular
 
     if config["print_qr"]["logos"]:
         left_pic = Image.open("media/left_pic.jpg").resize((qr_s, qr_s))

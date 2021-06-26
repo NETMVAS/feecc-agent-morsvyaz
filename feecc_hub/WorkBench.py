@@ -59,7 +59,9 @@ class WorkBench:
         return self._associated_agent.state_description
 
     def _get_camera(self) -> tp.Optional[Camera]:
-        camera_config: tp.Optional[tp.Dict[str, tp.Any]] = self._workbench_config["hardware"]["camera"]
+        camera_config: tp.Optional[tp.Dict[str, tp.Any]] = self._workbench_config["hardware"][
+            "camera"
+        ]
 
         if camera_config is None:
             return None
@@ -88,10 +90,7 @@ class WorkBench:
         self._associated_agent.execute_state(State.State0)
 
     def start_operation(
-            self,
-            unit: Unit,
-            production_stage_name: str,
-            additional_info: tp.Dict[str, tp.Any]
+        self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
     ) -> None:
         """begin work on the provided unit"""
 

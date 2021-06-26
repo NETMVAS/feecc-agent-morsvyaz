@@ -14,13 +14,19 @@ class Camera:
 
         Class description. On initiating state some attributes and methods to be described below
         """
-        self.qrpic = None  # future path to qr-code picture file. This will be used to create a labels
-        self.keyword = None  # shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
+        self.qrpic = (
+            None  # future path to qr-code picture file. This will be used to create a labels
+        )
+        self.keyword = (
+            None  # shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
+        )
         self.ip = config["ip"]  # dictionary containing all the configurations
         self.port = config["port"]  # port where the camera streams, required for rtsp
         self.login = config["login"]  # camera login to obtain access to the stream
         self.password = config["password"]  # camera password to obtain access to the stream
-        self._ongoing_records = []  # List of Recording objects each corresponding to an ongoing recording process
+        self._ongoing_records = (
+            []
+        )  # List of Recording objects each corresponding to an ongoing recording process
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
@@ -45,14 +51,18 @@ class Camera:
         return filename
 
     @staticmethod
-    def match_camera_with_table(camera_id: int, table_path: str = "config/camera_table.csv") -> tp.Optional[tp.Dict[str, str]]:
+    def match_camera_with_table(
+        camera_id: int, table_path: str = "config/camera_table.csv"
+    ) -> tp.Optional[tp.Dict[str, str]]:
         logging.debug(f"Looking for camera with ID {camera_id} in {table_path}")
         with open(table_path, "r") as f:
             reader = csv.reader(f, delimiter=";")
             for table_id, ip, port, login, password in reader:
                 if table_id == camera_id:
                     data_entry = {"ip": ip, "port": port, "login": login, "password": password}
-                    logging.debug(f"Found an entry for camera {camera_id} in {table_path}:\n{data_entry}")
+                    logging.debug(
+                        f"Found an entry for camera {camera_id} in {table_path}:\n{data_entry}"
+                    )
                     return data_entry
 
         logging.error(f"Could not find an entry for camera {camera_id} in {table_path}")

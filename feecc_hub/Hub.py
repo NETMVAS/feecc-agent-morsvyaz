@@ -37,7 +37,9 @@ class Hub:
         try:
             with open(config_path) as f:
                 content = f.read()
-                config_f: tp.Dict[str, tp.Dict[str, tp.Any]] = yaml.load(content, Loader=yaml.FullLoader)
+                config_f: tp.Dict[str, tp.Dict[str, tp.Any]] = yaml.load(
+                    content, Loader=yaml.FullLoader
+                )
                 logging.debug(f"Configuration dict: {content}")
                 return config_f
         except Exception as E:
@@ -79,7 +81,9 @@ class Hub:
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
 
-        workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config("config/workbench_config.yaml")
+        workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config(
+            "config/workbench_config.yaml"
+        )
         workbenches = []
 
         for workbench in workbench_config:
@@ -87,7 +91,9 @@ class Hub:
             workbenches.append(workbench_object)
 
         if not workbenches:
-            logging.critical("No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting.")
+            logging.critical(
+                "No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting."
+            )
             sys.exit(1)
 
         return workbenches
@@ -98,7 +104,9 @@ class Hub:
 
         try:
             if not os.path.exists(shelve_path):
-                logging.info(f"File {shelve_path} doesn't exist. Assuming there are no units to unshelve")
+                logging.info(
+                    f"File {shelve_path} doesn't exist. Assuming there are no units to unshelve"
+                )
                 return []
 
             with shelve.open(shelve_path) as unit_shelve:
