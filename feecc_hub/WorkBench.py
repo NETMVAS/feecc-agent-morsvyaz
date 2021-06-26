@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import typing as tp
 
@@ -9,6 +11,9 @@ from ._Employee import Employee
 from ._Types import Config
 from .exceptions import EmployeeUnauthorizedError, AgentBusyError
 
+if tp.TYPE_CHECKING:
+    from .Hub import Hub
+
 
 class WorkBench:
     """
@@ -17,10 +22,10 @@ class WorkBench:
     It provides highly abstract interface for interaction with them
     """
 
-    def __init__(self, associated_hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
+    def __init__(self, associated_hub: Hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
         self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
         self.number: int = self._workbench_config["workbench number"]
-        self._associated_hub = associated_hub
+        self._associated_hub: Hub = associated_hub
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self._associated_employee: tp.Optional[Employee] = None
         self._associated_agent: Agent = self._get_agent()
@@ -52,7 +57,7 @@ class WorkBench:
 
     @property
     def state_number(self) -> int:
-        return self._associated_agent.state
+        return self._associated_agent.state_no
 
     @property
     def state_description(self) -> str:
@@ -90,7 +95,7 @@ class WorkBench:
         self._associated_agent.execute_state(State.State0)
 
     def start_operation(
-        self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
+            self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
     ) -> None:
         """begin work on the provided unit"""
 

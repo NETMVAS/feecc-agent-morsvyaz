@@ -1,5 +1,6 @@
 import logging
 import typing as tp
+
 from PIL import Image
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send

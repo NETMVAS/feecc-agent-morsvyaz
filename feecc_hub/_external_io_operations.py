@@ -14,7 +14,7 @@ from ._short_url_generator import update_short_url
 
 class ExternalIoGateway:
     def __init__(self, config: Config):
-        self.config = config
+        self.config: Config = config
         self.ipfs_hash: tp.Optional[str] = None
 
     def send(self, filename: str, keyword: str = "") -> tp.Optional[str]:
@@ -29,20 +29,20 @@ class ExternalIoGateway:
 
         if self.config["ipfs"]["enable"]:
             try:
-                worker = IpfsWorker(self, self.config)
-                worker.post(filename, keyword)
+                ipfs_worker = IpfsWorker(self, self.config)
+                ipfs_worker.post(filename, keyword)
 
                 if self.config["pinata"]["enable"]:
-                    worker = PinataWorker(self, self.config)
-                    worker.post(filename)
+                    pinata_worker = PinataWorker(self, self.config)
+                    pinata_worker.post(filename)
 
             except Exception as e:
                 logging.error(f"Error while publishing to IPFS or pinning to pinata. Error: {e}")
 
         if self.config["datalog"]["enable"] and self.config["ipfs"]["enable"]:
             try:
-                worker = RobonomicsWorker(self, self.config)
-                worker.post()
+                robonomics_worker = RobonomicsWorker(self, self.config)
+                robonomics_worker.post()
             except Exception as e:
                 logging.error(f"Error while sending IPFS hash to chain, error: {e}")
 
@@ -83,7 +83,7 @@ class IpfsWorker(BaseIoWorker):
 
     def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="IPFS")
-        self.config = config
+        self.config: Config = config
 
     def post(self, filename: str, keyword: str = "") -> None:
         client = ipfshttpclient.connect()  # establish connection to local external_io node
@@ -104,7 +104,7 @@ class RobonomicsWorker(BaseIoWorker):
 
     def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Robonomics Network")
-        self.config = config["transaction"]
+        self.config: tp.Dict[str, tp.Any] = config["transaction"]
 
     def post(self) -> None:
         if self._context.ipfs_hash is None:
@@ -133,7 +133,7 @@ class PinataWorker(BaseIoWorker):
 
     def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Pinata cloud")
-        self.config = config["pinata"]
+        self.config: tp.Dict[str, tp.Any] = config["pinata"]
 
     def post(self, filename: str) -> None:
         logging.info("Camera is sending file to Pinata in the background")

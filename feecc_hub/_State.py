@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import logging
 import re
+import typing as tp
 from abc import ABC, abstractmethod
 
 from . import _Printer as Printer
 from . import _image_generation as image_generation
 from . import _short_url_generator as url_generator
+
+if tp.TYPE_CHECKING:
+    from ._Agent import Agent
 
 
 class AbstractState(ABC):
@@ -12,13 +18,13 @@ class AbstractState(ABC):
     abstract State class for states to inherit from
     """
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: Agent) -> None:
         """
         :param context: object of type Agent which executes the provided state
         """
 
         self.state_description: str = "Abstract State Object"
-        self._context = context
+        self._context: Agent = context
 
     @property
     def name(self) -> str:
@@ -45,7 +51,7 @@ class AbstractState(ABC):
 class State0(AbstractState):
     """at state 0 agent awaits for an incoming RFID event and is practically sleeping"""
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: Agent) -> None:
         super().__init__(context)
         self.state_description: str = (
             "At state 0 agent awaits for an incoming RFID event and is practically sleeping"
@@ -61,7 +67,7 @@ class State1(AbstractState):
     primarily done in app.py handlers, sleeping
     """
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: Agent) -> None:
         super().__init__(context)
         self.state_description: str = """
             at state 1 agent awaits for an incoming RFID event OR form post, thus operation is
@@ -78,7 +84,7 @@ class State2(AbstractState):
     RFID event which would stop the recording
     """
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: Agent) -> None:
         super().__init__(context)
         self.state_description: str = """
             at state 2 agent is recording the work process using an IP camera and awaits an
@@ -130,7 +136,7 @@ class State3(AbstractState):
     When everything is done, background pinning of the files is started, own state is changed to 0.
     """
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: Agent) -> None:
         super().__init__(context)
         self.state_description: str = (
             "at state 3 Unit is wrapped up, it's passport is published online"

@@ -1,21 +1,32 @@
+from __future__ import annotations
+
 import logging
 import threading
 import typing as tp
 
 from . import _external_io_operations as external_io
+from .Unit import Unit
 from ._Camera import Camera
 from ._Types import Config
-from .Unit import Unit
+
+if tp.TYPE_CHECKING:
+    from .WorkBench import WorkBench
+    from ._State import (
+        State0,
+        State1,
+        State2,
+        State3
+    )
 
 
 class Agent:
     """Handles agent's state management and high level operation"""
 
-    def __init__(self, workbench) -> None:
+    def __init__(self, workbench: WorkBench) -> None:
         """agent is initialized with state 0 and has an instance of Passport and Camera associated with it"""
 
-        self._workbench = workbench
-        self._state = None
+        self._workbench: WorkBench = workbench
+        self._state: tp.Optional[tp.Union[State0, State1, State2, State3]] = None
         self._state_thread_list: tp.List[threading.Thread] = []
         self.io_gateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.associated_unit: tp.Optional[Unit] = None

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import logging
 import os
@@ -5,12 +7,15 @@ import typing as tp
 
 import yaml
 
+if tp.TYPE_CHECKING:
+    from .Unit import Unit
+
 
 class Passport:
     """handles form validation and unit passport issuing"""
 
-    def __init__(self, unit) -> None:
-        self._unit = unit
+    def __init__(self, unit: Unit) -> None:
+        self._unit: Unit = unit
         self.filename: str = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
         logging.info(
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"

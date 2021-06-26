@@ -5,10 +5,10 @@ from datetime import datetime as dt
 from uuid import uuid4
 
 from . import _external_io_operations as external_io
+from ._Barcode import Barcode
 from ._Employee import Employee
 from ._Passport import Passport
 from ._Types import Config
-from ._Barcode import Barcode
 
 
 @dataclass
@@ -25,7 +25,7 @@ class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
     def __init__(self, config: Config, uuid: str = "") -> None:
-        self._config = config
+        self._config: Config = config
 
         # product data
         self.uuid: str = uuid or self._generate_uuid()
@@ -33,7 +33,7 @@ class Unit:
         self.model: str = ""
         self.unit_biography: tp.List[ProductionStage] = []
         self._keyword: str = ""
-        self._associated_passport = Passport(self)
+        self._associated_passport: Passport = Passport(self)
         self._print_barcode()
 
     def _print_barcode(self) -> None:
@@ -69,7 +69,8 @@ class Unit:
         return timestamp
 
     def start_session(
-        self, production_stage_name: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+            self, production_stage_name: str,
+            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     ) -> None:
         """begin the provided operation and save data about it"""
 
@@ -88,9 +89,9 @@ class Unit:
         self.current_operation = operation
 
     def end_session(
-        self,
-        video_hashes: tp.Optional[tp.List[str]] = None,
-        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
+            self,
+            video_hashes: tp.Optional[tp.List[str]] = None,
+            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
 

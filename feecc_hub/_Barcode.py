@@ -10,12 +10,12 @@ from ._Printer import Task
 
 class Barcode:
     def __init__(self, unit_code: str) -> None:
-        self.unit_code = unit_code
+        self.unit_code: str = unit_code
         self.filename: tp.Optional[str] = None
 
         try:
-            self.barcode = self.generate_barcode(unit_code)
-            self.barcode_path = self.save_barcode(self.barcode)
+            self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
+            self.barcode_path: str = self.save_barcode(self.barcode)
         except Exception as E:
             logging.error(f"Barcode error: {E}")
 
@@ -42,11 +42,11 @@ class Barcode:
             Path to barcode .png file
         """
 
-        dir_: str = os.path.dirname(self.filename)
+        dir_: tp.Optional[str] = os.path.dirname(self.filename)
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
 
-        filename = ean_code.save(self.filename)
+        filename: str = ean_code.save(self.filename)
         logging.info(f"Barcode {ean_code.get_fullcode()} was saved to {filename}")
 
         return filename

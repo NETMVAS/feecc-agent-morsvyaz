@@ -1,4 +1,3 @@
-import csv
 import logging
 import subprocess
 import time
@@ -20,13 +19,12 @@ class Camera:
         self.keyword = (
             None  # shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
         )
-        self.ip = config["ip"]  # dictionary containing all the configurations
-        self.port = config["port"]  # port where the camera streams, required for rtsp
-        self.login = config["login"]  # camera login to obtain access to the stream
-        self.password = config["password"]  # camera password to obtain access to the stream
-        self._ongoing_records = (
-            []
-        )  # List of Recording objects each corresponding to an ongoing recording process
+        self.ip: str = config["ip"]  # dictionary containing all the configurations
+        self.port: str = config["port"]  # port where the camera streams, required for rtsp
+        self.login: str = config["login"]  # camera login to obtain access to the stream
+        self.password: str = config["password"]  # camera password to obtain access to the stream
+        # List of Recording objects each corresponding to an ongoing recording process
+        self._ongoing_records: tp.List[Recording] = []
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
@@ -50,34 +48,17 @@ class Camera:
         logging.info(f"Stopped record for unit")
         return filename
 
-    @staticmethod
-    def match_camera_with_table(
-        camera_id: int, table_path: str = "config/camera_table.csv"
-    ) -> tp.Optional[tp.Dict[str, str]]:
-        logging.debug(f"Looking for camera with ID {camera_id} in {table_path}")
-        with open(table_path, "r") as f:
-            reader = csv.reader(f, delimiter=";")
-            for table_id, ip, port, login, password in reader:
-                if table_id == camera_id:
-                    data_entry = {"ip": ip, "port": port, "login": login, "password": password}
-                    logging.debug(
-                        f"Found an entry for camera {camera_id} in {table_path}:\n{data_entry}"
-                    )
-                    return data_entry
-
-        logging.error(f"Could not find an entry for camera {camera_id} in {table_path}")
-
 
 class Recording:
     """a recording object represents one ongoing recording process"""
 
     def __init__(self, camera: Camera, unit_uuid: str) -> None:
-        self._camera = camera
+        self._camera: Camera = camera
         self.unit_uuid: str = unit_uuid
         self.recording_ongoing: bool = False  # current status
-        self.process_ffmpeg = None  # popen object o ffmpeg subprocess
+        self.process_ffmpeg: tp.Optional[subprocess.Popen] = None
         logging.debug(f"New Recording object initialized at {self}")
-        self._start_record()
+        self._filename: str = self._start_record()
 
     def _start_record(self) -> str:
         """
@@ -106,7 +87,7 @@ class Recording:
 
         return filename
 
-    def stop(self) -> None:
+    def stop(self) -> str:
         """stop recording a video"""
 
         if self.process_ffmpeg and self.recording_ongoing:
@@ -114,6 +95,8 @@ class Recording:
             logging.info(f"Finished recording video for unit {self.unit_uuid}")
             self.recording_ongoing = False
             time.sleep(1)  # some time to finish the process
+
+        return self._filename
 
     def _execute_ffmpeg(self, filename: str) -> None:
         """Execute ffmpeg command"""
