@@ -22,7 +22,7 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
             "password": config["yourls"]["password"],
             "action": "shorturl",
             "format": "json",
-            "url": config["external_io"]["gateway_address"],
+            "url": config["ipfs"]["gateway_address"],
         }  # api call to the yourls server. More on yourls.org
         payload = ""  # payload. Server creates a short url and returns it as a response
         response = requests.request("GET", url, data=payload, params=querystring)  # get the created url keyword.

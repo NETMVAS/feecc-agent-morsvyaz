@@ -119,7 +119,7 @@ class State2(AbstractState):
             Printer.Task(picname=seal_file_path, config=self._context.config)
 
         # start recording a video
-        self._context.latest_record_filename = self._context.associated_camera.start_record(passport_id)
+        self._context.associated_camera.start_record(passport_id)
 
 
 class State3(AbstractState):
@@ -136,22 +136,17 @@ class State3(AbstractState):
 
     def run(self) -> None:
         # stop recording and save the file
-        self._context.associated_camera.stop_record()
+        self._context.latest_record_filename = self._context.associated_camera.stop_record()
 
         # publish video into IPFS and pin to Pinata
         # update the short link to point to an actual recording
-        ipfs_hash = self._context._iogateway.send(
+        ipfs_hash = self._context.io_gateway.send(
             filename=self._context.latest_record_filename,
-            qrpic=self._context.latest_record_qrpic_filename,
-            config=self._context.config,
             keyword=self._context.latest_record_short_link.split("/")[-1],
         )
 
         # add video IPFS hash to the passport
         self._context.associated_unit.end_session([ipfs_hash])
-
-        # save the passport into a file
-        self._context.associated_passport.export_yaml()
 
         # change own state back to 0
         self._context.execute_state(State0, background=False)

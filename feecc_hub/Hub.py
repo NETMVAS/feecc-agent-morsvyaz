@@ -49,7 +49,7 @@ class Hub:
 
         self._dump_open_units()
 
-    def get_workbench_by_number(self, workbench_no: int) -> tp.Union[WorkBench, None]:
+    def get_workbench_by_number(self, workbench_no: int) -> tp.Optional[WorkBench]:
         """find the workbench with the provided number"""
 
         for workbench in self._workbenches:
@@ -66,7 +66,7 @@ class Hub:
         self._units.append(unit)
         return unit.internal_id
 
-    def get_unit_by_internal_id(self, unit_internal_id: str) -> tp.Union[Unit, None]:
+    def get_unit_by_internal_id(self, unit_internal_id: str) -> tp.Optional[Unit]:
         """find the unit with the provided internal id"""
 
         for unit in self._units:

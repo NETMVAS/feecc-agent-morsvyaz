@@ -17,7 +17,7 @@ class Agent:
         self._workbench = workbench
         self._state = None
         self._state_thread_list: tp.List[threading.Thread] = []
-        self._iogateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
+        self.io_gateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.associated_unit: tp.Optional[Unit] = None
         self.associated_camera: Camera = self._workbench.camera
         self.latest_record_filename: str = ""
@@ -25,7 +25,7 @@ class Agent:
         self.latest_record_qrpic_filename: str = ""
 
     @property
-    def _state_thread(self) -> tp.Union[threading.Thread, None]:
+    def _state_thread(self) -> tp.Optional[threading.Thread]:
         if self._state_thread_list:
             return self._state_thread_list[-1]
         else:

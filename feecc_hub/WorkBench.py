@@ -21,8 +21,8 @@ class WorkBench:
         self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
         self.number: int = self._workbench_config["workbench number"]
         self._associated_hub = associated_hub
-        self._associated_camera: tp.Union[Camera, None] = self._get_camera()
-        self._associated_employee: tp.Union[Employee, None] = None
+        self._associated_camera: tp.Optional[Camera] = self._get_camera()
+        self._associated_employee: tp.Optional[Employee] = None
         self._associated_agent: Agent = self._get_agent()
         logging.info(f"Workbench no. {self.number} initialized")
         logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
@@ -32,11 +32,11 @@ class WorkBench:
         return self._associated_hub.config
 
     @property
-    def employee(self) -> tp.Union[Employee, None]:
+    def employee(self) -> tp.Optional[Employee]:
         return self._associated_employee
 
     @property
-    def camera(self) -> tp.Union[Camera, None]:
+    def camera(self) -> tp.Optional[Camera]:
         return self._associated_camera
 
     @property
@@ -58,8 +58,8 @@ class WorkBench:
     def state_description(self) -> str:
         return self._associated_agent.state_description
 
-    def _get_camera(self) -> tp.Union[Camera, None]:
-        camera_config: tp.Union[tp.Dict[str, tp.Any], None] = self._workbench_config["hardware"]["camera"]
+    def _get_camera(self) -> tp.Optional[Camera]:
+        camera_config: tp.Optional[tp.Dict[str, tp.Any]] = self._workbench_config["hardware"]["camera"]
 
         if camera_config is None:
             return None
@@ -102,7 +102,6 @@ class WorkBench:
         # check if employee is logged in
         if not (self.employee and self.employee.is_logged_in):
             message = f"Cannot start an operation: No employee is logged in at the Workbench {self.number}"
-            logging.error(message)
             raise EmployeeUnauthorizedError(message)
 
         # check if there are no ongoing operations

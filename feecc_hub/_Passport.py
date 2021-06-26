@@ -47,7 +47,7 @@ class Passport:
         logging.debug(f"Constructed passport dict for the unit with int. id {self._unit.internal_id}:\n{passport_dict}")
         return passport_dict
 
-    def encode_employee(self) -> str:
+    def encode_employee(self) -> tp.Optional[str]:
         """
         returns encoded employee name to put into the passport
 
@@ -57,11 +57,13 @@ class Passport:
         employee, it is safe to assume, that collision is impossible.
         """
 
-        # TODO: не работает если _unit.employee None
-        employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
-        employee_passport_string_encoded: bytes = employee_passport_string.encode()
-        employee_passport_code: str = hashlib.sha256(employee_passport_string_encoded).hexdigest()
-        return employee_passport_code
+        if self._unit.employee is not None:
+            employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
+            employee_passport_string_encoded: bytes = employee_passport_string.encode()
+            employee_passport_code: str = hashlib.sha256(employee_passport_string_encoded).hexdigest()
+            return employee_passport_code
+        else:
+            return None
 
     def save(self) -> None:
         """makes a unit passport and dumps it in a form of a YAML file"""

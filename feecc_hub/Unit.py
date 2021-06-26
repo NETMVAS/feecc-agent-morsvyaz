@@ -17,8 +17,8 @@ class ProductionStage:
     employee_name: str
     session_start_time: str
     session_end_time: str
-    video_hashes: tp.Union[tp.List[str], None] = None
-    additional_info: tp.Union[tp.Dict[str, tp.Any], None] = None
+    video_hashes: tp.Optional[tp.List[str]] = None
+    additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
 
 
 class Unit:

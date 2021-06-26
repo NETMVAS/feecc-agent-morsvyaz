@@ -31,20 +31,17 @@ class Camera:
     def stop_record(self, unit_uuid: str) -> str:
         """stop recording a video for the requested unit"""
 
-        recording = None
-
-        for rec in self._ongoing_records:
-            if rec.unit_uuid == unit_uuid:
-                recording = rec
-                self._ongoing_records.remove(rec)
-                break
+        if self._ongoing_records:
+            recording = self._ongoing_records.pop(-1)
+        else:
+            recording = None
 
         if not recording:
-            logging.error(f"Could not stop record for unit {unit_uuid}: no ongoing record for this unit found")
+            logging.error(f"Could not stop record for unit: no ongoing record found")
             return ""
 
-        filename = recording.stop_record()
-        logging.info(f"Stopped record for unit {unit_uuid}")
+        filename = recording.stop()
+        logging.info(f"Stopped record for unit")
         return filename
 
     @staticmethod
@@ -99,7 +96,7 @@ class Recording:
 
         return filename
 
-    def stop_record(self) -> None:
+    def stop(self) -> None:
         """stop recording a video"""
 
         if self.process_ffmpeg and self.recording_ongoing:

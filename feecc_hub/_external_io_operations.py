@@ -15,7 +15,7 @@ from ._short_url_generator import update_short_url
 class ExternalIoGateway:
     def __init__(self, config: Config):
         self.config = config
-        self.ipfs_hash: tp.Union[str, None] = None
+        self.ipfs_hash: tp.Optional[str] = None
 
     def send(self, filename: str, keyword: str = "") -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
