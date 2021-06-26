@@ -108,7 +108,7 @@ class RobonomicsWorker(BaseIoWorker):
 
     def post(self) -> None:
         if self._context.ipfs_hash is None:
-            raise ValueError(*"ipfs_hash is None")
+            raise ValueError("ipfs_hash is None")
         program = (
                 'echo "'
                 + self._context.ipfs_hash
