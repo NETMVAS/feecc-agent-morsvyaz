@@ -1,9 +1,10 @@
-import qrcode
-import time
 import os
+import time
 import typing as tp
-from PIL import Image, ImageOps, ImageDraw, ImageFont
 from datetime import datetime as dt
+
+import qrcode
+from PIL import Image, ImageOps, ImageDraw, ImageFont
 
 
 def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
@@ -76,10 +77,9 @@ def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
 
     # figure out the filename
     tag_timestamp = dt.now().strftime("%d.%m.%Y")
-    if config["print_security_tag"]["enable_timestamp"]:
-        seal_tag_path = f"output/seal_tag_{tag_timestamp}.png"
-    else:
-        seal_tag_path = f"output/seal_tag_base.png"
+    timestamp_enabled = config["print_security_tag"]["enable_timestamp"]
+    seal_tag_path = f"output/seal_tag_{tag_timestamp}.png" if timestamp_enabled \
+        else f"output/seal_tag_base.png"
 
     # check if seal tag has already been created
     if os.path.exists(seal_tag_path):

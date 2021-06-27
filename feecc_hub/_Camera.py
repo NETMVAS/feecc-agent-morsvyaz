@@ -35,11 +35,7 @@ class Camera:
     def stop_record(self) -> str:
         """stop recording a video for the requested unit"""
 
-        if self._ongoing_records:
-            recording = self._ongoing_records.pop(-1)
-        else:
-            recording = None
-
+        recording = self._ongoing_records.pop(-1) if self._ongoing_records else None
         if not recording:
             logging.error(f"Could not stop record for unit: no ongoing record found")
             return ""
