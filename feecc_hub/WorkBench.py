@@ -81,13 +81,11 @@ class WorkBench:
 
     def start_shift(self, employee_rfid_card_id: str) -> None:
         """authorize employee"""
-
         self._associated_employee = Employee(employee_rfid_card_id)
         self._associated_agent.execute_state(State.State1)
 
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
-
         if self._associated_agent.state_no == 2:
             self.end_operation(self.unit_in_operation)
 
@@ -98,7 +96,6 @@ class WorkBench:
             self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
     ) -> None:
         """begin work on the provided unit"""
-
         logging.info(
             f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
@@ -129,7 +126,6 @@ class WorkBench:
 
     def end_operation(self, unit_internal_id: str) -> None:
         """end work on the provided unit"""
-
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self.unit_in_operation:
             self._associated_agent.execute_state(State.State3)

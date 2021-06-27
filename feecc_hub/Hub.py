@@ -31,7 +31,6 @@ class Hub:
         Reading config, containing all the required data, such as filepath, robonomics parameters (remote wss, seed),
         camera parameters (ip, login, password, port), etc
         """
-
         logging.debug(f"Looking for config in {config_path}")
 
         try:
@@ -48,12 +47,10 @@ class Hub:
 
     def end_session(self) -> None:
         """a method to execute when daemon exits"""
-
         self._dump_open_units()
 
     def get_workbench_by_number(self, workbench_no: int) -> tp.Optional[WorkBench]:
         """find the workbench with the provided number"""
-
         for workbench in self._workbenches:
             if workbench.number == workbench_no:
                 return workbench
@@ -63,14 +60,12 @@ class Hub:
 
     def create_new_unit(self) -> str:
         """initialize a new instance of the Unit class"""
-
         unit = Unit(self.config)
         self._units.append(unit)
         return unit.internal_id
 
     def get_unit_by_internal_id(self, unit_internal_id: str) -> tp.Optional[Unit]:
         """find the unit with the provided internal id"""
-
         for unit in self._units:
             if unit.internal_id == unit_internal_id:
                 return unit
@@ -80,7 +75,6 @@ class Hub:
 
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
-
         workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config(
             "config/workbench_config.yaml"
         )
@@ -101,7 +95,6 @@ class Hub:
     @staticmethod
     def _unshelve_units(shelve_path: str = "config/Unit.shelve") -> tp.List[Unit]:
         """initialize a Unit object for every unfinished Unit using it's data files"""
-
         try:
             if not os.path.exists(shelve_path):
                 logging.info(
@@ -123,7 +116,6 @@ class Hub:
 
     def _dump_open_units(self, shelve_path: str = "config/Unit.shelve") -> None:
         """shelve every unfinished Unit"""
-
         if not len(self._units):
             logging.info("Shelving stopped: no units to shelve.")
 

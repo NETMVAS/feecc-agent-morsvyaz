@@ -26,7 +26,6 @@ class Passport:
         form a nested dictionary containing all the unit
         data to dump it into a passport in a human friendly form
         """
-
         biography: tp.List[tp.Dict[str, tp.Any]] = []
 
         for prod_stage in self._unit.unit_biography:
@@ -65,7 +64,6 @@ class Passport:
         combination of employee's ID, name and position. since this data is unique for every
         employee, it is safe to assume, that collision is impossible.
         """
-
         if self._unit.employee is not None:
             employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
             employee_passport_string_encoded: bytes = employee_passport_string.encode()
@@ -78,7 +76,6 @@ class Passport:
 
     def save(self) -> None:
         """makes a unit passport and dumps it in a form of a YAML file"""
-
         passport_dict = self._construct_passport_dict()
 
         # make directory if it is missing

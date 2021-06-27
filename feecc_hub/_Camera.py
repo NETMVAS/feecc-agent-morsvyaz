@@ -28,13 +28,11 @@ class Camera:
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
-
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
 
     def stop_record(self) -> str:
         """stop recording a video for the requested unit"""
-
         recording = self._ongoing_records.pop(-1) if self._ongoing_records else None
         if not recording:
             logging.error(f"Could not stop record for unit: no ongoing record found")
@@ -65,7 +63,6 @@ class Recording:
 
         :returns: saved video relative path
         """
-
         unit_uuid: str = self.unit_uuid
         logging.info(f"Recording started for the unit with UUID {unit_uuid}")
 
@@ -85,7 +82,6 @@ class Recording:
 
     def stop(self) -> str:
         """stop recording a video"""
-
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
             logging.info(f"Finished recording video for unit {self.unit_uuid}")

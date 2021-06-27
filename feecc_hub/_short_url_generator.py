@@ -54,7 +54,6 @@ def update_short_url(
 
     Update redirecting service so that now the short url points to the  gateway to a video in external_io
     """
-
     try:
         url = "https://" + config["yourls"]["server"] + "/yourls-api.php"
         querystring = {

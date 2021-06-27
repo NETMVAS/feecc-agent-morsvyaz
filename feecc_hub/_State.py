@@ -14,15 +14,10 @@ if tp.TYPE_CHECKING:
 
 
 class AbstractState(ABC):
-    """
-    abstract State class for states to inherit from
-    """
+    """abstract State class for states to inherit from"""
 
     def __init__(self, context: Agent) -> None:
-        """
-        :param context: object of type Agent which executes the provided state
-        """
-
+        """:param context: object of type Agent which executes the provided state"""
         self.state_description: str = "Abstract State Object"
         self._context: Agent = context
 
@@ -33,7 +28,6 @@ class AbstractState(ABC):
     @property
     def number(self) -> int:
         """extract own state number from the class name"""
-
         try:
             state_no = re.findall("\d+", self.name)[0]
             return int(state_no)
@@ -44,8 +38,7 @@ class AbstractState(ABC):
     @abstractmethod
     def run(self) -> None:
         """state action executor (to be overridden)"""
-
-        pass
+        raise NotImplementedError
 
 
 class State0(AbstractState):

@@ -7,6 +7,7 @@ from brother_ql.backends.helpers import send
 
 
 class Task:
+
     def __init__(self, picname: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
         """
         :param picname: path to a picture to be printed
@@ -15,7 +16,6 @@ class Task:
         When creating an instance of the class, it creates a task for a brother QL-800 printer to print a label with a
         qr-code passed as an argument. picname != qrpic, it contains side fields and logos (optionally)
         """
-
         logging.info("Initializing printer")
         logging.debug(f"picname: {picname},\nconfig for printer: {config['printer']}")
 

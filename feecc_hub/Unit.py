@@ -64,7 +64,6 @@ class Unit:
     @staticmethod
     def _current_timestamp() -> str:
         """generate formatted timestamp for the invocation moment"""
-
         timestamp: str = dt.now().strftime("%d-%m-%Y %H:%M:%S")
         return timestamp
 
@@ -73,7 +72,6 @@ class Unit:
             additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     ) -> None:
         """begin the provided operation and save data about it"""
-
         logging.info(
             f"Starting production stage {production_stage_name} for unit with int. id {self.internal_id}"
         )
@@ -94,7 +92,6 @@ class Unit:
             additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
-
         self.current_operation.session_end_time = self._current_timestamp()
 
         if video_hashes:

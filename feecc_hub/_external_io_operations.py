@@ -58,7 +58,6 @@ class BaseIoWorker(ABC):
         """
         :param context: object of type IoGateway which makes use of the class methods
         """
-
         logging.debug(f"An instance of {self.name} initialized at {self}")
         self.target: str = target
         self._context: ExternalIoGateway = context
@@ -69,12 +68,10 @@ class BaseIoWorker(ABC):
 
     def post(self, *args, **kwargs) -> None:
         """uploading data to the target"""
-
         pass
 
     def get(self, *args, **kwargs) -> None:
         """getting data from the target"""
-
         pass
 
 

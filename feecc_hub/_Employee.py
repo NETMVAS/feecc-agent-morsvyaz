@@ -39,7 +39,6 @@ class Employee:
         Returns:
             None if employee not found, if found returns list with full name and position.
         """
-
         employee_data: tp.Optional[tp.List[str]] = None
 
         # open employee database

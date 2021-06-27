@@ -24,7 +24,6 @@ class Agent:
 
     def __init__(self, workbench: WorkBench) -> None:
         """agent is initialized with state 0 and has an instance of Passport and Camera associated with it"""
-
         self._workbench: WorkBench = workbench
         self._state: tp.Optional[tp.Union[State0, State1, State2, State3]] = None
         self._state_thread_list: tp.List[threading.Thread] = []
@@ -66,7 +65,6 @@ class Agent:
 
     def execute_state(self, state, background: bool = True) -> None:
         """execute provided state in the background"""
-
         self._state = state(self)
         logging.info(f"Agent state is now {self._state.name}")
 
