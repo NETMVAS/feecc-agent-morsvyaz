@@ -11,12 +11,7 @@ from ._Types import Config
 
 if tp.TYPE_CHECKING:
     from .WorkBench import WorkBench
-    from ._State import (
-        State0,
-        State1,
-        State2,
-        State3
-    )
+    from ._State import State0, State1, State2, State3
 
 
 class Agent:

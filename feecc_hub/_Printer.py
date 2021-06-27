@@ -7,6 +7,7 @@ from brother_ql.backends.helpers import send
 
 
 class Task:
+    """a printing task for the label printer"""
 
     def __init__(self, picname: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
         """
