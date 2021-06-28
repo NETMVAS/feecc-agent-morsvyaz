@@ -2,29 +2,29 @@ import pytest
 import requests
 
 
-@pytest.fixture
-def test_server():
-    return "http://127.0.0.1:5000"
+test_server = "http://127.0.0.1:5000"
 
 
-@pytest.fixture
-def unit(test_server):
+def get_unit(test_server):
     resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
     return resp
 
 
-def test_api_working(test_server):
+unit = get_unit(test_server)
+
+
+def test_api_working():
     """Can't connect to server means server down"""
     r = requests.get(test_server)
     assert r.ok is False
 
 
-def test_unit_creation(unit):
+def test_unit_creation():
     """Test to check if one unit could be created"""
     assert unit.json()["status"] is True
 
 
-# def test_multiple_unit_creation(test_server):
+# def test_multiple_unit_creation():
 #     """Test to check if multiple units could be created"""
 #     for _ in range(3):
 #         resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
@@ -33,7 +33,7 @@ def test_unit_creation(unit):
 #         assert int(resp.json()["unit_internal_id"])
 
 
-def test_unit_record_not_logged_in_employee(test_server, unit):
+def test_unit_record_not_logged_in_employee():
     """Test to check if recording couldn't be started when employee unlogged"""
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
@@ -45,7 +45,7 @@ def test_unit_record_not_logged_in_employee(test_server, unit):
     assert resp.json()["status"] is False
 
 
-def test_employee_login(test_server):
+def test_employee_login():
     """Test to check if employee could be logged in system"""
     resp = requests.post(
         test_server + "/api/employee/log-in",
@@ -60,7 +60,7 @@ def test_employee_login(test_server):
     assert employee_data["position"] is not None
 
 
-def test_unit_record_logged_employee(test_server, unit):
+def test_unit_record_logged_employee():
     """Test to check if recording couldn't be started when employee is not logged in"""
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
@@ -72,7 +72,7 @@ def test_unit_record_logged_employee(test_server, unit):
     assert resp.json()["status"] is True
 
 
-def test_employee_logout(test_server):
+def test_employee_logout():
     """Test to check if employee could be logged out"""
     logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
 

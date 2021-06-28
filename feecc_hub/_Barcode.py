@@ -45,7 +45,9 @@ class Barcode:
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
 
-        filename: str = ean_code.save(self.filename)
+        filename: str = ean_code.save(
+            self.filename, {"module_height": 8, "text_distance": 1, "font_size": 14}
+        )
         logging.info(f"Barcode {ean_code.get_fullcode()} was saved to {filename}")
 
         return filename
