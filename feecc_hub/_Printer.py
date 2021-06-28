@@ -38,7 +38,7 @@ class Task:
         red: bool = label_name == 62
         conversion.convert(qlr, [qr], label_name, red=red)
 
-        logging.debug(f"Sending task to printer")
+        logging.debug("Sending task to printer")
         send(
             qlr.data, printer
         )  # this is some standard code for printing with brother label printer with python,
