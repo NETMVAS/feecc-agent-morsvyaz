@@ -2,7 +2,7 @@ import logging
 import subprocess
 import threading
 import typing as tp
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import ipfshttpclient
 from pinatapy import PinataPy
@@ -66,13 +66,15 @@ class BaseIoWorker(ABC):
     def name(self) -> str:
         return self.__class__.__name__
 
+    @abstractmethod
     def post(self, *args, **kwargs) -> None:
         """uploading data to the target"""
-        pass
+        raise NotImplementedError
 
+    @abstractmethod
     def get(self, *args, **kwargs) -> None:
         """getting data from the target"""
-        pass
+        raise NotImplementedError
 
 
 class IpfsWorker(BaseIoWorker):
@@ -95,6 +97,9 @@ class IpfsWorker(BaseIoWorker):
             # update the link on the qr code so that it redirects now to the gateway with a published file. It may
             # take some for the gateway node to find the file, so we need to pin it in pinata
 
+    def get(self) -> None:
+        raise NotImplementedError
+
 
 class RobonomicsWorker(BaseIoWorker):
     """Robonomics worker handles interactions with Robonomics network"""
@@ -107,14 +112,14 @@ class RobonomicsWorker(BaseIoWorker):
         if self._context.ipfs_hash is None:
             raise ValueError("ipfs_hash is None")
         program = (
-            'echo "'
-            + self._context.ipfs_hash
-            + '" | '  # send external_io hash
-            + self.config["path_to_robonomics_file"]
-            + " io write datalog "  # to robonomics chain
-            + self.config["remote"]  # specify remote wss, if calling remote node
-            + " -s "
-            + self._context.config["camera"]["key"]  # sing transaction with camera seed
+                'echo "'
+                + self._context.ipfs_hash
+                + '" | '  # send external_io hash
+                + self.config["path_to_robonomics_file"]
+                + " io write datalog "  # to robonomics chain
+                + self.config["remote"]  # specify remote wss, if calling remote node
+                + " -s "
+                + self._context.config["camera"]["key"]  # sing transaction with camera seed
         )  # line of form  echo "Qm…" | ./robonomics io write datalog -s seed. See robonomics wiki for more
         process = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
         output = (
@@ -123,6 +128,9 @@ class RobonomicsWorker(BaseIoWorker):
         logging.info(
             "Published data to chain. Transaction hash is " + output.strip().decode("utf8")
         )  # get transaction hash to use it further if needed
+
+    def get(self) -> None:
+        raise NotImplementedError
 
 
 class PinataWorker(BaseIoWorker):
@@ -157,3 +165,6 @@ class PinataWorker(BaseIoWorker):
             )  # here we actually send the entire file to pinata, not just its hash. It will
             # remain the same as if published locally, cause the content is the same.
             logging.info(f"File {filename} published to Pinata")
+
+    def get(self) -> None:
+        raise NotImplementedError

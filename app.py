@@ -12,7 +12,7 @@ from feecc_hub.WorkBench import WorkBench
 
 # set up logging
 logging.basicConfig(
-    level=logging.DEBUG, filename="hub.log", format="%(asctime)s %(levelname)s: %(message)s"
+    level=logging.DEBUG, filename="hub.log", format="%(levelname)s (%(asctime)s): %(message)s"
 )
 
 # global variables
