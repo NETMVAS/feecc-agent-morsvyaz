@@ -112,14 +112,14 @@ class RobonomicsWorker(BaseIoWorker):
         if self._context.ipfs_hash is None:
             raise ValueError("ipfs_hash is None")
         program = (
-                'echo "'
-                + self._context.ipfs_hash
-                + '" | '  # send external_io hash
-                + self.config["path_to_robonomics_file"]
-                + " io write datalog "  # to robonomics chain
-                + self.config["remote"]  # specify remote wss, if calling remote node
-                + " -s "
-                + self._context.config["camera"]["key"]  # sing transaction with camera seed
+            'echo "'
+            + self._context.ipfs_hash
+            + '" | '  # send external_io hash
+            + self.config["path_to_robonomics_file"]
+            + " io write datalog "  # to robonomics chain
+            + self.config["remote"]  # specify remote wss, if calling remote node
+            + " -s "
+            + self._context.config["camera"]["key"]  # sing transaction with camera seed
         )  # line of form  echo "Qm…" | ./robonomics io write datalog -s seed. See robonomics wiki for more
         process = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
         output = (

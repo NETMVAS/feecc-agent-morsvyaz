@@ -20,26 +20,25 @@ class Task:
         logging.info("Initializing printer")
         logging.debug(f"picname: {picname},\nconfig for printer: {config['printer']}")
 
-        qr = Image.open(picname)
+        image = Image.open(picname)
 
         printer_config: tp.Dict[str, tp.Any] = config["printer"]
         printer: str = printer_config["address"]  # link to device
         label_name = str(printer_config["paper_width"])  # that depends on paper used for printing
 
-        basewidth = 696 if label_name == 62 else 554
-        wpercent = basewidth / float(qr.size[0])
-        hsize = int((float(qr.size[1]) * float(wpercent)))
-        qr = qr.resize((basewidth, hsize), Image.ANTIALIAS)
-
-        logging.info("Printing...")
+        # resize the image before printing
+        w, h = image.size
+        target_w = 696 if label_name == "62" else 554
+        target_h = int(h * (target_w / w))
+        image = image.resize((target_w, target_h))
+        logging.info(f"Printing image of size {image.size}")
 
         qlr = BrotherQLRaster(printer_config["printer_model"])
-        red: bool = label_name == 62
-        conversion.convert(qlr, [qr], label_name, red=red)
-
+        red: bool = label_name == "62"
+        logging.debug("Attempting image conversion")
+        conversion.convert(qlr, [image], label_name, red=red)
         logging.debug("Sending task to printer")
-        send(
-            qlr.data, printer
-        )  # this is some standard code for printing with brother label printer with python,
+        send(qlr.data, printer)
+        # this is some standard code for printing with brother label printer with python,
         # red = True means that black and red printing will be done. Only for 62 label paper
-        logging.info("Printed!")
+        logging.info("Printed")

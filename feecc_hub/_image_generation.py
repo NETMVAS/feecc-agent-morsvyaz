@@ -95,14 +95,17 @@ def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     large_font = ImageFont.truetype(font=font_path, size=52)
 
     # add text to the image
-    seal_tag_draw.text(
-        xy=(20, 30), text="ОПЛОМБИРОВАНО", fill=(0, 0, 0), font=large_font, align="center"
-    )
+    text = "ОПЛОМБИРОВАНО"
+    txt_w, _ = seal_tag_draw.textsize(text, large_font)
+    x = (image_width - txt_w) / 2
+    seal_tag_draw.text(xy=(x, 30), text=text, fill=(0, 0, 0), font=large_font, align="center")
 
     # add a timestamp to the seal tag if needed
-    if config["print_security_tag"]["enable_timestamp"]:
+    if timestamp_enabled:
+        txt_w, _ = seal_tag_draw.textsize(tag_timestamp, large_font)
+        x = (image_width - txt_w) / 2
         seal_tag_draw.text(
-            xy=(20, 82), text=tag_timestamp, fill=(0, 0, 0), font=large_font, align="center"
+            xy=(x, 82), text=tag_timestamp, fill=(0, 0, 0), font=large_font, align="center"
         )
 
     # save the image in the output folder
