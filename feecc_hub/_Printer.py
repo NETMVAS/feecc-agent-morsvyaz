@@ -20,17 +20,16 @@ class Task:
         logging.info("Initializing printer")
         logging.debug(f"picname: {picname},\nconfig for printer: {config['printer']}")
 
-        basewidth = 554
-
         qr = Image.open(picname)
-
-        wpercent = basewidth / float(qr.size[0])
-        hsize = int((float(qr.size[1]) * float(wpercent)))
-        qr = qr.resize((basewidth, hsize), Image.ANTIALIAS)
 
         printer_config: tp.Dict[str, tp.Any] = config["printer"]
         printer: str = printer_config["address"]  # link to device
         label_name = str(printer_config["paper_width"])  # that depends on paper used for printing
+
+        basewidth = 696 if label_name == 62 else 554
+        wpercent = basewidth / float(qr.size[0])
+        hsize = int((float(qr.size[1]) * float(wpercent)))
+        qr = qr.resize((basewidth, hsize), Image.ANTIALIAS)
 
         logging.info("Printing...")
 
