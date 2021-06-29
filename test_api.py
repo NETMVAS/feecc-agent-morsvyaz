@@ -80,7 +80,6 @@ def test_unit_record_logged_in_employee():
         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
     )
 
-
     assert resp.status_code == 200
     assert resp.json()["status"] is True
 
@@ -125,9 +124,10 @@ def test_employee_fake_logout():
     assert logout_resp.json()["status"] is False
 
 
-# def test_():
-#     """Test to check if unauthorized employee couldn't be logged out"""
-#     logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
-#
-#     assert logout_resp.ok
-#     assert logout_resp.json()["status"] is False
+def test_workbench_status_handler():
+    """Test to check if unauthorized employee couldn't be logged out"""
+    status_resp = requests.get(test_server + "/api/workbench/1/status")
+
+    assert status_resp.ok
+    assert status_resp.json()["status"] is True
+    assert status_resp.json() is not None
