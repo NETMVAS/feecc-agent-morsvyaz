@@ -65,6 +65,7 @@ class Agent:
 
         if background:
             # execute state in the background
+            logging.debug(f"Trying to execute state: {state}")
             self._state_thread = threading.Thread(target=self._state.run)
             self._state_thread.start()
         else:

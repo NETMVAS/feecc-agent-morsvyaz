@@ -80,7 +80,6 @@ def test_unit_record_logged_in_employee():
         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
     )
 
-    time.sleep(5)
 
     assert resp.status_code == 200
     assert resp.json()["status"] is True
@@ -88,6 +87,7 @@ def test_unit_record_logged_in_employee():
 
 def test_unit_stop_record_logged_employee():
     """Test to check if recording could be stopped when employee is logged in"""
+    time.sleep(5)
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
         test_server + f"/api/unit/{unit_id}/end",
