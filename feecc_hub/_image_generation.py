@@ -58,7 +58,12 @@ def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
         posr = (696 - qr_s - 24, 2)
         img_qr_big.paste(right_pic, posr)
     # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
-    qrpic = "output/" + time.ctime(time.time()).replace(" ", "_") + "qr.png"
+    dir_ = "output/qr_codes"
+
+    if not os.path.isdir(dir_):
+        os.mkdir(dir_)
+
+    qrpic = dir_ + "/" + time.ctime(time.time()).replace(" ", "_") + "qr.png"
     img_qr_big.save(qrpic)  # saving picture for further printing with a timestamp
 
     return qrpic
@@ -76,8 +81,14 @@ def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     # figure out the filename
     tag_timestamp = dt.now().strftime("%d.%m.%Y")
     timestamp_enabled = config["print_security_tag"]["enable_timestamp"]
+
+    dir_ = "output/seal_tags"
+
+    if not os.path.isdir(dir_):
+        os.mkdir(dir_)
+
     seal_tag_path = (
-        f"output/seal_tag_{tag_timestamp}.png" if timestamp_enabled else "output/seal_tag_base.png"
+        f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
     )
 
     # check if seal tag has already been created

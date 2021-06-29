@@ -1,8 +1,8 @@
 import logging
+import os
 import subprocess
 import time
 import typing as tp
-from os import path
 
 
 class Camera:
@@ -68,11 +68,16 @@ class Recording:
 
         # new video filepath. It is to be saved in a separate directory
         # with a UUID and number in case a unit has more than one video associated with it
-        filename = f"output/unit_{unit_uuid}_assembly_video_1.mp4"
+        dir_ = "output/video"
+
+        if not os.path.isdir(dir_):
+            os.mkdir(dir_)
+
+        filename = f"{dir_}/unit_{unit_uuid}_assembly_video_1.mp4"
 
         # determine a valid video name not to override an existing video
         cnt = 1
-        while path.exists(filename):
+        while os.path.exists(filename):
             filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
 
