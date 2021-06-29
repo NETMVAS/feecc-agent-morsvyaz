@@ -6,10 +6,10 @@ import typing as tp
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
-from feecc_hub.exceptions import UnitNotFoundError
 from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
+from feecc_hub.exceptions import UnitNotFoundError, WorkbenchNotFoundError
 
 # set up logging
 logging.basicConfig(
@@ -260,13 +260,18 @@ class WorkBenchStatusHandler(Resource):
             workbench = self._get_workbench(workbench_no)
         except ValueError:
             return Response(status=404)
+        except WorkbenchNotFoundError:
+            return Response(status=404)
+
+        logged_in = workbench.employee is not None
+        employee_data = workbench.employee.data if logged_in else None
 
         workbench_status_dict: tp.Dict[str, tp.Any] = {
             "workbench_no": workbench.number,
             "state": workbench.state_number,
             "state_description": workbench.state_description,
-            "employee_logged_in": workbench.employee.is_logged_in,
-            "employee": workbench.employee.data,
+            "employee_logged_in": logged_in,
+            "employee": employee_data,
             "operation_ongoing": workbench.is_operation_ongoing,
             "unit_internal_id": workbench.unit_in_operation,
         }
@@ -278,11 +283,11 @@ class WorkBenchStatusHandler(Resource):
         global hub
 
         if not isinstance(workbench_no, int):
-            raise ValueError
+            raise ValueError("Workbench number must be an integer")
 
         workbench = hub.get_workbench_by_number(workbench_no)
         if workbench is None:
-            raise ValueError
+            raise WorkbenchNotFoundError(f"No workbench with number {workbench_no}")
 
         return workbench
 
