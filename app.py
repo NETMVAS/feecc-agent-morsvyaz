@@ -287,7 +287,7 @@ api.add_resource(UnitEndRecordHandler, "/api/unit/<unit_internal_id>/end")
 api.add_resource(UnitUploadHandler, "/api/unit/<unit_internal_id>/upload")
 api.add_resource(EmployeeLogInHandler, "/api/employee/log-in")
 api.add_resource(EmployeeLogOutHandler, "/api/employee/log-out")
-api.add_resource(WorkBenchStatusHandler, "/api/workbench/<int:workbench_no>")
+api.add_resource(WorkBenchStatusHandler, "/api/workbench/<int:workbench_no>/status")
 
 if __name__ == "__main__":
     # start the server

@@ -75,7 +75,7 @@ def test_fake_employee_login():
     """Test to check if fake employee couldn't be logged in system"""
     resp = requests.post(
         test_server + "/api/employee/log-in",
-        json={"workbench_no": 1, "employee_rfid_card_no": "0000000000"},
+        json={"workbench_no": 2, "employee_rfid_card_no": "0000000000"},
     )
 
     assert resp.ok
@@ -134,3 +134,11 @@ def test_employee_fake_logout():
 
     assert logout_resp.ok
     assert logout_resp.json()["status"] is False
+
+
+# def test_():
+#     """Test to check if unauthorized employee couldn't be logged out"""
+#     logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
+#
+#     assert logout_resp.ok
+#     assert logout_resp.json()["status"] is False
