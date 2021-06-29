@@ -42,7 +42,7 @@ class Hub:
                 logging.debug(f"Configuration dict: {content}")
                 return config_f
         except Exception as E:
-            logging.error(f"Error parsing configuration file {config_path}:\n{E}")
+            logging.error(f"Error parsing configuration file {config_path}: {E}")
             sys.exit(1)
 
     def end_session(self) -> None:
@@ -111,7 +111,7 @@ class Hub:
             return units
 
         except Exception as e:
-            logging.error(f"An error occurred during unshelving units from {shelve_path}:\n{e}")
+            logging.error(f"An error occurred during unshelving units from {shelve_path}: {e}")
             return []
 
     def _dump_open_units(self, shelve_path: str = "config/Unit.shelve") -> None:
@@ -126,4 +126,4 @@ class Hub:
             logging.info(f"Successfully shelved {len(self._units)} units to {shelve_path}")
 
         except Exception as e:
-            logging.error(f"An error occurred during shelving units to {shelve_path}:\n{e}")
+            logging.error(f"An error occurred during shelving units to {shelve_path}: {e}")

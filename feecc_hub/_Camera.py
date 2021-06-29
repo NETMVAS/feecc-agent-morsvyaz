@@ -1,8 +1,8 @@
 import logging
+import os
 import subprocess
 import time
 import typing as tp
-from os import path
 
 
 class Camera:
@@ -34,6 +34,7 @@ class Camera:
     def stop_record(self) -> str:
         """stop recording a video for the requested unit"""
         recording = self._ongoing_records.pop(-1) if self._ongoing_records else None
+        logging.debug(f"Trying to stop record for {recording}")
         if not recording:
             logging.error("Could not stop record for unit: no ongoing record found")
             return ""
@@ -54,6 +55,9 @@ class Recording:
         logging.debug(f"New Recording object initialized at {self}")
         self._filename: str = self._start_record()
 
+    def _toggle_record_flag(self) -> None:
+        self.recording_ongoing = not self.recording_ongoing
+
     def _start_record(self) -> str:
         """
         unit_uuid: UUID of a unit passport associated with a unit, which assembly
@@ -68,15 +72,21 @@ class Recording:
 
         # new video filepath. It is to be saved in a separate directory
         # with a UUID and number in case a unit has more than one video associated with it
-        filename = f"output/unit_{unit_uuid}_assembly_video_1.mp4"
+        dir_ = "output/video"
+
+        if not os.path.isdir(dir_):
+            os.mkdir(dir_)
+
+        filename = f"{dir_}/unit_{unit_uuid}_assembly_video_1.mp4"
 
         # determine a valid video name not to override an existing video
         cnt = 1
-        while path.exists(filename):
+        while os.path.exists(filename):
             filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
 
         self._execute_ffmpeg(filename)
+        self._toggle_record_flag()
 
         return filename
 
@@ -85,7 +95,7 @@ class Recording:
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
             logging.info(f"Finished recording video for unit {self.unit_uuid}")
-            self.recording_ongoing = False
+            self._toggle_record_flag()
             time.sleep(1)  # some time to finish the process
 
         return self._filename

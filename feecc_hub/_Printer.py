@@ -18,7 +18,7 @@ class Task:
         qr-code passed as an argument. picname != qrpic, it contains side fields and logos (optionally)
         """
         logging.info("Initializing printer")
-        logging.debug(f"picname: {picname},\nconfig for printer: {config['printer']}")
+        logging.debug(f"picname: {picname}, config for printer: {config['printer']}")
 
         image = Image.open(picname)
 

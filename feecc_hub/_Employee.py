@@ -1,7 +1,9 @@
-import typing as tp
 import csv
-import logging
 import io
+import logging
+import typing as tp
+
+from .exceptions import EmployeeUnauthorizedError
 
 
 class Employee:
@@ -27,7 +29,7 @@ class Employee:
 
     @staticmethod
     def _find_in_db(
-        employee_card_id: str, db_path: str = "config/employee_db.csv"
+            employee_card_id: str, db_path: str = "config/employee_db.csv"
     ) -> tp.Optional[tp.List[str]]:
         """
         Method is used to get employee data (or confirm its absence)
@@ -57,6 +59,8 @@ class Employee:
             )
 
         if employee_data is None:
-            logging.error(f"Employee with card id {employee_card_id} not found. Access denied.")
+            error_message = f"Employee with card id {employee_card_id} not found. Access denied."
+            logging.error(error_message)
+            raise EmployeeUnauthorizedError(error_message)
 
         return employee_data

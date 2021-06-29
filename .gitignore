@@ -1,3 +1,6 @@
 /hub.log
 cleanup.sh
 /config/
+
+/output/*
+!/output/.gitignore

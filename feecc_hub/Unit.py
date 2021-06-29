@@ -34,7 +34,9 @@ class Unit:
         self.unit_biography: tp.List[ProductionStage] = []
         self._keyword: str = ""
         self._associated_passport: Passport = Passport(self)
-        self._print_barcode()
+
+        if self._config["print_barcode"]["enable"]:
+            self._print_barcode()
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
@@ -97,7 +99,12 @@ class Unit:
             self.current_operation.video_hashes = video_hashes
 
         if additional_info:
-            self.current_operation.additional_info = additional_info
+            if self.current_operation.additional_info is not None:
+                self.current_operation.additional_info = {
+                    **self.current_operation.additional_info, **additional_info
+                }
+            else:
+                self.current_operation.additional_info = additional_info
 
         self._associated_passport.save()
 

@@ -1,5 +1,6 @@
 import pytest
 import requests
+import time
 
 test_server = "http://127.0.0.1:5000"
 
@@ -44,18 +45,6 @@ def test_unit_record_not_logged_in_employee():
     assert resp.json()["status"] is False
 
 
-def test_unit_upload_not_logged_in_employee():
-    """Test to check if empty recording couldn't be uploaded when employee is not logged in"""
-    unit_id = unit.json()["unit_internal_id"]
-    resp = requests.post(
-        test_server + f"/api/unit/{unit_id}/upload",
-        json={"workbench_no": 1},
-    )
-
-    assert resp.status_code == 500
-    assert resp.json()["status"] is True
-
-
 def test_employee_login():
     """Test to check if employee could be logged in system"""
     resp = requests.post(
@@ -78,7 +67,6 @@ def test_fake_employee_login():
         json={"workbench_no": 2, "employee_rfid_card_no": "0000000000"},
     )
 
-    assert resp.ok
     assert resp.json()["status"] is False
 
     assert "employee_data" not in resp.json()
@@ -92,12 +80,14 @@ def test_unit_record_logged_in_employee():
         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
     )
 
+
     assert resp.status_code == 200
     assert resp.json()["status"] is True
 
 
 def test_unit_stop_record_logged_employee():
     """Test to check if recording could be stopped when employee is logged in"""
+    time.sleep(5)
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
         test_server + f"/api/unit/{unit_id}/end",
@@ -132,7 +122,6 @@ def test_employee_fake_logout():
     """Test to check if unauthorized employee couldn't be logged out"""
     logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
 
-    assert logout_resp.ok
     assert logout_resp.json()["status"] is False
 
 

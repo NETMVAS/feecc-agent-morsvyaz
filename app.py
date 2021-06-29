@@ -6,6 +6,7 @@ import typing as tp
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
+from feecc_hub.exceptions import UnitNotFoundError
 from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
@@ -46,7 +47,7 @@ class UnitCreationHandler(Resource):
 
         except Exception as E:
             logging.error(
-                f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred:\n{E}"
+                f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred: {E}"
             )
             return Response(status=500)
 
@@ -63,7 +64,7 @@ class UnitCreationHandler(Resource):
             return Response(response=json.dumps(response), status=200)
 
         except Exception as E:
-            logging.error(f"Exception occurred while creating new Unit:\n{E}")
+            logging.error(f"Exception occurred while creating new Unit: {E}")
             response = {
                 "status": False,
                 "comment": "Could not create a new Unit. Internal error occurred",
@@ -144,21 +145,27 @@ class UnitUploadHandler(Resource):
 
         try:
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
-            unit.upload()
+
+            if unit is None:
+                raise UnitNotFoundError(f"No open unit with int. id {unit_internal_id}")
+            else:
+                unit.upload()
             return Response(
                 response=json.dumps(
                     {
                         "status": True,
-                        "comment": f"uploaded data for unit {unit_internal_id}",
+                        "comment": f"Uploaded data for unit {unit_internal_id}",
                     }
                 ),
                 status=200,
             )
+
         except Exception as e:
-            logging.error(f"Can't handle unit upload. An error occurred: {e}")
+            error_message = f"Can't handle unit upload. An error occurred: {e}"
+            logging.error(error_message)
 
         return Response(
-            response=json.dumps({"status": False, "comment": "Can't handle unit upload"}),
+            response=json.dumps({"status": False, "comment": error_message}),
             status=500,
         )
 
@@ -200,7 +207,7 @@ class EmployeeLogInHandler(Resource):
             return Response(response=json.dumps(response_data), status=401)
 
         except Exception as e:
-            message = f"An error occurred while logging in the Employee:\n{e}"
+            message = f"An error occurred while logging in the Employee: {e}"
             logging.error(message)
 
             response_data = {"status": False, "comment": message}
@@ -235,7 +242,7 @@ class EmployeeLogOutHandler(Resource):
                 raise ValueError
 
         except Exception as e:
-            message = f"An error occurred while logging out the Employee:\n{e}"
+            message = f"An error occurred while logging out the Employee: {e}"
             logging.error(message)
 
             response_data = {"status": False, "comment": message}
