@@ -129,5 +129,4 @@ def test_workbench_status_handler():
     status_resp = requests.get(test_server + "/api/workbench/1/status")
 
     assert status_resp.ok
-    assert status_resp.json()["status"] is True
     assert status_resp.json() is not None
