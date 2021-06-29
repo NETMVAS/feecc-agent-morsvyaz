@@ -89,7 +89,14 @@ class WorkBench:
         if self._associated_agent.state_no == 2:
             self.end_operation(self.unit_in_operation)
 
-        self._associated_employee = None
+        if self.employee is None:
+            error_message = (
+                f"Cannot log out employee at the workbench no. {self.number}. No one logged in"
+            )
+            raise EmployeeUnauthorizedError(error_message)
+        else:
+            self._associated_employee = None
+
         self._associated_agent.execute_state(State.State0)
 
     def start_operation(
