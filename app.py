@@ -6,6 +6,7 @@ import typing as tp
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 
+from feecc_hub.exceptions import UnitNotFoundError
 from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
@@ -144,21 +145,27 @@ class UnitUploadHandler(Resource):
 
         try:
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
-            unit.upload()
+
+            if unit is None:
+                raise UnitNotFoundError(f"No open unit with int. id {unit_internal_id}")
+            else:
+                unit.upload()
             return Response(
                 response=json.dumps(
                     {
                         "status": True,
-                        "comment": f"uploaded data for unit {unit_internal_id}",
+                        "comment": f"Uploaded data for unit {unit_internal_id}",
                     }
                 ),
                 status=200,
             )
+
         except Exception as e:
-            logging.error(f"Can't handle unit upload. An error occurred: {e}")
+            error_message = f"Can't handle unit upload. An error occurred: {e}"
+            logging.error(error_message)
 
         return Response(
-            response=json.dumps({"status": False, "comment": "Can't handle unit upload"}),
+            response=json.dumps({"status": False, "comment": error_message}),
             status=500,
         )
 
