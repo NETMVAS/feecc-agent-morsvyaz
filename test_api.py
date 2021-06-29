@@ -33,7 +33,7 @@ def test_unit_creation():
 
 
 def test_unit_record_not_logged_in_employee():
-    """Test to check if recording couldn't be started when employee unlogged"""
+    """Test to check if recording couldn't be started when employee not logged in"""
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
         test_server + f"/api/unit/{unit_id}/start",
@@ -42,6 +42,18 @@ def test_unit_record_not_logged_in_employee():
 
     assert resp.status_code == 500
     assert resp.json()["status"] is False
+
+
+def test_unit_upload_not_logged_in_employee():
+    """Test to check if empty recording couldn't be uploaded when employee is not logged in"""
+    unit_id = unit.json()["unit_internal_id"]
+    resp = requests.post(
+        test_server + f"/api/unit/{unit_id}/upload",
+        json={"workbench_no": 1},
+    )
+
+    assert resp.status_code == 500
+    assert resp.json()["status"] is True
 
 
 def test_employee_login():
@@ -89,7 +101,19 @@ def test_unit_stop_record_logged_employee():
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
         test_server + f"/api/unit/{unit_id}/end",
-        json={"workbench_no": 1, "additional_info": {"test": "test!"}},
+        json={"workbench_no": 1, "additional_info": {"test": "test"}},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] is True
+
+
+def test_unit_upload_logged_employee():
+    """Test to check if recording could be uploaded when employee is logged in"""
+    unit_id = unit.json()["unit_internal_id"]
+    resp = requests.post(
+        test_server + f"/api/unit/{unit_id}/upload",
+        json={"workbench_no": 1},
     )
 
     assert resp.status_code == 200
@@ -102,3 +126,11 @@ def test_employee_logout():
 
     assert logout_resp.ok
     assert logout_resp.json()["status"] is True
+
+
+def test_employee_fake_logout():
+    """Test to check if unauthorized employee couldn't be logged out"""
+    logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
+
+    assert logout_resp.ok
+    assert logout_resp.json()["status"] is False
