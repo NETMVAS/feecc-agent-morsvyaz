@@ -55,6 +55,9 @@ class Recording:
         logging.debug(f"New Recording object initialized at {self}")
         self._filename: str = self._start_record()
 
+    def _toggle_record_flag(self) -> None:
+        self.recording_ongoing = not self.recording_ongoing
+
     def _start_record(self) -> str:
         """
         unit_uuid: UUID of a unit passport associated with a unit, which assembly
@@ -83,6 +86,7 @@ class Recording:
             cnt += 1
 
         self._execute_ffmpeg(filename)
+        self._toggle_record_flag()
 
         return filename
 
@@ -91,7 +95,7 @@ class Recording:
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
             logging.info(f"Finished recording video for unit {self.unit_uuid}")
-            self.recording_ongoing = False
+            self._toggle_record_flag()
             time.sleep(1)  # some time to finish the process
 
         return self._filename
