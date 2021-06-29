@@ -97,7 +97,12 @@ class Unit:
             self.current_operation.video_hashes = video_hashes
 
         if additional_info:
-            self.current_operation.additional_info = additional_info
+            if self.current_operation.additional_info is not None:
+                self.current_operation.additional_info = {
+                    **self.current_operation.additional_info, **additional_info
+                }
+            else:
+                self.current_operation.additional_info = additional_info
 
         self._associated_passport.save()
 
