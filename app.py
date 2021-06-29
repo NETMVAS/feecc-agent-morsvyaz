@@ -47,7 +47,7 @@ class UnitCreationHandler(Resource):
 
         except Exception as E:
             logging.error(
-                f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred:\n{E}"
+                f"Can't handle the request. Request payload: {request.get_json()}. Exception occurred: {E}"
             )
             return Response(status=500)
 
@@ -64,7 +64,7 @@ class UnitCreationHandler(Resource):
             return Response(response=json.dumps(response), status=200)
 
         except Exception as E:
-            logging.error(f"Exception occurred while creating new Unit:\n{E}")
+            logging.error(f"Exception occurred while creating new Unit: {E}")
             response = {
                 "status": False,
                 "comment": "Could not create a new Unit. Internal error occurred",
@@ -207,7 +207,7 @@ class EmployeeLogInHandler(Resource):
             return Response(response=json.dumps(response_data), status=401)
 
         except Exception as e:
-            message = f"An error occurred while logging in the Employee:\n{e}"
+            message = f"An error occurred while logging in the Employee: {e}"
             logging.error(message)
 
             response_data = {"status": False, "comment": message}
@@ -242,7 +242,7 @@ class EmployeeLogOutHandler(Resource):
                 raise ValueError
 
         except Exception as e:
-            message = f"An error occurred while logging out the Employee:\n{e}"
+            message = f"An error occurred while logging out the Employee: {e}"
             logging.error(message)
 
             response_data = {"status": False, "comment": message}

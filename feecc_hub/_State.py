@@ -91,7 +91,7 @@ class State2(AbstractState):
         except AttributeError as E:
             logging.error(
                 f"Failed to start video recording: error retrieving associated passport ID.\n\
-                        self._context.associated_passport = {self._context.associated_unit}\n{E}"
+                        self._context.associated_passport = {self._context.associated_unit} {E}"
             )
             return
 
