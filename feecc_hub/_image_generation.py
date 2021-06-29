@@ -7,6 +7,7 @@ import qrcode
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 
 
+# todo refactor this
 def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     """
     :param link: full yourls url. E.g. url.today/6b

@@ -34,7 +34,9 @@ class Unit:
         self.unit_biography: tp.List[ProductionStage] = []
         self._keyword: str = ""
         self._associated_passport: Passport = Passport(self)
-        self._print_barcode()
+
+        if self._config["print_barcode"]["enable"]:
+            self._print_barcode()
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
