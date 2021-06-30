@@ -84,18 +84,16 @@ class IpfsWorker(BaseIoWorker):
         super().__init__(context, target="IPFS")
         self.config: Config = config
 
-    def post(self, filename: str, keyword: str = "") -> None:
-        client = ipfshttpclient.connect()  # establish connection to local external_io node
-        res = client.add(filename)  # publish video locally
-        self._context.ipfs_hash = res["Hash"]  # get its hash of form Qm....
-        logging.info(f"Published to IPFS, hash: {self._context.ipfs_hash}")
+    def post(self, filename: str, keyword: tp.Optional[str] = None) -> None:
+        """share file on IPFS"""
+        ipfs_client = ipfshttpclient.connect()
+        result = ipfs_client.add(filename)
+        self._context.ipfs_hash = result["Hash"]
+        logging.info(f"File {filename} published to IPFS, hash: {self._context.ipfs_hash}")
 
-        if keyword:
-            logging.info("Updating URL")
+        if keyword is not None:
+            logging.info(f"Updating URL with keyword {keyword}")
             update_short_url(keyword, self._context.ipfs_hash, self.config)
-            # after publishing file in external_io locally, which is pretty fast,
-            # update the link on the qr code so that it redirects now to the gateway with a published file. It may
-            # take some for the gateway node to find the file, so we need to pin it in pinata
 
     def get(self) -> None:
         raise NotImplementedError
@@ -111,23 +109,16 @@ class RobonomicsWorker(BaseIoWorker):
     def post(self) -> None:
         if self._context.ipfs_hash is None:
             raise ValueError("ipfs_hash is None")
-        program = (
-            'echo "'
-            + self._context.ipfs_hash
-            + '" | '  # send external_io hash
-            + self.config["path_to_robonomics_file"]
-            + " io write datalog "  # to robonomics chain
-            + self.config["remote"]  # specify remote wss, if calling remote node
-            + " -s "
-            + self._context.config["camera"]["key"]  # sing transaction with camera seed
-        )  # line of form  echo "Qm…" | ./robonomics io write datalog -s seed. See robonomics wiki for more
-        process = subprocess.Popen(program, shell=True, stdout=subprocess.PIPE)
-        output = (
-            process.stdout.readline()
-        )  # execute the command in shell and wait for it to complete
-        logging.info(
-            "Published data to chain. Transaction hash is " + output.strip().decode("utf8")
-        )  # get transaction hash to use it further if needed
+
+        ipfs_hash: str = self._context.ipfs_hash
+        robonomics_bin: str = self.config["path_to_robonomics_file"]
+        remote: str = self.config["remote"]
+        signature: str = self._context.config["camera"]["key"]
+        command: str = f'echo "{ipfs_hash}" | {robonomics_bin} io write datalog {remote} -s {signature}'
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        output = process.stdout.readline()
+        transaction_hash: str = output.strip().decode("utf8")
+        logging.info(f"Data written to Robonomics datalog. Transaction hash: {transaction_hash}")
 
     def get(self) -> None:
         raise NotImplementedError
@@ -141,30 +132,19 @@ class PinataWorker(BaseIoWorker):
         self.config: tp.Dict[str, tp.Any] = config["pinata"]
 
     def post(self, filename: str) -> None:
-        logging.info("Camera is sending file to Pinata in the background")
-
-        # create a thread for the function to run in
+        logging.info("Pinning file to Pinata in the background")
         pinata_thread = threading.Thread(target=self._pin_to_pinata, args=filename)
-
-        # start the pinning operation
         pinata_thread.start()
+        logging.info(f"Pinning process started. Thread name: {pinata_thread.name}")
 
     def _pin_to_pinata(self, filename: str) -> None:
-        """
-        :param filename: full name of a recorded video
-        :type filename: str
-
-        pinning files in pinata to make them broadcasted around external_io
-        """
-        pinata_api = self.config["pinata_api"]  # pinata credentials
-        pinata_secret_api = self.config["pinata_secret_api"]
-        if pinata_api and pinata_secret_api:
-            pinata = PinataPy(pinata_api, pinata_secret_api)
-            pinata.pin_file_to_ipfs(
-                filename
-            )  # here we actually send the entire file to pinata, not just its hash. It will
-            # remain the same as if published locally, cause the content is the same.
-            logging.info(f"File {filename} published to Pinata")
+        """pinning files in pinata to make them broadcasted around external_io"""
+        api_key = self.config["pinata_api"]
+        api_token = self.config["pinata_secret_api"]
+        pinata = PinataPy(api_key, api_token)
+        logging.info(f"Starting publishing file {filename} to Pinata")
+        pinata.pin_file_to_ipfs(filename)
+        logging.info(f"File {filename} published to Pinata")
 
     def get(self) -> None:
         raise NotImplementedError
