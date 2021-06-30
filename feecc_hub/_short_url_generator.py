@@ -34,7 +34,7 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
         keyword = response.json()["url"]["keyword"]
         link = config["yourls"]["server"] + "/" + keyword  # link of form url.today/6b
         logging.info("Generating short url")
-        logging.debug("")
+        logging.debug(response.json())
         return keyword, link
     except Exception as e:
         logging.error("Failed to create URL, replaced by url.today/55. Error: ", e)
