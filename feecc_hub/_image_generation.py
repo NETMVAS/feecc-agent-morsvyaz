@@ -7,7 +7,6 @@ import qrcode
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 
 
-# todo refactor this
 def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     """
     :param link: full yourls url. E.g. url.today/6b
@@ -17,46 +16,34 @@ def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     :return: full filename of a resulted qr-code
     :rtype: str
 
-    This is a qr-creating submodule. Inserts a robonomics logo inside the qr and adds logos aside if required
+    This is a qr-creating submodule. Inserts a Robonomics logo inside the qr and adds logos aside if required
     """
-    inpic_s = 100  # size of robonomics logo in pixels
-    robonomics = Image.open("media/robonomics.jpg").resize(
-        (inpic_s, inpic_s)  # resize logo if it's not the demanded size
-    )
+    robonomics_logo = Image.open("media/robonomics.jpg").resize((100, 100))
     qr_big = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
     qr_big.add_data("https://" + link)
     qr_big.make()
-    img_qr_big = qr_big.make_image().convert(
-        "RGB"
-    )  # some standard code to create qr-code with a python lib
+    img_qr_big = qr_big.make_image().convert("RGB")
 
     pos = (
-        (img_qr_big.size[0] - robonomics.size[0]) // 2,
-        (img_qr_big.size[1] - robonomics.size[1]) // 2,
+        (img_qr_big.size[0] - robonomics_logo.size[0]) // 2,
+        (img_qr_big.size[1] - robonomics_logo.size[1]) // 2,
     )  # position to insert to logo right in the center of a qr-code
 
-    qr_s = 200  # size of the entire qr-code
-    border_s = int(
-        (554 - qr_s) / 2
-    )  # 696 comes from a brother_ql label size accordance. Label of 62 mm corresponds to
-    # 696 pixels picture size
-    img_qr_big.paste(robonomics, pos)  # insert logo
-    img_qr_big = img_qr_big.resize((qr_s, qr_s))  # resize qr
-    img_qr_big = ImageOps.expand(
-        img_qr_big, border=border_s, fill="white"
-    )  # add borders. it makes a square picture
-    left, top, right, bottom = 0, border_s - 2, qr_s + border_s * 2, border_s + qr_s + 2
-    img_qr_big = img_qr_big.crop(
-        (left, top, right, bottom)
-    )  # crop top and bottom borders to make image rectangular
+    qr_size = 200  # size of the entire qr-code
+    border_s = int((554 - qr_size) / 2)
+    img_qr_big.paste(robonomics_logo, pos)  # insert logo
+    img_qr_big = img_qr_big.resize((qr_size, qr_size))  # resize qr
+    img_qr_big = ImageOps.expand(img_qr_big, border=border_s, fill="white")
+    img_qr_pos = 0, border_s - 2, qr_size + border_s * 2, border_s + qr_size + 2
+    img_qr_big = img_qr_big.crop(img_qr_pos)
 
     if config["print_qr"]["logos"]:
-        left_pic = Image.open("media/left_pic.jpg").resize((qr_s, qr_s))
+        left_pic = Image.open("media/left_pic.jpg").resize((qr_size, qr_size))
         posl = (24, 2)
         img_qr_big.paste(left_pic, posl)
 
-        right_pic = Image.open("media/right_pic.jpg").resize((qr_s, qr_s))
-        posr = (696 - qr_s - 24, 2)
+        right_pic = Image.open("media/right_pic.jpg").resize((qr_size, qr_size))
+        posr = (696 - qr_size - 24, 2)
         img_qr_big.paste(right_pic, posr)
     # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
     dir_ = "output/qr_codes"
@@ -64,10 +51,10 @@ def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-    qrpic = dir_ + "/" + time.ctime(time.time()).replace(" ", "_") + "qr.png"
-    img_qr_big.save(qrpic)  # saving picture for further printing with a timestamp
+    path_to_qr = dir_ + f"/{int(time.time())}_qr.png"
+    img_qr_big.save(path_to_qr)  # saving picture for further printing with a timestamp
 
-    return qrpic
+    return path_to_qr
 
 
 def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
