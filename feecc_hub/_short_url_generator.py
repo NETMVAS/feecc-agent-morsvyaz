@@ -1,4 +1,3 @@
-import ast
 import logging
 import typing as tp
 
@@ -15,34 +14,36 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
     create an url to redirecting service to encode it in the qr and print. Redirecting to some dummy link initially
     just to print the qr, later the redirect link is updated with a gateway link to the video
     """
+    url = f"https://{config['yourls']['server']}/yourls-api.php"
+    querystring = {
+        "username": config["yourls"]["username"],
+        "password": config["yourls"]["password"],
+        "action": "shorturl",
+        "format": "json",
+        "url": config["ipfs"]["gateway_address"],
+    }  # api call to the yourls server. More on yourls.org
+    payload = ""  # payload. Server creates a short url and returns it as a response
+
     try:
-        url = "https://" + config["yourls"]["server"] + "/yourls-api.php"
-        querystring = {
-            "username": config["yourls"]["username"],
-            "password": config["yourls"]["password"],
-            "action": "shorturl",
-            "format": "json",
-            "url": config["ipfs"]["gateway_address"],
-        }  # api call to the yourls server. More on yourls.org
-        payload = ""  # payload. Server creates a short url and returns it as a response
-        response = requests.request(
-            "GET", url, data=payload, params=querystring
-        )  # get the created url keyword.
+        # response = requests.request(
+        #     "GET", url, data=payload, params=querystring
+        # )  # get the created url keyword.
+        response = requests.get(url, data=payload, params=querystring)
 
         logging.debug(response.text)
-        keyword = ast.literal_eval(response._content.decode("utf-8"))["url"]["keyword"]
+        keyword = response.json()["url"]["keyword"]
         link = config["yourls"]["server"] + "/" + keyword  # link of form url.today/6b
+        logging.info("Generating short url")
+        logging.debug("")
         return keyword, link
     except Exception as e:
         logging.error("Failed to create URL, replaced by url.today/55. Error: ", e)
-        return (
-            "55",
-            "url.today/55",
-        )  # time to time creating url fails. To go on just set a dummy url and keyword
+        return "55", "url.today/55"
+        # time to time creating url fails. To go on just set a dummy url and keyword
 
 
 def update_short_url(
-    keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]
+        keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]
 ) -> None:
     """
     :param keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
@@ -54,20 +55,20 @@ def update_short_url(
 
     Update redirecting service so that now the short url points to the  gateway to a video in external_io
     """
+    url = f"https://{config['yourls']['server']}/yourls-api.php"
+    querystring = {
+        "username": config["yourls"]["username"],
+        "password": config["yourls"]["password"],
+        "action": "update",
+        "format": "json",
+        "url": config["external_io"]["gateway_address"] + ipfs_hash,
+        "shorturl": keyword,
+    }
+    payload = ""  # api call with no payload just to update the link. More on yourls.org. Call created with insomnia
+
     try:
-        url = "https://" + config["yourls"]["server"] + "/yourls-api.php"
-        querystring = {
-            "username": config["yourls"]["username"],
-            "password": config["yourls"]["password"],
-            "action": "update",
-            "format": "json",
-            "url": config["external_io"]["gateway_address"] + ipfs_hash,
-            "shorturl": keyword,
-        }
-        payload = ""  # another api call with no payload just to update the link. More on yourls.org. Call created with
-        # insomnia
-        response = requests.request("GET", url, data=payload, params=querystring)
+        response = requests.get(url, data=payload, params=querystring)
         # no need to read the response. Just wait till the process finishes
-        logging.debug(response)
+        logging.debug(f"Trying to update short url link: {response.json()}")
     except Exception as e:
         logging.warning("Failed to update URL: ", e)
