@@ -5,6 +5,7 @@ import typing as tp
 
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
+from flask_cors import CORS
 
 from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
@@ -20,6 +21,7 @@ logging.basicConfig(
 hub = Hub()
 app = Flask(__name__)
 api = Api(app)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 @atexit.register
