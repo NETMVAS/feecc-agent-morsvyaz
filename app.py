@@ -69,7 +69,7 @@ class UnitCreationHandler(Resource):
             logging.error(f"Exception occurred while creating new Unit: {E}")
             response = {
                 "status": False,
-                "comment": "Could not create a new Unit. Internal error occurred",
+                "comment": f"Could not create a new Unit. Internal error occurred: {E}",
             }
             return Response(response=json.dumps(response), status=500)
 
