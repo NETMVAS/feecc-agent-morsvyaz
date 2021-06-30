@@ -17,6 +17,7 @@ PyYAML = "^5.4.1"
 brother-ql = "^0.9.4"
 qrcode = "^6.1"
 python-barcode = "^0.13.1"
+Flask-Cors = "^3.0.10"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.902"
