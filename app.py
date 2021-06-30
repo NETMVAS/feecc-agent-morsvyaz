@@ -4,8 +4,8 @@ import logging
 import typing as tp
 
 from flask import Flask, Response, request
-from flask_restful import Api, Resource
 from flask_cors import CORS
+from flask_restful import Api, Resource
 
 from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
