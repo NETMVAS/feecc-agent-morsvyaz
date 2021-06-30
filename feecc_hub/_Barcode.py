@@ -29,8 +29,9 @@ class Barcode:
         Returns:
             EAN13 Class
         """
-        self.filename = f"output/barcode/{int_id}_barcode"
-        return barcode.get("ean13", int_id, writer=ImageWriter())
+        ean13 = barcode.get("ean13", int_id, writer=ImageWriter())
+        self.filename = f"output/barcode/{ean13.get_fullcode()}_barcode"
+        return ean13
 
     def save_barcode(self, ean_code: barcode.EAN13) -> str:
         """
