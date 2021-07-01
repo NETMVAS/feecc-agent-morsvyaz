@@ -15,9 +15,13 @@ class Barcode:
 
         try:
             self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
+            logging.debug(f"Initialized EAN13 barcode {self.barcode.get_fullcode()} for unit {self.unit_code}")
             self.barcode_path: str = self.save_barcode(self.barcode)
         except Exception as E:
             logging.error(f"Barcode error: {E}")
+
+    def __call__(self) -> str:
+        return self.filename.split("_")[0]
 
     def generate_barcode(self, int_id: str) -> barcode.EAN13:
         """
