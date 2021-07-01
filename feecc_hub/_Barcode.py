@@ -15,7 +15,6 @@ class Barcode:
 
         try:
             self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
-            logging.debug(f"Initialized EAN13 barcode {self.barcode.get_fullcode()} for unit {self.unit_code}")
             self.barcode_path: str = self.save_barcode(self.barcode)
         except Exception as E:
             logging.error(f"Barcode error: {E}")
@@ -50,8 +49,6 @@ class Barcode:
         filename: str = ean_code.save(
             self.filename, {"module_height": 8, "text_distance": 1, "font_size": 14}
         )
-        logging.info(f"Barcode {ean_code.get_fullcode()} was saved to {filename}")
-
         return filename
 
     def print_barcode(self, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
