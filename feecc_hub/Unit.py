@@ -34,6 +34,7 @@ class Unit:
         self.unit_biography: tp.List[ProductionStage] = []
         self._keyword: str = ""
         self._associated_passport: Passport = Passport(self)
+        self._barcode: tp.Optional[Barcode] = None
 
         if self._config["print_barcode"]["enable"]:
             self._print_barcode()
@@ -44,8 +45,10 @@ class Unit:
 
     @property
     def associated_barcode(self) -> Barcode:
-        barcode = Barcode(str(int(self.uuid, 16))[:12])
-        return barcode
+        if self._barcode is None:
+            self._barcode = Barcode(str(int(self.uuid, 16))[:12])
+
+        return self._barcode
 
     @property
     def internal_id(self) -> str:
