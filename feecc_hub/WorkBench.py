@@ -140,4 +140,5 @@ class WorkBench:
         else:
             message = f"Unit with int. id {unit_internal_id} is not associated with the Workbench no.{self.number}"
             logging.error(message)
+            logging.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
             raise ValueError(message)
