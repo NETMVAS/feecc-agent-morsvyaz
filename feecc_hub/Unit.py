@@ -40,13 +40,17 @@ class Unit:
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
-        barcode = Barcode(self.internal_id)
-        barcode.print_barcode(self._config)
+        self.associated_barcode.print_barcode(self._config)
+
+    @property
+    def associated_barcode(self) -> Barcode:
+        barcode = Barcode(str(int(self.uuid, 16))[:12])
+        return barcode
 
     @property
     def internal_id(self) -> str:
         """get own internal id using own uuid"""
-        return str(int(self.uuid, 16))[:13]
+        return self.associated_barcode.barcode.get_fullcode()
 
     @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
@@ -70,7 +74,7 @@ class Unit:
         return timestamp
 
     def start_session(
-        self, production_stage_name: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+            self, production_stage_name: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     ) -> None:
         """begin the provided operation and save data about it"""
         logging.info(
@@ -88,9 +92,9 @@ class Unit:
         self.current_operation = operation
 
     def end_session(
-        self,
-        video_hashes: tp.Optional[tp.List[str]] = None,
-        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
+            self,
+            video_hashes: tp.Optional[tp.List[str]] = None,
+            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
         self.current_operation.session_end_time = self._current_timestamp()

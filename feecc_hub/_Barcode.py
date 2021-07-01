@@ -20,9 +20,6 @@ class Barcode:
         except Exception as E:
             logging.error(f"Barcode error: {E}")
 
-    def __call__(self) -> str:
-        return self.filename.split("_")[0]
-
     def generate_barcode(self, int_id: str) -> barcode.EAN13:
         """
         Method used to generate EAN13 class
