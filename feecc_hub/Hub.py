@@ -7,9 +7,9 @@ import typing as tp
 
 import yaml
 
+from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
-from .Employee import Employee
 from ._Types import Config
 from .exceptions import EmployeeNotFoundError, WorkbenchNotFoundError
 
@@ -50,11 +50,13 @@ class Hub:
 
         with open(db_path, "r", encoding="utf-8") as file:
             employee_db = csv.reader(file)
+            next(employee_db)  # skip the header
 
             for rfid_card_id, name, position in employee_db:
                 employee = Employee(rfid_card_id, name, position)
                 employees[rfid_card_id] = employee
 
+        logging.info(f"Initialized {len(employees.keys())} employees using {db_path}")
         return employees
 
     @staticmethod
@@ -74,8 +76,8 @@ class Hub:
                 config_f: tp.Dict[str, tp.Dict[str, tp.Any]] = yaml.load(
                     content, Loader=yaml.FullLoader
                 )
-                logging.debug(f"Configuration dict: {content}")
                 return config_f
+
         except Exception as E:
             logging.error(f"Error parsing configuration file {config_path}: {E}")
             sys.exit(1)
