@@ -58,7 +58,7 @@ class BaseIoWorker(ABC):
 
     def __init__(self, context: ExternalIoGateway, target: str) -> None:
         """
-        :param context: object of type IoGateway which makes use of the class methods
+        :param context of type IoGateway which makes use of the class methods
         """
         logging.debug(f"An instance of {self.name} initialized at {self}")
         self.target: str = target
@@ -69,12 +69,14 @@ class BaseIoWorker(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    def post(self, *args: object, **kwargs: object) -> None:
+    @tp.no_type_check
+    def post(self, *args, **kwargs) -> None:
         """uploading data to the target"""
         raise NotImplementedError
 
     @abstractmethod
-    def get(self, *args: object, **kwargs: object) -> None:
+    @tp.no_type_check
+    def get(self, *args, **kwargs) -> None:
         """getting data from the target"""
         raise NotImplementedError
 
