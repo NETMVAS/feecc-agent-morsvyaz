@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+import typing as tp
 
 
 class VideoEditor:
@@ -8,7 +9,7 @@ class VideoEditor:
 
     @staticmethod
     def concatenate(
-        video_path: str, intro_path: str = "media/intro.mp4", delete_source: bool = False
+            video_path: str, intro_path: str = "media/intro.mp4", delete_source: bool = False
     ) -> str:
         """
         concatenating two videos (intro with the main video) if needed. Intro is to be placed in media folder.
@@ -52,10 +53,3 @@ class VideoEditor:
             VideoEditor._remove_files(video_path)
 
         return concat_filename  # return new filename
-
-    @staticmethod
-    def _remove_files(*files) -> None:
-
-        logging.info(f"Removing files: {files}")
-        for file in files:
-            os.remove(file)

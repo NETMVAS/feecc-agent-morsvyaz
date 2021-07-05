@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import subprocess
@@ -51,7 +53,7 @@ class Recording:
         self._camera: Camera = camera
         self.unit_uuid: str = unit_uuid
         self.recording_ongoing: bool = False  # current status
-        self.process_ffmpeg: tp.Optional[subprocess.Popen] = None
+        self.process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
         logging.debug(f"New Recording object initialized at {self}")
         self._filename: str = self._start_record()
 

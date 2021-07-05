@@ -7,11 +7,10 @@ import typing as tp
 from . import _external_io_operations as external_io
 from .Unit import Unit
 from ._Camera import Camera
-from ._Types import Config
 
 if tp.TYPE_CHECKING:
     from .WorkBench import WorkBench
-    from ._State import State0, State1, State2, State3
+    from ._Types import Config, State
 
 
 class Agent:
@@ -20,7 +19,7 @@ class Agent:
     def __init__(self, workbench: WorkBench) -> None:
         """agent is initialized with state 0 and has an instance of Passport and Camera associated with it"""
         self._workbench: WorkBench = workbench
-        self._state: tp.Optional[tp.Union[State0, State1, State2, State3]] = None
+        self._state: tp.Optional[State] = None
         self._state_thread_list: tp.List[threading.Thread] = []
         self.io_gateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.associated_unit: tp.Optional[Unit] = None
@@ -51,12 +50,12 @@ class Agent:
         if self._state is None:
             return -1
         else:
-            return self._state.number
+            return int(self._state.number)
 
     @property
     def state_description(self) -> str:
         if self._state is not None:
-            return self._state.state_description
+            return str(self._state.state_description)
         else:
             return ""
 
@@ -64,7 +63,7 @@ class Agent:
     def config(self) -> Config:
         return self._workbench.config
 
-    def execute_state(self, state, background: bool = True) -> None:
+    def execute_state(self, state: State, background: bool = True) -> None:
         """execute provided state in the background"""
         self._state = state(self)
         if self._state is None:
