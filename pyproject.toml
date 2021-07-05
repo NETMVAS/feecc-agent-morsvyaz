@@ -18,6 +18,7 @@ brother-ql = "^0.9.4"
 qrcode = "^6.1"
 python-barcode = "^0.13.1"
 Flask-Cors = "^3.0.10"
+pytest-cov = "^2.12.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.902"

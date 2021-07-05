@@ -121,6 +121,7 @@ class Unit:
                 self.current_operation.additional_info = additional_info
 
         self._associated_passport.save()
+        self.employee = None
 
     def upload(self) -> None:
 

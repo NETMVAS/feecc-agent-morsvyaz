@@ -64,7 +64,6 @@ class Employee:
 
         if employee_data is None:
             error_message = f"Employee with card id {employee_card_id} not found. Access denied."
-            logging.error(error_message)
             raise EmployeeUnauthorizedError(error_message)
 
         return employee_data

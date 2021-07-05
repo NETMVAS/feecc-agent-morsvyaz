@@ -115,11 +115,13 @@ class WorkBench:
         # check if there are no ongoing operations
         if self.is_operation_ongoing:
             message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self.number}"
-            logging.error(message)
             raise AgentBusyError(message)
 
         # assign unit
         self._associated_agent.associated_unit = unit
+
+        # assign employee to unit
+        self._associated_agent.associated_unit.employee = self._associated_employee
 
         # start operation at the unit
         self._associated_agent.associated_unit.start_session(production_stage_name, additional_info)

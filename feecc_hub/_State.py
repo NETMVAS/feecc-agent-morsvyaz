@@ -161,6 +161,7 @@ class State3(State):
 
         # add video IPFS hash to the passport
         self._context.associated_unit.end_session([ipfs_hash])
+        self._context.associated_unit = None
 
         # change own state back to 0
         self._context.execute_state(State0, background=False)

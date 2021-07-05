@@ -1,6 +1,23 @@
-import pytest
-import requests
+import os
 import time
+from subprocess import Popen, PIPE, STDOUT
+
+import requests
+
+
+# def start_server() -> Popen:
+#     """start the hub server"""
+#     # clear old logs
+#     log_file_path: str = "hub.log"
+#
+#     # if os.path.exists(log_file_path):
+#     #     os.remove(log_file_path)
+#     #     print(f"Removed {log_file_path}")
+#
+#     command = "python app.py"
+#     _server_thread: Popen = Popen(command, shell=True, stdout=PIPE, stderr=STDOUT)
+#     print("Started server")
+#     return _server_thread
 
 test_server = "http://127.0.0.1:5000"
 
@@ -22,6 +39,7 @@ def test_api_working():
 def test_unit_creation():
     """Test to check if one unit could be created"""
     assert unit.json()["status"] is True
+
 
 
 # def test_multiple_unit_creation():
@@ -80,7 +98,7 @@ def test_unit_record_logged_in_employee():
         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
     )
 
-    assert resp.status_code == 200
+    assert resp.status_code == 200, f"{resp.json()}"
     assert resp.json()["status"] is True
 
 
