@@ -12,3 +12,7 @@ class WorkbenchNotFoundError(Exception):
 
 class AgentBusyError(Exception):
     pass
+
+
+class EmployeeNotFoundError(Exception):
+    pass

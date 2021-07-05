@@ -87,7 +87,12 @@ class State2(AbstractState):
     def run(self) -> None:
         # start the recording in the background and send the path to the video
         try:
-            passport_id = self._context.associated_unit.uuid
+            unit = self._context.associated_unit
+
+            if unit is None:
+                raise ValueError
+
+            passport_id = unit.uuid
         except AttributeError as E:
             logging.error(
                 f"Failed to start video recording: error retrieving associated passport ID.\n\
@@ -145,6 +150,12 @@ class State3(AbstractState):
             filename=self._context.latest_record_filename,
             keyword=self._context.latest_record_short_link.split("/")[-1],
         )
+
+        if self._context.associated_unit is None:
+            raise ValueError
+
+        if ipfs_hash is None:
+            raise ValueError
 
         # add video IPFS hash to the passport
         self._context.associated_unit.end_session([ipfs_hash])

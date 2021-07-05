@@ -29,7 +29,7 @@ class Passport:
         biography: tp.List[tp.Dict[str, tp.Any]] = []
 
         for prod_stage in self._unit.unit_biography:
-            stage = {
+            stage: tp.Dict[str, tp.Any] = {
                 "Этап производства": prod_stage.production_stage_name,
                 "Сотрудник": prod_stage.employee_name,
                 "Время начала": prod_stage.session_start_time,
@@ -65,6 +65,10 @@ class Passport:
         employee, it is safe to assume, that collision is impossible.
         """
         if self._unit.employee is not None:
+
+            if self._unit.employee.employee_db_entry is None:
+                raise ValueError
+
             employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
             employee_passport_string_encoded: bytes = employee_passport_string.encode()
             employee_passport_code: str = hashlib.sha256(

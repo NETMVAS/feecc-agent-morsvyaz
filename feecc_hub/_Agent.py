@@ -24,7 +24,13 @@ class Agent:
         self._state_thread_list: tp.List[threading.Thread] = []
         self.io_gateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.associated_unit: tp.Optional[Unit] = None
-        self.associated_camera: Camera = self._workbench.camera
+
+        camera = self._workbench.camera
+
+        if camera is None:
+            raise ValueError
+
+        self.associated_camera: Camera = camera
         self.latest_record_filename: str = ""
         self.latest_record_short_link: str = ""
         self.latest_record_qrpic_filename: str = ""
@@ -61,6 +67,9 @@ class Agent:
     def execute_state(self, state, background: bool = True) -> None:
         """execute provided state in the background"""
         self._state = state(self)
+        if self._state is None:
+            raise ValueError
+
         logging.info(f"Agent state is now {self._state.name}")
 
         if background:

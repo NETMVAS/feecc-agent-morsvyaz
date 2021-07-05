@@ -42,6 +42,9 @@ class VideoEditor:
             stdin=subprocess.PIPE,
         )  # subprocess to execute ffmpeg utility command in shell and obtain all the flows
 
+        if concat_process.stdout is None:
+            raise ValueError("Popen operation error")
+
         concat_process.stdout.readline()  # wait till the process finishes
 
         # remove source files in necessary

@@ -42,7 +42,14 @@ class Barcode:
         Returns:
             Path to barcode .png file
         """
-        dir_: tp.Optional[str] = os.path.dirname(self.filename)
+        if self.filename is None:
+            raise FileNotFoundError
+
+        dir_ = os.path.dirname(self.filename)
+
+        if dir_ is None:
+            raise FileNotFoundError
+        
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
 

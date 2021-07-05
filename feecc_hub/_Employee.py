@@ -3,13 +3,17 @@ import io
 import logging
 import typing as tp
 
-from .exceptions import EmployeeUnauthorizedError
+from .exceptions import EmployeeUnauthorizedError, EmployeeNotFoundError
 
 
 class Employee:
     def __init__(self, rfid_card_id: str) -> None:
         self.id: str = rfid_card_id
         self.employee_db_entry: tp.Optional[tp.List[str]] = self._find_in_db(rfid_card_id)
+
+        if self.employee_db_entry is None:
+            raise EmployeeNotFoundError()
+
         self.name: str = self.employee_db_entry[1]
         self.position: str = self.employee_db_entry[2]
 

@@ -3,8 +3,10 @@ import typing as tp
 
 import requests
 
+from feecc_hub._Types import Config
 
-def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[tp.Any, tp.Any]:
+
+def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
     """
     :param config: dictionary containing all the configurations
     :type config: dict
@@ -32,7 +34,7 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
 
         logging.debug(response.text)
         keyword = response.json()["url"]["keyword"]
-        link = config["yourls"]["server"] + "/" + keyword  # link of form url.today/6b
+        link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
         logging.info("Generating short url")
         logging.debug(response.json())
         return keyword, link
@@ -43,7 +45,7 @@ def generate_short_url(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> tp.Tuple[t
 
 
 def update_short_url(
-        keyword: str, ipfs_hash: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]
+        keyword: str, ipfs_hash: str, config: Config
 ) -> None:
     """
     :param keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
@@ -61,7 +63,7 @@ def update_short_url(
         "password": config["yourls"]["password"],
         "action": "update",
         "format": "json",
-        "url": config["external_io"]["gateway_address"] + ipfs_hash,
+        "url": str(config["external_io"]["gateway_address"]) + ipfs_hash,
         "shorturl": keyword,
     }
     payload = ""  # api call with no payload just to update the link. More on yourls.org. Call created with insomnia

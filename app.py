@@ -83,11 +83,15 @@ class UnitStartRecordHandler(Resource):
         request_payload: tp.Dict[str, tp.Any] = request.get_json()
 
         try:
-            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
-            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+            unit: tp.Optional[Unit] = hub.get_unit_by_internal_id(unit_internal_id)
 
             if unit is None:
                 err_msg = f"No unit with internal id {unit_internal_id}"
+                raise ValueError(err_msg)
+
+            if workbench is None:
+                err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
                 raise ValueError(err_msg)
 
             workbench.start_operation(
@@ -121,7 +125,12 @@ class UnitEndRecordHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+
+            if workbench is None:
+                err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
+                raise ValueError(err_msg)
+
             workbench.end_operation(unit_internal_id)
             return Response(status=200, response=json.dumps({"status": True, "comment": "ok"}))
         except Exception as e:
@@ -146,7 +155,7 @@ class UnitUploadHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+            unit: tp.Optional[Unit] = hub.get_unit_by_internal_id(unit_internal_id)
 
             if unit is None:
                 raise UnitNotFoundError(f"No open unit with int. id {unit_internal_id}")
@@ -185,7 +194,12 @@ class EmployeeLogInHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+
+            if workbench is None:
+                err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
+                raise ValueError(err_msg)
+
             workbench.start_shift(request_payload["employee_rfid_card_no"])
 
             if workbench.employee is not None:
@@ -229,7 +243,11 @@ class EmployeeLogOutHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+
+            if workbench is None:
+                raise ValueError
+
             workbench.end_shift()
 
             if workbench.employee is None:
@@ -265,18 +283,20 @@ class WorkBenchStatusHandler(Resource):
         except WorkbenchNotFoundError:
             return Response(status=404)
 
-        logged_in = workbench.employee is not None
-        employee_data = workbench.employee.data if logged_in else None
+        employee = workbench.employee
 
         workbench_status_dict: tp.Dict[str, tp.Any] = {
             "workbench_no": workbench.number,
             "state": workbench.state_number,
             "state_description": workbench.state_description,
-            "employee_logged_in": logged_in,
-            "employee": employee_data,
+            "employee_logged_in": employee is not None,
+            "employee": None,
             "operation_ongoing": workbench.is_operation_ongoing,
             "unit_internal_id": workbench.unit_in_operation,
         }
+
+        if employee is not None:
+            workbench_status_dict["employee"] = employee.data
 
         return Response(response=json.dumps(workbench_status_dict), status=200)
 

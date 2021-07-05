@@ -88,9 +88,15 @@ class Unit:
         logging.info(
             f"Starting production stage {production_stage_name} for unit with int. id {self.internal_id}"
         )
+
+        employee = self._associated_passport.encode_employee()
+
+        if employee is None:
+            raise ValueError
+
         operation = ProductionStage(
             production_stage_name=production_stage_name,
-            employee_name=self._associated_passport.encode_employee(),
+            employee_name=employee,
             session_start_time=self._current_timestamp(),
             session_end_time=self._current_timestamp(),
             additional_info=additional_info,
@@ -105,6 +111,9 @@ class Unit:
             additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
+        if self.current_operation is None:
+            raise ValueError
+
         self.current_operation.session_end_time = self._current_timestamp()
 
         if video_hashes:

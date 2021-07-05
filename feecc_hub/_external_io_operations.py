@@ -22,7 +22,7 @@ class ExternalIoGateway:
         if self.config["intro"]["enable"]:
             try:
                 filename = VideoEditor.concatenate(
-                    filename, delete_source=self.config["general"]["delete_after_record"]
+                    filename, delete_source=bool(self.config["general"]["delete_after_record"])
                 )  # get concatenated video filename
             except Exception as e:
                 logging.error("Failed to concatenate. Error: ", e)
@@ -48,6 +48,8 @@ class ExternalIoGateway:
 
             return self.ipfs_hash
 
+        return None
+
 
 class BaseIoWorker(ABC):
     """
@@ -67,12 +69,12 @@ class BaseIoWorker(ABC):
         return self.__class__.__name__
 
     @abstractmethod
-    def post(self, *args, **kwargs) -> None:
+    def post(self, *args: object, **kwargs: object) -> None:
         """uploading data to the target"""
         raise NotImplementedError
 
     @abstractmethod
-    def get(self, *args, **kwargs) -> None:
+    def get(self, *args: object, **kwargs: object) -> None:
         """getting data from the target"""
         raise NotImplementedError
 
@@ -93,6 +95,10 @@ class IpfsWorker(BaseIoWorker):
 
         if keyword is not None:
             logging.info(f"Updating URL with keyword {keyword}")
+
+            if self._context.ipfs_hash is None:
+                raise ValueError
+
             update_short_url(keyword, self._context.ipfs_hash, self.config)
 
     def get(self) -> None:
@@ -116,6 +122,10 @@ class RobonomicsWorker(BaseIoWorker):
         signature: str = self._context.config["camera"]["key"]
         command: str = f'echo "{ipfs_hash}" | {robonomics_bin} io write datalog {remote} -s {signature}'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+
+        if process.stdout is None:
+            raise ValueError
+
         output = process.stdout.readline()
         transaction_hash: str = output.strip().decode("utf8")
         logging.info(f"Data written to Robonomics datalog. Transaction hash: {transaction_hash}")
