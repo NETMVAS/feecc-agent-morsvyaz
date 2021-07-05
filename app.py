@@ -215,7 +215,7 @@ class EmployeeLogInHandler(Resource):
                 return Response(response=json.dumps(response_data), status=200)
 
             else:
-                raise ValueError
+                raise ValueError("Unable to login employee")
 
         except ValueError:
             message = "Could not log in the Employee. Authentication failed."
@@ -250,7 +250,7 @@ class EmployeeLogOutHandler(Resource):
                 request_payload["workbench_no"])
 
             if workbench is None:
-                raise ValueError
+                raise ValueError(f"No associated workbench with id {request_payload['workbench_no']}")
 
             workbench.end_shift()
 
@@ -263,7 +263,7 @@ class EmployeeLogOutHandler(Resource):
                 return Response(response=json.dumps(response_data), status=200)
 
             else:
-                raise ValueError
+                raise ValueError("Unable to logout employee")
 
         except Exception as e:
             message = f"An error occurred while logging out the Employee: {e}"

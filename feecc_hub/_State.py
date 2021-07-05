@@ -90,7 +90,7 @@ class State2(State):
             unit = self._context.associated_unit
 
             if unit is None:
-                raise ValueError
+                raise ValueError("No associated unit found")
 
             passport_id = unit.uuid
         except AttributeError as E:
@@ -154,10 +154,10 @@ class State3(State):
         )
 
         if self._context.associated_unit is None:
-            raise ValueError
+            raise ValueError("No context associated unit found")
 
         if ipfs_hash is None:
-            raise ValueError
+            raise ValueError("IPFS Hash is None")
 
         # add video IPFS hash to the passport
         self._context.associated_unit.end_session([ipfs_hash])

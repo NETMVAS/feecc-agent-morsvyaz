@@ -43,12 +43,12 @@ class Barcode:
             Path to barcode .png file
         """
         if self.filename is None:
-            raise FileNotFoundError
+            raise FileNotFoundError("Barcode filename is None")
 
         dir_ = os.path.dirname(self.filename)
 
         if dir_ is None:
-            raise FileNotFoundError
+            raise FileNotFoundError("Directory filename is None")
         
         if not os.path.isdir(dir_):
             os.mkdir(dir_)

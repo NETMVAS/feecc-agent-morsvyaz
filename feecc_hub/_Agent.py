@@ -62,7 +62,7 @@ class Agent:
         """execute provided state in the background"""
         self._state = state(self)
         if self._state is None:
-            raise ValueError
+            raise ValueError("Current state undefined")
 
         logging.info(f"Agent state is now {self._state.name}")
 

@@ -7,6 +7,8 @@ import typing as tp
 
 import yaml
 
+from .exceptions import EmployeeNotFoundError
+
 if tp.TYPE_CHECKING:
     from .Unit import Unit
 
@@ -67,7 +69,7 @@ class Passport:
         if self._unit.employee is not None:
 
             if self._unit.employee.employee_db_entry is None:
-                raise ValueError
+                raise EmployeeNotFoundError("Employee's data not found. Unauthorized")
 
             employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
             employee_passport_string_encoded: bytes = employee_passport_string.encode()

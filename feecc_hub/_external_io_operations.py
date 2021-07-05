@@ -99,7 +99,7 @@ class IpfsWorker(BaseIoWorker):
             logging.info(f"Updating URL with keyword {keyword}")
 
             if self._context.ipfs_hash is None:
-                raise ValueError
+                raise ValueError("Context IPFS hash is None")
 
             update_short_url(keyword, self._context.ipfs_hash, self.config)
 
@@ -126,7 +126,7 @@ class RobonomicsWorker(BaseIoWorker):
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
         if process.stdout is None:
-            raise ValueError
+            raise ValueError("Popen process stdout is None")
 
         output = process.stdout.readline()
         transaction_hash: str = output.strip().decode("utf8")

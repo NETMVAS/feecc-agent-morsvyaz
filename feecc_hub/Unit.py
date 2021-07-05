@@ -85,7 +85,7 @@ class Unit:
         employee = self._associated_passport.encode_employee()
 
         if employee is None:
-            raise ValueError
+            raise ValueError("Employee is None")
 
         operation = ProductionStage(
             production_stage_name=production_stage_name,
@@ -105,7 +105,7 @@ class Unit:
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
         if self.current_operation is None:
-            raise ValueError
+            raise ValueError("No ongoing operations found")
 
         self.current_operation.session_end_time = self._current_timestamp()
 

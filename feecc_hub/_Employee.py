@@ -12,7 +12,7 @@ class Employee:
         self.employee_db_entry: tp.Optional[tp.List[str]] = self._find_in_db(rfid_card_id)
 
         if self.employee_db_entry is None:
-            raise EmployeeNotFoundError()
+            raise EmployeeNotFoundError("Employee entry is None. Unable to unpack.")
 
         self.name: str = self.employee_db_entry[1]
         self.position: str = self.employee_db_entry[2]
