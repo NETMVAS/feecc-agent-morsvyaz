@@ -50,6 +50,6 @@ class VideoEditor:
 
         # remove source files in necessary
         if delete_source:
-            VideoEditor._remove_files(video_path)
+            os.remove(video_path)
 
         return concat_filename  # return new filename

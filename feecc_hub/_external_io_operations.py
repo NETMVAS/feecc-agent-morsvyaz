@@ -150,7 +150,7 @@ class PinataWorker(BaseIoWorker):
         logging.info(f"Pinning process started. Thread name: {pinata_thread.name}")
 
     def _pin_to_pinata(self, filename: str) -> None:
-        """pinning files in pinata to make them broadcasted around external_io"""
+        """pin files in Pinata Cloud to secure their copies in IPFS"""
         api_key = self.config["pinata_api"]
         api_token = self.config["pinata_secret_api"]
         pinata = PinataPy(api_key, api_token)

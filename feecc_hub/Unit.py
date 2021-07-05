@@ -43,13 +43,6 @@ class Unit:
         """print barcode with own int. id"""
         self.associated_barcode.print_barcode(self._config)
 
-    # @property
-    # def associated_barcode(self) -> Barcode:
-    #     if self._barcode is None:
-    #         self._barcode = Barcode(str(int(self.uuid, 16))[:12])
-    #
-    #     return self._barcode
-
     @property
     def associated_barcode(self) -> Barcode:
         barcode = Barcode(str(int(self.uuid, 16))[:12])
@@ -58,7 +51,7 @@ class Unit:
     @property
     def internal_id(self) -> str:
         """get own internal id using own uuid"""
-        return self.associated_barcode.barcode.get_fullcode()
+        return str(self.associated_barcode.barcode.get_fullcode())
 
     @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
