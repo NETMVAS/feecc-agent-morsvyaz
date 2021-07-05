@@ -3,7 +3,7 @@ import typing as tp
 
 import requests
 
-from feecc_hub._Types import Config
+from ._Types import Config
 
 
 def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:

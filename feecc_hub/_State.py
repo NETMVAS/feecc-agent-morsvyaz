@@ -13,7 +13,7 @@ if tp.TYPE_CHECKING:
     from ._Agent import Agent
 
 
-class AbstractState(ABC):
+class State(ABC):
     """abstract State class for states to inherit from"""
 
     def __init__(self, context: Agent) -> None:
@@ -41,7 +41,7 @@ class AbstractState(ABC):
         raise NotImplementedError
 
 
-class State0(AbstractState):
+class State0(State):
     """at state 0 agent awaits for an incoming RFID event and is practically sleeping"""
 
     def __init__(self, context: Agent) -> None:
@@ -54,7 +54,7 @@ class State0(AbstractState):
         pass
 
 
-class State1(AbstractState):
+class State1(State):
     """
     at state 1 agent awaits for an incoming RFID event OR form post, thus operation is
     primarily done in app.py handlers, sleeping
@@ -71,7 +71,7 @@ class State1(AbstractState):
         pass
 
 
-class State2(AbstractState):
+class State2(State):
     """
     at state 2 agent is recording the work process using an IP camera and awaits an
     RFID event which would stop the recording
@@ -123,10 +123,11 @@ class State2(AbstractState):
             Printer.Task(picname=seal_file_path, config=self._context.config)
 
         # start recording a video
-        self._context.associated_camera.start_record(passport_id)
+        if self._context.associated_camera is not None:
+            self._context.associated_camera.start_record(passport_id)
 
 
-class State3(AbstractState):
+class State3(State):
     """
     then the agent receives an RFID event, recording is stopped and published to IPFS.
     Passport is dumped and also published into IPFS, it's checksum is stored in Robonomics.
@@ -142,7 +143,8 @@ class State3(AbstractState):
 
     def run(self) -> None:
         # stop recording and save the file
-        self._context.latest_record_filename = self._context.associated_camera.stop_record()
+        if self._context.associated_camera is not None:
+            self._context.latest_record_filename = self._context.associated_camera.stop_record()
 
         # publish video into IPFS and pin to Pinata
         # update the short link to point to an actual recording

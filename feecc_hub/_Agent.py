@@ -7,10 +7,11 @@ import typing as tp
 from . import _external_io_operations as external_io
 from .Unit import Unit
 from ._Camera import Camera
+from ._State import State
 
 if tp.TYPE_CHECKING:
     from .WorkBench import WorkBench
-    from ._Types import Config, State
+    from ._Types import Config
 
 
 class Agent:
@@ -23,13 +24,7 @@ class Agent:
         self._state_thread_list: tp.List[threading.Thread] = []
         self.io_gateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
         self.associated_unit: tp.Optional[Unit] = None
-
-        camera = self._workbench.camera
-
-        if camera is None:
-            raise ValueError
-
-        self.associated_camera: Camera = camera
+        self.associated_camera: tp.Optional[Camera] = self._workbench.camera
         self.latest_record_filename: str = ""
         self.latest_record_short_link: str = ""
         self.latest_record_qrpic_filename: str = ""
@@ -63,7 +58,7 @@ class Agent:
     def config(self) -> Config:
         return self._workbench.config
 
-    def execute_state(self, state: State, background: bool = True) -> None:
+    def execute_state(self, state: tp.Type[State], background: bool = True) -> None:
         """execute provided state in the background"""
         self._state = state(self)
         if self._state is None:

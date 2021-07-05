@@ -42,7 +42,7 @@ class UnitCreationHandler(Resource):
     @staticmethod
     def post() -> Response:
         try:
-            workbench_no: int = request.get_json()["workbench_no"]
+            workbench_no: int = request.get_json()["workbench_no"]  # type:ignore
             logging.debug(
                 f"Received a request to create a new Unit from workbench no. {workbench_no}"
             )
@@ -80,10 +80,11 @@ class UnitStartRecordHandler(Resource):
     @staticmethod
     def post(unit_internal_id: str) -> Response:
         global hub
-        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()  # type:ignore
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
+                request_payload["workbench_no"])
             unit: tp.Optional[Unit] = hub.get_unit_by_internal_id(unit_internal_id)
 
             if unit is None:
@@ -119,13 +120,14 @@ class UnitEndRecordHandler(Resource):
     @staticmethod
     def post(unit_internal_id: str) -> Response:
         global hub
-        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()  # type:ignore
 
         logging.info(f"Received a request to end record for unit with int. id {unit_internal_id}")
         logging.debug(request_payload)
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
+                request_payload["workbench_no"])
 
             if workbench is None:
                 err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
@@ -149,7 +151,7 @@ class UnitUploadHandler(Resource):
     @staticmethod
     def post(unit_internal_id: str) -> Response:
         global hub
-        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()  # type:ignore
 
         logging.info(f"Received a request to upload unit with int. id {unit_internal_id}")
         logging.debug(request_payload)
@@ -188,13 +190,14 @@ class EmployeeLogInHandler(Resource):
     @staticmethod
     def post() -> Response:
         global hub
-        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()  # type:ignore
 
         logging.info("Handling logging in the employee")
         logging.debug(request_payload)
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
+                request_payload["workbench_no"])
 
             if workbench is None:
                 err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
@@ -237,13 +240,14 @@ class EmployeeLogOutHandler(Resource):
     @staticmethod
     def post() -> Response:
         global hub
-        request_payload: tp.Dict[str, tp.Any] = request.get_json()
+        request_payload: tp.Dict[str, tp.Any] = request.get_json()  # type:ignore
 
         logging.info("Handling logging out the employee")
         logging.debug(request_payload)
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(request_payload["workbench_no"])
+            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
+                request_payload["workbench_no"])
 
             if workbench is None:
                 raise ValueError
