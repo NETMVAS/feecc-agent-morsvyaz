@@ -28,7 +28,8 @@ def generate_systemd_service(
         file.writelines(new_lines)
 
 
-if __name__ == "__main__":
+@tp.no_type_check
+def main():
     # check if running with sudo
     if os.getuid() != 0:
         print("This script must be executed with Root permissions.")
@@ -65,3 +66,7 @@ if __name__ == "__main__":
 
     print(f"\nDaemon for the project {project_name} has been installed on this machine.")
     print(f"To uninstall {project_name} run 'sudo python3 uninstall.py'.")
+
+
+if __name__ == "__main__":
+    main()

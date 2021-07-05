@@ -3,7 +3,9 @@ import subprocess
 import sys
 import typing as tp
 
-if __name__ == "__main__":
+
+@tp.no_type_check
+def main():
     # check if running with sudo
     if os.getuid() != 0:
         print("This script must be executed with Root permissions.")
@@ -36,3 +38,7 @@ if __name__ == "__main__":
         subprocess.run(command, shell=True)
 
     print(f"\nDaemon for the project {project_name} has been uninstalled from this machine.")
+
+
+if __name__ == "__main__":
+    main()
