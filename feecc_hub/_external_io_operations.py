@@ -122,7 +122,9 @@ class RobonomicsWorker(BaseIoWorker):
         robonomics_bin: str = self.config["path_to_robonomics_file"]
         remote: str = self.config["remote"]
         signature: str = self._context.config["camera"]["key"]
-        command: str = f'echo "{ipfs_hash}" | {robonomics_bin} io write datalog {remote} -s {signature}'
+        command: str = (
+            f'echo "{ipfs_hash}" | {robonomics_bin} io write datalog {remote} -s {signature}'
+        )
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
         if process.stdout is None:

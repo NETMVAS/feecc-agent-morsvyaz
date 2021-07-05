@@ -92,7 +92,8 @@ class UnitStartRecordHandler(Resource):
 
         try:
             workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
-                request_payload["workbench_no"])
+                request_payload["workbench_no"]
+            )
             unit: tp.Optional[Unit] = hub.get_unit_by_internal_id(unit_internal_id)
 
             if unit is None:
@@ -135,7 +136,8 @@ class UnitEndRecordHandler(Resource):
 
         try:
             workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
-                request_payload["workbench_no"])
+                request_payload["workbench_no"]
+            )
 
             if workbench is None:
                 err_msg = f"Associated workbench not found {request_payload['workbench_no']}"

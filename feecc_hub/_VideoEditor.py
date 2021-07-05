@@ -1,7 +1,6 @@
 import logging
 import os
 import subprocess
-import typing as tp
 
 
 class VideoEditor:
@@ -9,7 +8,7 @@ class VideoEditor:
 
     @staticmethod
     def concatenate(
-            video_path: str, intro_path: str = "media/intro.mp4", delete_source: bool = False
+        video_path: str, intro_path: str = "media/intro.mp4", delete_source: bool = False
     ) -> str:
         """
         concatenating two videos (intro with the main video) if needed. Intro is to be placed in media folder.

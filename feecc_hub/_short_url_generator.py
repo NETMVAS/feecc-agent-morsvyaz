@@ -44,9 +44,7 @@ def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
         # time to time creating url fails. To go on just set a dummy url and keyword
 
 
-def update_short_url(
-        keyword: str, ipfs_hash: str, config: Config
-) -> None:
+def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
     """
     :param keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str

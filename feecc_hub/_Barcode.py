@@ -49,7 +49,7 @@ class Barcode:
 
         if dir_ is None:
             raise FileNotFoundError("Directory filename is None")
-        
+
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
 

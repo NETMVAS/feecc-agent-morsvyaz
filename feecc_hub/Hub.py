@@ -40,7 +40,9 @@ class Hub:
     def _get_employees(db_path: str = "config/employee_db.csv") -> tp.Dict[str, Employee]:
         """load up employee database and initialize an array of Employee objects"""
         if not os.path.exists(db_path):
-            message: str = f"File '{db_path}' is not in the working directory, cannot retrieve employee data"
+            message: str = (
+                f"File '{db_path}' is not in the working directory, cannot retrieve employee data"
+            )
             logging.critical(message)
             sys.exit(message)
 

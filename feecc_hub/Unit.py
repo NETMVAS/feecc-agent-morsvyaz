@@ -75,10 +75,10 @@ class Unit:
         return timestamp
 
     def start_session(
-            self,
-            production_stage_name: str,
-            employee_code_name: str,
-            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+        self,
+        production_stage_name: str,
+        employee_code_name: str,
+        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
         logging.info(
@@ -97,9 +97,9 @@ class Unit:
         self.current_operation = operation
 
     def end_session(
-            self,
-            video_hashes: tp.Optional[tp.List[str]] = None,
-            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        self,
+        video_hashes: tp.Optional[tp.List[str]] = None,
+        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         """wrap up the session when video recording stops and save video data as well as session end timestamp"""
         if self.current_operation is None:
@@ -113,7 +113,8 @@ class Unit:
         if additional_info:
             if self.current_operation.additional_info is not None:
                 self.current_operation.additional_info = {
-                    **self.current_operation.additional_info, **additional_info
+                    **self.current_operation.additional_info,
+                    **additional_info,
                 }
             else:
                 self.current_operation.additional_info = additional_info
