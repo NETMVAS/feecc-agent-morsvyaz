@@ -10,7 +10,15 @@ from flask_restful import Api, Resource
 from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
-from feecc_hub.exceptions import UnitNotFoundError, WorkbenchNotFoundError
+from feecc_hub.exceptions import (
+    UnitNotFoundError,
+    WorkbenchNotFoundError,
+    EmployeeNotFoundError,
+    EmployeeUnauthorizedError,
+)
+
+if tp.TYPE_CHECKING:
+    from feecc_hub.Employee import Employee
 
 # set up logging
 logging.basicConfig(
@@ -196,41 +204,40 @@ class EmployeeLogInHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
-                request_payload["workbench_no"])
+            workbench_no: int = int(request_payload["workbench_no"])
+            employee_rfid_card_no: str = request_payload["employee_rfid_card_no"]
+            workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
 
-            if workbench is None:
-                err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
-                raise ValueError(err_msg)
+            hub.authorize_employee(employee_rfid_card_no, workbench_no)
+            employee: tp.Optional[Employee] = workbench.employee
 
-            workbench.start_shift(request_payload["employee_rfid_card_no"])
+            if employee is None:
+                raise EmployeeUnauthorizedError
 
-            if workbench.employee is not None:
-                response_data = {
-                    "status": True,
-                    "comment": "Employee logged in successfully",
-                    "employee_data": workbench.employee.data,
-                }
+            response_data = {
+                "status": True,
+                "comment": "Employee logged in successfully",
+                "employee_data": employee.data,
+            }
 
-                return Response(response=json.dumps(response_data), status=200)
+            return Response(response=json.dumps(response_data), status=200)
 
-            else:
-                raise ValueError("Unable to login employee")
-
-        except ValueError:
-            message = "Could not log in the Employee. Authentication failed."
+        except WorkbenchNotFoundError as E:
+            message = f"Could not log in the Employee. Workbench not found: {E}"
             logging.error(message)
-
             response_data = {"status": False, "comment": message}
+            return Response(response=json.dumps(response_data), status=401)
 
+        except EmployeeNotFoundError as E:
+            message = f"Could not log in the Employee. Employee not found: {E}"
+            logging.error(message)
+            response_data = {"status": False, "comment": message}
             return Response(response=json.dumps(response_data), status=401)
 
         except Exception as e:
             message = f"An error occurred while logging in the Employee: {e}"
             logging.error(message)
-
             response_data = {"status": False, "comment": message}
-
             return Response(response=json.dumps(response_data), status=500)
 
 
@@ -246,12 +253,7 @@ class EmployeeLogOutHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
-                request_payload["workbench_no"])
-
-            if workbench is None:
-                raise ValueError(f"No associated workbench with id {request_payload['workbench_no']}")
-
+            workbench: WorkBench = hub.get_workbench_by_number(int(request_payload["workbench_no"]))
             workbench.end_shift()
 
             if workbench.employee is None:

@@ -1,3 +1,4 @@
+import csv
 import logging
 import os
 import shelve
@@ -8,7 +9,9 @@ import yaml
 
 from .Unit import Unit
 from .WorkBench import WorkBench
+from .Employee import Employee
 from ._Types import Config
+from .exceptions import EmployeeNotFoundError, WorkbenchNotFoundError
 
 
 class Hub:
@@ -19,8 +22,38 @@ class Hub:
 
     def __init__(self) -> None:
         self.config: Config = self._get_config()
-        self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
+        self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._units: tp.List[Unit] = self._unshelve_units()
+        self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
+
+    def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
+        """logs the employee in at a given workbench"""
+        try:
+            employee: Employee = self._employees[employee_card_id]
+        except KeyError:
+            raise EmployeeNotFoundError(f"Rfid card ID {employee_card_id} unknown")
+
+        workbench: WorkBench = self.get_workbench_by_number(workbench_no)
+        workbench.start_shift(employee)
+
+    @staticmethod
+    def _get_employees(db_path: str = "config/employee_db.csv") -> tp.Dict[str, Employee]:
+        """load up employee database and initialize an array of Employee objects"""
+        if not os.path.exists(db_path):
+            message: str = f"File '{db_path}' is not in the working directory, cannot retrieve employee data"
+            logging.critical(message)
+            sys.exit(message)
+
+        employees: tp.Dict[str, Employee] = {}
+
+        with open(db_path, "r", encoding="utf-8") as file:
+            employee_db = csv.reader(file)
+
+            for rfid_card_id, name, position in employee_db:
+                employee = Employee(rfid_card_id, name, position)
+                employees[rfid_card_id] = employee
+
+        return employees
 
     @staticmethod
     def _get_config(config_path: str = "config/hub_config.yaml") -> tp.Any:
@@ -49,14 +82,15 @@ class Hub:
         """a method to execute when daemon exits"""
         self._dump_open_units()
 
-    def get_workbench_by_number(self, workbench_no: int) -> tp.Optional[WorkBench]:
+    def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
         for workbench in self._workbenches:
             if workbench.number == workbench_no:
                 return workbench
 
-        logging.error(f"Could not find the workbench with number {workbench_no}. Does it exist?")
-        return None
+        message: str = f"Could not find the workbench with number {workbench_no}. Does it exist?"
+        logging.error(message)
+        raise WorkbenchNotFoundError(message)
 
     def create_new_unit(self) -> str:
         """initialize a new instance of the Unit class"""

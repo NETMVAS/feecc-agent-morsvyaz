@@ -57,29 +57,6 @@ class Passport:
         )
         return passport_dict
 
-    def encode_employee(self) -> tp.Optional[str]:
-        """
-        returns encoded employee name to put into the passport
-
-        since unit passport will be published to IPFS, employee name is replaced with
-        "employee passport code" - an SHA256 checksum of a string, which is a space-separated
-        combination of employee's ID, name and position. since this data is unique for every
-        employee, it is safe to assume, that collision is impossible.
-        """
-        if self._unit.employee is not None:
-
-            if self._unit.employee.employee_db_entry is None:
-                raise EmployeeNotFoundError("Employee's data not found. Unauthorized")
-
-            employee_passport_string: str = " ".join(self._unit.employee.employee_db_entry)
-            employee_passport_string_encoded: bytes = employee_passport_string.encode()
-            employee_passport_code: str = hashlib.sha256(
-                employee_passport_string_encoded
-            ).hexdigest()
-            return employee_passport_code
-        else:
-            return None
-
     def save(self) -> None:
         """makes a unit passport and dumps it in a form of a YAML file"""
         passport_dict = self._construct_passport_dict()

@@ -7,7 +7,7 @@ from . import _State as State
 from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
-from ._Employee import Employee
+from .Employee import Employee
 from ._Types import Config
 from .exceptions import EmployeeUnauthorizedError, AgentBusyError
 
@@ -27,7 +27,7 @@ class WorkBench:
         self.number: int = self._workbench_config["workbench number"]
         self._associated_hub: Hub = associated_hub
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
-        self._associated_employee: tp.Optional[Employee] = None
+        self.employee: tp.Optional[Employee] = None
         self._associated_agent: Agent = self._get_agent()
         logging.info(f"Workbench no. {self.number} initialized")
         logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
@@ -35,10 +35,6 @@ class WorkBench:
     @property
     def config(self) -> Config:
         return self._associated_hub.config
-
-    @property
-    def employee(self) -> tp.Optional[Employee]:
-        return self._associated_employee
 
     @property
     def camera(self) -> tp.Optional[Camera]:
@@ -79,9 +75,10 @@ class WorkBench:
         agent.execute_state(State.State0)
         return agent
 
-    def start_shift(self, employee_rfid_card_id: str) -> None:
+    def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
-        self._associated_employee = Employee(employee_rfid_card_id)
+        self.employee = employee
+        self.employee.is_logged_in = True
         self._associated_agent.execute_state(State.State1)
 
     def end_shift(self) -> None:
@@ -95,12 +92,13 @@ class WorkBench:
             )
             raise EmployeeUnauthorizedError(error_message)
         else:
-            self._associated_employee = None
+            self.employee.is_logged_in = False
+            self.employee = None
 
         self._associated_agent.execute_state(State.State0)
 
     def start_operation(
-        self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
+            self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
     ) -> None:
         """begin work on the provided unit"""
         logging.info(
@@ -121,10 +119,12 @@ class WorkBench:
         self._associated_agent.associated_unit = unit
 
         # assign employee to unit
-        self._associated_agent.associated_unit.employee = self._associated_employee
+        self._associated_agent.associated_unit.employee = self.employee
 
         # start operation at the unit
-        self._associated_agent.associated_unit.start_session(production_stage_name, additional_info)
+        self._associated_agent.associated_unit.start_session(
+            production_stage_name, self.employee.passport_code, additional_info
+        )
 
         # start recording video
         self._associated_agent.execute_state(State.State2)

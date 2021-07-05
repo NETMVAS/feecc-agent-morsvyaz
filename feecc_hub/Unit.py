@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from . import _external_io_operations as external_io
 from ._Barcode import Barcode
-from ._Employee import Employee
+from .Employee import Employee
 from ._Passport import Passport
 from ._Types import Config
 
@@ -75,21 +75,19 @@ class Unit:
         return timestamp
 
     def start_session(
-            self, production_stage_name: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+            self,
+            production_stage_name: str,
+            employee_code_name: str,
+            additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     ) -> None:
         """begin the provided operation and save data about it"""
         logging.info(
             f"Starting production stage {production_stage_name} for unit with int. id {self.internal_id}"
         )
 
-        employee = self._associated_passport.encode_employee()
-
-        if employee is None:
-            raise ValueError("Employee is None")
-
         operation = ProductionStage(
             production_stage_name=production_stage_name,
-            employee_name=employee,
+            employee_name=employee_code_name,
             session_start_time=self._current_timestamp(),
             session_end_time=self._current_timestamp(),
             additional_info=additional_info,

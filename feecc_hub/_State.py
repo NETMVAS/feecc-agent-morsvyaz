@@ -156,11 +156,10 @@ class State3(State):
         if self._context.associated_unit is None:
             raise ValueError("No context associated unit found")
 
-        if ipfs_hash is None:
-            raise ValueError("IPFS Hash is None")
+        ipfs_hashes: tp.List[str] = [ipfs_hash] if ipfs_hash is not None else []
 
         # add video IPFS hash to the passport
-        self._context.associated_unit.end_session([ipfs_hash])
+        self._context.associated_unit.end_session(ipfs_hashes)
         self._context.associated_unit = None
 
         # change own state back to 0
