@@ -8,10 +8,10 @@ camera:
 print_barcode:
   enable: false
 print_qr: # Whether to print QR code stickers pointing to a video in IPFS
-  enable: true
+  enable: false
   logos: false # Enables logo insertion into a qrcode
 print_security_tag: # Whether to print seal tags with optional timestamp on them
-  enable: true
+  enable: false
   enable_timestamp: false
 printer: # Info about the Brother Label printer used in your operation
   printer_model: "QL-800"
@@ -28,7 +28,7 @@ pinata:
   pinata_api: ""
   pinata_secret_api: ""
 ipfs:
-  enable: true
+  enable: false
   gateway_address: "https://gateway.ipfs.io/ipfs/" # IPFS gateway to use when creating links
 datalog:
   enable: true # Whether to write certain data to Robonomics datalog or not
