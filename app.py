@@ -92,11 +92,6 @@ class UnitStartRecordHandler(Resource):
         try:
             workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
             unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
-
-            if workbench is None:
-                err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
-                raise ValueError(err_msg)
-
             workbench.start_operation(
                 unit, request_payload["production_stage_name"], request_payload["additional_info"]
             )
@@ -266,44 +261,28 @@ class EmployeeLogOutHandler(Resource):
 class WorkBenchStatusHandler(Resource):
     """handle providing status of the given Workbench"""
 
-    def get(self, workbench_no: int) -> Response:
+    @staticmethod
+    def get(workbench_no: int) -> Response:
         # find the WorkBench with the provided number
         try:
-            workbench = self._get_workbench(workbench_no)
-        except ValueError:
-            return Response(status=404)
-        except WorkbenchNotFoundError:
-            return Response(status=404)
+            workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
+        except Exception as E:
+            return Response(response=str(E), status=404)
 
-        employee = workbench.employee
+        employee: tp.Optional[Employee] = workbench.employee
+        employee_data: tp.Optional[tp.Dict[str, str]] = employee.data if employee else None
 
         workbench_status_dict: tp.Dict[str, tp.Any] = {
             "workbench_no": workbench.number,
             "state": workbench.state_number,
             "state_description": workbench.state_description,
-            "employee_logged_in": employee is not None,
-            "employee": None,
+            "employee_logged_in": bool(employee),
+            "employee": employee_data,
             "operation_ongoing": workbench.is_operation_ongoing,
             "unit_internal_id": workbench.unit_in_operation,
         }
 
-        if employee is not None:
-            workbench_status_dict["employee"] = employee.data
-
         return Response(response=json.dumps(workbench_status_dict), status=200)
-
-    @staticmethod
-    def _get_workbench(workbench_no: int) -> WorkBench:
-        global hub
-
-        if not isinstance(workbench_no, int):
-            raise ValueError("Workbench number must be an integer")
-
-        workbench = hub.get_workbench_by_number(workbench_no)
-        if workbench is None:
-            raise WorkbenchNotFoundError(f"No workbench with number {workbench_no}")
-
-        return workbench
 
 
 # REST API endpoints
