@@ -23,7 +23,6 @@ from feecc_hub.models import (
     BaseOut,
     UnitOut,
     EmployeeOut,
-    WorkbenchOut,
 )
 
 if tp.TYPE_CHECKING:
@@ -250,10 +249,8 @@ def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
         return response_data
 
 
-@api.get(
-    "/api/workbench/{workbench_no}/status",
-)
-def get(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
+@api.get("/api/workbench/{workbench_no}/status")
+def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
     """handle providing status of the given Workbench"""
     # find the WorkBench with the provided number
     try:
@@ -281,4 +278,4 @@ if __name__ == "__main__":
     # start the server
     host: str = hub.config["api_server"]["ip"]
     port: int = hub.config["api_server"]["port"]
-    # uvicorn.run("app:api", host=host, port=port)
+    uvicorn.run("app:api", host=host, port=port)
