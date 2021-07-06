@@ -5,6 +5,8 @@ transaction:
   remote: '--remote wss://earth.rpc.robonomics.network' # e.g. ws://127.0.0.1:9944
 camera:
   key: '' # secret key in robonomics network
+print_barcode:
+  enable: false
 print_qr: # Whether to print QR code stickers pointing to a video in IPFS
   enable: true
   logos: false # Enables logo insertion into a qrcode
