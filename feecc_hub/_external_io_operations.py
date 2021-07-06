@@ -8,45 +8,37 @@ import ipfshttpclient
 from pinatapy import PinataPy
 
 from ._Types import Config
-from ._VideoEditor import VideoEditor
 from ._short_url_generator import update_short_url
 
 
 class ExternalIoGateway:
     def __init__(self, config: Config):
         self.config: Config = config
-        self.ipfs_hash: tp.Optional[str] = None
 
     def send(self, filename: str, keyword: str = "") -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
-        if self.config["intro"]["enable"]:
-            try:
-                filename = VideoEditor.concatenate(
-                    filename, delete_source=bool(self.config["general"]["delete_after_record"])
-                )  # get concatenated video filename
-            except Exception as e:
-                logging.error("Failed to concatenate. Error: ", e)
+        ipfs_hash: str = ""
 
         if self.config["ipfs"]["enable"]:
-            try:
-                ipfs_worker = IpfsWorker(self, self.config)
-                ipfs_worker.post(filename, keyword)
+            ipfs_worker = IpfsWorker(self, self.config)
+            ipfs_hash = ipfs_worker.post(filename)
 
-                if self.config["pinata"]["enable"]:
-                    pinata_worker = PinataWorker(self, self.config)
-                    pinata_worker.post(filename)
+            if keyword and ipfs_hash:
+                logging.info(f"Updating URL with keyword {keyword}")
+                update_short_url(keyword, ipfs_hash, self.config)
 
-            except Exception as e:
-                logging.error(f"Error while publishing to IPFS or pinning to pinata. Error: {e}")
+            if self.config["pinata"]["enable"]:
+                pinata_worker = PinataWorker(self, self.config)
+                pinata_worker.post(filename)
 
-        if self.config["datalog"]["enable"] and self.config["ipfs"]["enable"]:
+        if self.config["datalog"]["enable"] and ipfs_hash:
             try:
                 robonomics_worker = RobonomicsWorker(self, self.config)
-                robonomics_worker.post()
+                robonomics_worker.post(ipfs_hash)
             except Exception as e:
-                logging.error(f"Error while sending IPFS hash to chain, error: {e}")
+                logging.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
 
-            return self.ipfs_hash
+            return ipfs_hash
 
         return None
 
@@ -88,20 +80,13 @@ class IpfsWorker(BaseIoWorker):
         super().__init__(context, target="IPFS")
         self.config: Config = config
 
-    def post(self, filename: str, keyword: tp.Optional[str] = None) -> None:
+    def post(self, filename: str) -> str:
         """share file on IPFS"""
         ipfs_client = ipfshttpclient.connect()
         result = ipfs_client.add(filename)
-        self._context.ipfs_hash = result["Hash"]
-        logging.info(f"File {filename} published to IPFS, hash: {self._context.ipfs_hash}")
-
-        if keyword is not None:
-            logging.info(f"Updating URL with keyword {keyword}")
-
-            if self._context.ipfs_hash is None:
-                raise ValueError("Context IPFS hash is None")
-
-            update_short_url(keyword, self._context.ipfs_hash, self.config)
+        ipfs_hash: str = result["Hash"]
+        logging.info(f"File {filename} published to IPFS, hash: {ipfs_hash}")
+        return ipfs_hash
 
     def get(self) -> None:
         raise NotImplementedError
@@ -114,25 +99,18 @@ class RobonomicsWorker(BaseIoWorker):
         super().__init__(context, target="Robonomics Network")
         self.config: tp.Dict[str, tp.Any] = config["transaction"]
 
-    def post(self) -> None:
-        if self._context.ipfs_hash is None:
-            raise ValueError("ipfs_hash is None")
-
-        ipfs_hash: str = self._context.ipfs_hash
+    def post(self, data: str) -> None:
+        """write provided string to Robonomics datalog"""
         robonomics_bin: str = self.config["path_to_robonomics_file"]
         remote: str = self.config["remote"]
         signature: str = self._context.config["camera"]["key"]
-        command: str = (
-            f'echo "{ipfs_hash}" | {robonomics_bin} io write datalog {remote} -s {signature}'
-        )
+        command: str = f'echo "{data}" | {robonomics_bin} io write datalog {remote} -s {signature}'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 
-        if process.stdout is None:
-            raise ValueError("Popen process stdout is None")
-
-        output = process.stdout.readline()
-        transaction_hash: str = output.strip().decode("utf8")
-        logging.info(f"Data written to Robonomics datalog. Transaction hash: {transaction_hash}")
+        if process.stdout is not None:
+            output = process.stdout.readline()
+            transaction_hash: str = output.strip().decode("utf8")
+            logging.info(f"Data added to Robonomics datalog. Transaction hash: {transaction_hash}")
 
     def get(self) -> None:
         raise NotImplementedError
