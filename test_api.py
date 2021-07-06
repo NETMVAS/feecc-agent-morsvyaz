@@ -76,14 +76,14 @@ def test_unit_upload_logged_employee():
     )
 
     assert resp.status_code == 200, f"{resp.json()}"
-    assert resp.json()["status"] is True
+    assert resp.json()["status"] is True, f"{resp.json()}"
 
 
 def test_employee_logout():
     """Test to check if employee could be logged out"""
     logout_resp = requests.post(test_server + "/api/employee/log-out", json={"workbench_no": 1})
 
-    assert logout_resp.ok
+    assert logout_resp.ok, f"{logout_resp.json()}"
     assert logout_resp.json()["status"] is True, f"{logout_resp.json()}"
 
 
@@ -95,8 +95,7 @@ def test_unit_record_not_logged_in_employee():
         json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
     )
 
-    assert resp.status_code == 500, f"{resp.json()}"
-    assert resp.json()["status"] is False
+    assert resp.json()["status"] is False, f"{resp.json()}"
 
 
 def test_fake_employee_login():
@@ -108,7 +107,7 @@ def test_fake_employee_login():
 
     assert resp.json()["status"] is False, f"{resp.json()}"
 
-    assert "employee_data" not in resp.json()
+    assert resp.json()["employee_data"] is None, f"{resp.json()}"
 
 
 def test_employee_fake_logout():
@@ -122,5 +121,5 @@ def test_workbench_status_handler():
     """Test to check if unauthorized employee couldn't be logged out"""
     status_resp = requests.get(test_server + "/api/workbench/1/status")
 
-    assert status_resp.ok
+    assert status_resp.ok, f"{status_resp.json()}"
     assert status_resp.json() is not None, f"{status_resp.json()}"

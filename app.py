@@ -16,7 +16,7 @@ from feecc_hub.exceptions import (
 )
 from feecc_hub.models import (
     WorkbenchData,
-    WorkbenchStageDetails,
+    WorkbenchExtraDetailsWithoutStage,
     WorkbenchExtraDetails,
     EmployeeDetails,
     EmployeeData,
@@ -125,7 +125,7 @@ def unit_start_record(
 
 @api.post("/api/unit/{unit_internal_id}/end", response_model=BaseOut)
 def unit_stop_record(
-    workbench_data: WorkbenchStageDetails, unit_internal_id: str
+    workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str
 ) -> tp.Dict[str, tp.Any]:
     """handle end recording operation on a Unit"""
     global hub
@@ -216,7 +216,7 @@ def log_in_employee(employee_data: EmployeeDetails) -> tp.Dict[str, tp.Any]:
 @api.post(
     "/api/employee/log-out",
 )
-def log_out_employee(employee: EmployeeDetails) -> tp.Dict[str, tp.Any]:
+def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
     """handle logging out the Employee at a given Workbench"""
     global hub
     request_payload = employee.dict()
@@ -249,7 +249,7 @@ def log_out_employee(employee: EmployeeDetails) -> tp.Dict[str, tp.Any]:
 
 
 @api.get(
-    "/api/workbench/<int:workbench_no>/status",
+    "/api/workbench/{workbench_no}/status",
     response_model=WorkbenchOut,
     response_model_include={"status", "comment"},
 )
@@ -281,4 +281,4 @@ if __name__ == "__main__":
     # start the server
     host: str = hub.config["api_server"]["ip"]
     port: int = hub.config["api_server"]["port"]
-    uvicorn.run("app:api", host=host, port=port)
+    # uvicorn.run("app:api", host=host, port=port)

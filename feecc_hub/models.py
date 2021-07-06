@@ -15,6 +15,10 @@ class WorkbenchExtraDetails(WorkbenchStageDetails):
     additional_info: tp.Dict[str, str]
 
 
+class WorkbenchExtraDetailsWithoutStage(WorkbenchData):
+    additional_info: tp.Dict[str, str]
+
+
 class EmployeeDetails(WorkbenchData):
     employee_rfid_card_no: str
 
