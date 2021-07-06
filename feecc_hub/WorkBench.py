@@ -4,12 +4,12 @@ import logging
 import typing as tp
 
 from . import _State as State
+from .Employee import Employee
 from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
-from .Employee import Employee
 from ._Types import Config
-from .exceptions import EmployeeUnauthorizedError, AgentBusyError
+from .exceptions import EmployeeUnauthorizedError, AgentBusyError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
     from .Hub import Hub
@@ -77,8 +77,14 @@ class WorkBench:
 
     def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
+        if self.employee is not None:
+            message = (
+                f"Employee {employee.id} is already logged in at the workbench no. {self.number}"
+            )
+            raise AgentBusyError(message)
+
         self.employee = employee
-        self.employee.is_logged_in = True
+        logging.info(f"Employee {employee.id} is logged in at the workbench no. {self.number}")
         self._associated_agent.execute_state(State.State1)
 
     def end_shift(self) -> None:
@@ -92,7 +98,6 @@ class WorkBench:
             )
             raise EmployeeUnauthorizedError(error_message)
         else:
-            self.employee.is_logged_in = False
             self.employee = None
 
         self._associated_agent.execute_state(State.State0)
@@ -106,7 +111,7 @@ class WorkBench:
         )
 
         # check if employee is logged in
-        if not (self.employee and self.employee.is_logged_in):
+        if self.employee is None:
             message = f"Cannot start an operation: No employee is logged in at the Workbench {self.number}"
             raise EmployeeUnauthorizedError(message)
 
@@ -143,4 +148,4 @@ class WorkBench:
             message = f"Unit with int. id {unit_internal_id} is not associated with the Workbench no.{self.number}"
             logging.error(message)
             logging.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
-            raise ValueError(message)
+            raise UnitNotFoundError(message)

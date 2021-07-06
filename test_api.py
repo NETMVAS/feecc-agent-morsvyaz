@@ -1,27 +1,7 @@
-import os
 import time
-from subprocess import Popen, PIPE, STDOUT
 
 import requests
 
-
-# def start_server() -> Popen:
-#     """start the hub server"""
-#     # clear old logs
-#     log_file_path: str = "hub.log"
-#
-#     # if os.path.exists(log_file_path):
-#     #     os.remove(log_file_path)
-#     #     print(f"Removed {log_file_path}")
-#
-#     command = "python app.py"
-#     _server_thread: Popen = Popen(command, shell=True, stdout=PIPE, stderr=STDOUT)
-#     print("Started server")
-#     return _server_thread
-
-
-# start the hub server
-# server_thread: Popen = start_server()
 test_server = "http://127.0.0.1:5000"
 
 
@@ -144,7 +124,3 @@ def test_workbench_status_handler():
 
     assert status_resp.ok
     assert status_resp.json() is not None, f"{status_resp.json()}"
-
-
-# end server
-# server_thread.terminate()

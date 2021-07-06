@@ -8,7 +8,6 @@ class Employee:
         self.id: str = rfid_card_id
         self.name: str = name
         self.position: str = position
-        self.is_logged_in: bool = False
         logging.info(f"Initialized Employee with id {self.id}, data: {self.data}")
 
     @property

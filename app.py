@@ -11,7 +11,6 @@ from feecc_hub.Hub import Hub
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.exceptions import (
-    UnitNotFoundError,
     WorkbenchNotFoundError,
     EmployeeNotFoundError,
     EmployeeUnauthorizedError,
@@ -91,14 +90,8 @@ class UnitStartRecordHandler(Resource):
         request_payload: tp.Dict[str, tp.Any] = request.get_json()  # type:ignore
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
-                request_payload["workbench_no"]
-            )
-            unit: tp.Optional[Unit] = hub.get_unit_by_internal_id(unit_internal_id)
-
-            if unit is None:
-                err_msg = f"No unit with internal id {unit_internal_id}"
-                raise ValueError(err_msg)
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
+            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
 
             if workbench is None:
                 err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
@@ -135,16 +128,10 @@ class UnitEndRecordHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            workbench: tp.Optional[WorkBench] = hub.get_workbench_by_number(
-                request_payload["workbench_no"]
-            )
-
-            if workbench is None:
-                err_msg = f"Associated workbench not found {request_payload['workbench_no']}"
-                raise ValueError(err_msg)
-
+            workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
             workbench.end_operation(unit_internal_id)
             return Response(status=200, response=json.dumps({"status": True, "comment": "ok"}))
+
         except Exception as e:
             logging.error(f"Couldn't handle end record request. An error occurred: {e}")
             return Response(
@@ -167,12 +154,9 @@ class UnitUploadHandler(Resource):
         logging.debug(request_payload)
 
         try:
-            unit: tp.Optional[Unit] = hub.get_unit_by_internal_id(unit_internal_id)
+            unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+            unit.upload()
 
-            if unit is None:
-                raise UnitNotFoundError(f"No open unit with int. id {unit_internal_id}")
-            else:
-                unit.upload()
             return Response(
                 response=json.dumps(
                     {

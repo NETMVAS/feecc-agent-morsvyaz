@@ -11,7 +11,7 @@ from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
 from ._Types import Config
-from .exceptions import EmployeeNotFoundError, WorkbenchNotFoundError
+from .exceptions import EmployeeNotFoundError, WorkbenchNotFoundError, UnitNotFoundError
 
 
 class Hub:
@@ -102,14 +102,14 @@ class Hub:
         self._units.append(unit)
         return unit.internal_id
 
-    def get_unit_by_internal_id(self, unit_internal_id: str) -> tp.Optional[Unit]:
+    def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         for unit in self._units:
             if unit.internal_id == unit_internal_id:
                 return unit
 
-        logging.error(f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?")
-        return None
+        message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
+        raise UnitNotFoundError(message)
 
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
