@@ -15,7 +15,7 @@ class Barcode:
 
         try:
             self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
-            self.barcode_path: str = self.save_barcode(self.barcode)
+            self.save_barcode(self.barcode)
         except Exception as E:
             logging.error(f"Barcode error: {E}")
 

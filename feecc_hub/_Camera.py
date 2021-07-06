@@ -15,9 +15,6 @@ class Camera:
 
         Class description. On initiating state some attributes and methods to be described below
         """
-        self.qrpic = (
-            None  # future path to qr-code picture file. This will be used to create a labels
-        )
         self.keyword = (
             None  # shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
         )
