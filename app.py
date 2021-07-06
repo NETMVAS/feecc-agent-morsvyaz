@@ -31,7 +31,9 @@ if tp.TYPE_CHECKING:
 
 # set up logging
 logging.basicConfig(
-    level=logging.DEBUG, filename="hub.log", format="%(levelname)s (%(asctime)s): %(message)s"
+    level=logging.DEBUG,
+    filename="hub.log",
+    format="%(levelname)s (%(asctime)s) [%(module)s:%(funcName)s]: %(message)s",
 )
 
 # global variables
@@ -281,4 +283,4 @@ if __name__ == "__main__":
     # start the server
     host: str = hub.config["api_server"]["ip"]
     port: int = hub.config["api_server"]["port"]
-    # uvicorn.run("app:api", host=host, port=port)
+    uvicorn.run("app:api", host=host, port=port)
