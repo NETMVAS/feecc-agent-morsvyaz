@@ -255,7 +255,7 @@ def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
     response_model=WorkbenchOut,
     response_model_include={"status", "comment"},
 )
-def get(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
+def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
     """handle providing status of the given Workbench"""
     # find the WorkBench with the provided number
     try:
