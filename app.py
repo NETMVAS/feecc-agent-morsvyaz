@@ -252,10 +252,8 @@ def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
 
 @api.get(
     "/api/workbench/{workbench_no}/status",
-    response_model=WorkbenchOut,
-    response_model_include={"status", "comment"},
 )
-def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
+def get(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
     """handle providing status of the given Workbench"""
     # find the WorkBench with the provided number
     try:
@@ -283,4 +281,4 @@ if __name__ == "__main__":
     # start the server
     host: str = hub.config["api_server"]["ip"]
     port: int = hub.config["api_server"]["port"]
-    uvicorn.run("app:api", host=host, port=port)
+    # uvicorn.run("app:api", host=host, port=port)
