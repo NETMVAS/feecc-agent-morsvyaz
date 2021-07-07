@@ -63,17 +63,7 @@ def end_session() -> None:
 @api.post("/api/unit/new", response_model=UnitOut)
 def create_unit(workbench: WorkbenchData) -> tp.Dict[str, tp.Any]:
     """handle new Unit creation"""
-    try:
-        workbench_no: int = workbench.workbench_no
-        logging.debug(f"Received a request to create a new Unit from workbench no. {workbench_no}")
-
-    except Exception as E:
-        logging.error(
-            f"Can't handle the request. Request payload: {workbench.json()}. Exception occurred: {E}"
-        )
-        response = UnitOut(status=False, comment="Can't handle request", unit_internal_id="")
-        return response.dict()  # type : ignore
-
+    logging.debug(f"Got request at /api/unit/new with payload: {workbench.dict()}")
     global hub
 
     try:
@@ -101,6 +91,10 @@ def unit_start_record(
     """handle start recording operation on a Unit"""
     global hub
     request_payload: tp.Dict[str, tp.Any] = workbench_details.dict()
+
+    logging.debug(
+        f"Got request at /api/unit/{unit_internal_id}/start with payload:" f" {request_payload}"
+    )
 
     try:
         workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
@@ -132,13 +126,19 @@ def unit_stop_record(
     global hub
     request_payload = workbench_data.dict()
 
-    logging.info(f"Received a request to end record for unit with int. id {unit_internal_id}")
-    logging.debug(request_payload)
+    logging.debug(
+        f"Got request at /api/unit/{unit_internal_id}/end with payload:" f" {request_payload}"
+    )
 
     try:
-        workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
-        workbench.end_operation(unit_internal_id)
-        return {"status": True, "comment": "ok"}
+        workbench_no: int = request_payload["workbench_no"]
+        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = (
+            request_payload["additional_info"] or None
+        )
+        workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
+        workbench.end_operation(unit_internal_id, additional_info)
+        message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
+        return {"status": True, "comment": message}
 
     except Exception as e:
         logging.error(f"Couldn't handle end record request. An error occurred: {e}")
@@ -151,8 +151,9 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> tp.Di
     global hub
     request_payload = workbench.dict()
 
-    logging.info(f"Received a request to upload unit with int. id {unit_internal_id}")
-    logging.debug(request_payload)
+    logging.debug(
+        f"Got request at /api/unit/{unit_internal_id}/upload with payload:" f" {request_payload}"
+    )
 
     try:
         unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
@@ -173,8 +174,7 @@ def log_in_employee(employee_data: EmployeeDetails) -> tp.Dict[str, tp.Any]:
     global hub
     request_payload = employee_data.dict()
 
-    logging.info("Handling logging in the employee")
-    logging.debug(request_payload)
+    logging.debug(f"Got request at /api/employee/log-in with payload:" f" {request_payload}")
 
     try:
         workbench_no: int = int(request_payload["workbench_no"])
@@ -222,8 +222,7 @@ def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
     global hub
     request_payload = employee.dict()
 
-    logging.info("Handling logging out the employee")
-    logging.debug(request_payload)
+    logging.debug(f"Got request at /api/employee/log-out with payload:" f" {request_payload}")
 
     try:
         workbench: WorkBench = hub.get_workbench_by_number(int(request_payload["workbench_no"]))

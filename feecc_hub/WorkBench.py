@@ -138,11 +138,13 @@ class WorkBench:
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
 
-    def end_operation(self, unit_internal_id: str) -> None:
+    def end_operation(
+        self, unit_internal_id: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+    ) -> None:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self.unit_in_operation:
-            self._associated_agent.execute_state(State.State3)
+            self._associated_agent.execute_state(State.State3, True, additional_info)
 
         else:
             message = f"Unit with int. id {unit_internal_id} is not associated with the Workbench no.{self.number}"

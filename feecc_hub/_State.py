@@ -36,7 +36,8 @@ class State(ABC):
             return -1
 
     @abstractmethod
-    def run(self) -> None:
+    @tp.no_type_check
+    def run(self, *args, **kwargs) -> None:
         """state action executor (to be overridden)"""
         raise NotImplementedError
 
@@ -141,7 +142,7 @@ class State3(State):
             "at state 3 Unit is wrapped up, it's passport is published online"
         )
 
-    def run(self) -> None:
+    def run(self, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None) -> None:
         # stop recording and save the file
         if self._context.associated_camera is not None:
             self._context.latest_record_filename = self._context.associated_camera.stop_record()
@@ -159,7 +160,7 @@ class State3(State):
         ipfs_hashes: tp.List[str] = [ipfs_hash] if ipfs_hash is not None else []
 
         # add video IPFS hash to the passport
-        self._context.associated_unit.end_session(ipfs_hashes)
+        self._context.associated_unit.end_session(ipfs_hashes, additional_info)
         self._context.associated_unit = None
 
         # change own state back to 0

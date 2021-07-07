@@ -58,7 +58,9 @@ class Agent:
     def config(self) -> Config:
         return self._workbench.config
 
-    def execute_state(self, state: tp.Type[State], background: bool = True) -> None:
+    def execute_state(
+        self, state: tp.Type[State], background: bool = True, *args: tp.Any, **kwargs: tp.Any
+    ) -> None:
         """execute provided state in the background"""
         self._state = state(self)
         if self._state is None:
@@ -69,7 +71,7 @@ class Agent:
         if background:
             # execute state in the background
             logging.debug(f"Trying to execute state: {state}")
-            self._state_thread = threading.Thread(target=self._state.run)
+            self._state_thread = threading.Thread(target=self._state.run, args=args, kwargs=kwargs)
             self._state_thread.start()
         else:
-            self._state.run()
+            self._state.run(*args, **kwargs)
