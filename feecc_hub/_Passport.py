@@ -38,7 +38,7 @@ class Passport:
             if prod_stage.video_hashes is not None:
                 stage["Видеозаписи процесса сборки в IPFS"] = prod_stage.video_hashes
 
-            if prod_stage.additional_info is not None:
+            if prod_stage.additional_info:
                 stage["Дополнительная информация"] = prod_stage.additional_info
 
             biography.append(stage)
