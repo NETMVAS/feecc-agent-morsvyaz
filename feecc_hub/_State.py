@@ -4,6 +4,7 @@ import logging
 import re
 import typing as tp
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 from . import _Printer as Printer
 from . import _image_generation as image_generation
@@ -11,6 +12,7 @@ from . import _short_url_generator as url_generator
 
 if tp.TYPE_CHECKING:
     from ._Agent import Agent
+    from .Unit import Unit
 
 
 class State(ABC):
@@ -143,6 +145,14 @@ class State3(State):
         )
 
     def run(self, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None) -> None:
+
+        # make a copy of unit to work with securely in another thread
+        if self._context.associated_unit is None:
+            raise ValueError("No context associated unit found")
+        else:
+            unit: Unit = deepcopy(self._context.associated_unit)
+            self._context.associated_unit = None
+
         # stop recording and save the file
         if self._context.associated_camera is not None:
             self._context.latest_record_filename = self._context.associated_camera.stop_record()
@@ -154,14 +164,10 @@ class State3(State):
             keyword=self._context.latest_record_short_link.split("/")[-1],
         )
 
-        if self._context.associated_unit is None:
-            raise ValueError("No context associated unit found")
-
         ipfs_hashes: tp.List[str] = [ipfs_hash] if ipfs_hash is not None else []
 
         # add video IPFS hash to the passport
-        self._context.associated_unit.end_session(ipfs_hashes, additional_info)
-        self._context.associated_unit = None
+        unit.end_session(ipfs_hashes, additional_info)
 
         # change own state back to 0
         self._context.execute_state(State0, background=False)
