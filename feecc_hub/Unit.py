@@ -81,7 +81,8 @@ class Unit:
     ) -> None:
         """begin the provided operation and save data about it"""
         logging.info(
-            f"Starting production stage {production_stage_name} for unit with int. id {self.internal_id}"
+            f"Starting production stage {production_stage_name} for unit with int. id "
+            f"{self.internal_id}, additional info {additional_info}"
         )
 
         operation = ProductionStage(

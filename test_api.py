@@ -47,7 +47,11 @@ def test_unit_record_logged_in_employee():
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
         test_server + f"/api/unit/{unit_id}/start",
-        json={"workbench_no": 1, "production_stage_name": "packing", "additional_info": {}},
+        json={
+            "workbench_no": 1,
+            "production_stage_name": "packing",
+            "additional_info": {"additional": "info 1"},
+        },
     )
 
     assert resp.status_code == 200, f"{resp.json()}"
@@ -56,7 +60,34 @@ def test_unit_record_logged_in_employee():
 
 def test_unit_stop_record_logged_employee():
     """Test to check if recording could be stopped when employee is logged in"""
-    time.sleep(5)
+    unit_id = unit.json()["unit_internal_id"]
+    resp = requests.post(
+        test_server + f"/api/unit/{unit_id}/end",
+        json={"workbench_no": 1, "additional_info": {"test": "test"}},
+    )
+
+    assert resp.status_code == 200, f"{resp.json()}"
+    assert resp.json()["status"] is True
+
+
+def test_unit_record_second_stage():
+    """Test to check if recording could be started when employee is logged in"""
+    unit_id = unit.json()["unit_internal_id"]
+    resp = requests.post(
+        test_server + f"/api/unit/{unit_id}/start",
+        json={
+            "workbench_no": 1,
+            "production_stage_name": "second",
+            "additional_info": {"additional": "info"},
+        },
+    )
+
+    assert resp.status_code == 200, f"{resp.json()}"
+    assert resp.json()["status"] is True
+
+
+def test_unit_stop_record_second_stage():
+    """Test to check if recording could be stopped when employee is logged in"""
     unit_id = unit.json()["unit_internal_id"]
     resp = requests.post(
         test_server + f"/api/unit/{unit_id}/end",

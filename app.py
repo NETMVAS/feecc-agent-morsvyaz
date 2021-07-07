@@ -252,6 +252,9 @@ def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
 def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
     """handle providing status of the given Workbench"""
     # find the WorkBench with the provided number
+
+    logging.debug(f"Got request at /api/workbench/{workbench_no}/status")
+
     try:
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
     except Exception as E:

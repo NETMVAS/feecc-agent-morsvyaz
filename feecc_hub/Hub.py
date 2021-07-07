@@ -21,6 +21,7 @@ class Hub:
     """
 
     def __init__(self) -> None:
+        logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._units: tp.List[Unit] = self._unshelve_units()
