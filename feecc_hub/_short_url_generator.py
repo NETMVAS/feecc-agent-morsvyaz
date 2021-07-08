@@ -27,11 +27,7 @@ def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
     payload = ""  # payload. Server creates a short url and returns it as a response
 
     try:
-        # response = requests.request(
-        #     "GET", url, data=payload, params=querystring
-        # )  # get the created url keyword.
         response = requests.get(url, data=payload, params=querystring)
-
         logging.debug(response.text)
         keyword = response.json()["url"]["keyword"]
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
@@ -39,7 +35,7 @@ def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
         logging.debug(response.json())
         return keyword, link
     except Exception as e:
-        logging.error("Failed to create URL, replaced by url.today/55. Error: ", e)
+        logging.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
         return "55", "url.today/55"
         # time to time creating url fails. To go on just set a dummy url and keyword
 
