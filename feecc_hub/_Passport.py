@@ -20,7 +20,9 @@ class Passport:
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
         )
 
-    def _construct_passport_dict(self) -> tp.Dict[str, tp.Any]:
+    def _construct_passport_dict(
+        self, ipfs_gateway: str = "https://gateway.ipfs.io/ipfs/"
+    ) -> tp.Dict[str, tp.Any]:
         """
         form a nested dictionary containing all the unit
         data to dump it into a passport in a human friendly form
@@ -36,7 +38,10 @@ class Passport:
             }
 
             if prod_stage.video_hashes is not None:
-                stage["Видеозаписи процесса сборки в IPFS"] = prod_stage.video_hashes
+                video_links: tp.List[str] = [
+                    ipfs_gateway + hash_ for hash_ in prod_stage.video_hashes
+                ]
+                stage["Видеозаписи процесса сборки в IPFS"] = video_links
 
             if prod_stage.additional_info:
                 stage["Дополнительная информация"] = prod_stage.additional_info
