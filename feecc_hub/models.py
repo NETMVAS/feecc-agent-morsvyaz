@@ -3,6 +3,10 @@ import typing as tp
 from pydantic import BaseModel
 
 
+class NewUnitData(BaseModel):
+    unit_type: str
+
+
 class WorkbenchData(BaseModel):
     workbench_no: int
 

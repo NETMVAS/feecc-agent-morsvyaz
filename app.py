@@ -15,6 +15,7 @@ from feecc_hub.exceptions import (
     EmployeeUnauthorizedError,
 )
 from feecc_hub.models import (
+    NewUnitData,
     WorkbenchData,
     WorkbenchExtraDetailsWithoutStage,
     WorkbenchExtraDetails,
@@ -61,13 +62,13 @@ def end_session() -> None:
 
 
 @api.post("/api/unit/new", response_model=UnitOut)
-def create_unit(workbench: WorkbenchData) -> tp.Dict[str, tp.Any]:
+def create_unit(payload: NewUnitData) -> tp.Dict[str, tp.Any]:
     """handle new Unit creation"""
-    logging.debug(f"Got request at /api/unit/new with payload: {workbench.dict()}")
+    logging.debug(f"Got request at /api/unit/new with payload: {payload.dict()}")
     global hub
 
     try:
-        new_unit_internal_id: str = hub.create_new_unit()
+        new_unit_internal_id: str = hub.create_new_unit(payload.unit_type)
         response = UnitOut(
             status=True,
             comment="New unit created successfully",

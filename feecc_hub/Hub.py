@@ -97,9 +97,9 @@ class Hub:
         logging.error(message)
         raise WorkbenchNotFoundError(message)
 
-    def create_new_unit(self) -> str:
+    def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
-        unit = Unit(self.config)
+        unit = Unit(self.config, unit_type)
         self._units.append(unit)
         return unit.internal_id
 

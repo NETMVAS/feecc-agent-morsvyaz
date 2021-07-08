@@ -5,8 +5,8 @@ from datetime import datetime as dt
 from uuid import uuid4
 
 from . import _external_io_operations as external_io
-from ._Barcode import Barcode
 from .Employee import Employee
+from ._Barcode import Barcode
 from ._Passport import Passport
 from ._Types import Config
 
@@ -24,13 +24,13 @@ class ProductionStage:
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    def __init__(self, config: Config, uuid: str = "") -> None:
+    def __init__(self, config: Config, model: str, uuid: str = "") -> None:
         self._config: Config = config
 
         # product data
         self.uuid: str = uuid or self._generate_uuid()
         self.employee: tp.Optional[Employee] = None
-        self.model: str = ""
+        self.model: str = model
         self.unit_biography: tp.List[ProductionStage] = []
         self._keyword: str = ""
         self._associated_passport: Passport = Passport(self)
