@@ -7,7 +7,7 @@ import typing as tp
 import yaml
 
 if tp.TYPE_CHECKING:
-    from .Unit import Unit
+    from .Unit import Unit, ProductionStage
 
 
 class Passport:
@@ -20,42 +20,42 @@ class Passport:
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
         )
 
-    def _construct_passport_dict(
-        self, ipfs_gateway: str = "https://gateway.ipfs.io/ipfs/"
+    @staticmethod
+    def _construct_stage_dict(
+        prod_stage: ProductionStage, ipfs_gateway: str = "https://gateway.ipfs.io/ipfs/"
     ) -> tp.Dict[str, tp.Any]:
+        stage: tp.Dict[str, tp.Any] = {
+            "Наименование": prod_stage.name,
+            "Код сотрудника": prod_stage.employee_name,
+            "Время начала": prod_stage.session_start_time,
+            "Время окончания": prod_stage.session_end_time,
+        }
+
+        if prod_stage.video_hashes is not None:
+            video_links: tp.List[str] = [ipfs_gateway + hash_ for hash_ in prod_stage.video_hashes]
+            stage["Видеозаписи процесса сборки в IPFS"] = video_links
+
+        if prod_stage.additional_info:
+            stage["Дополнительная информация"] = prod_stage.additional_info
+
+        return stage
+
+    def _construct_passport_dict(self) -> tp.Dict[str, tp.Any]:
         """
         form a nested dictionary containing all the unit
         data to dump it into a passport in a human friendly form
         """
-        biography: tp.List[tp.Dict[str, tp.Any]] = []
-
-        for prod_stage in self._unit.unit_biography:
-            stage: tp.Dict[str, tp.Any] = {
-                "Этап производства": prod_stage.production_stage_name,
-                "Сотрудник": prod_stage.employee_name,
-                "Время начала": prod_stage.session_start_time,
-                "Время окончания": prod_stage.session_end_time,
-            }
-
-            if prod_stage.video_hashes is not None:
-                video_links: tp.List[str] = [
-                    ipfs_gateway + hash_ for hash_ in prod_stage.video_hashes
-                ]
-                stage["Видеозаписи процесса сборки в IPFS"] = video_links
-
-            if prod_stage.additional_info:
-                stage["Дополнительная информация"] = prod_stage.additional_info
-
-            biography.append(stage)
-
+        biography: tp.List[tp.Dict[str, tp.Any]] = [
+            self._construct_stage_dict(prod_stage) for prod_stage in self._unit.unit_biography
+        ]
         passport_dict = {
             "Уникальный номер паспорта изделия": self._unit.uuid,
-            "Модель изделия:": self._unit.model,
+            "Модель изделия": self._unit.model,
             "Этапы производства": biography,
         }
 
         logging.debug(
-            f"Constructed passport dict for the unit with int. id {self._unit.internal_id}:\n{passport_dict}"
+            f"Constructed passport dict for unit with id {self._unit.internal_id}:\n{passport_dict}"
         )
         return passport_dict
 
