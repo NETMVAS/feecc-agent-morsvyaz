@@ -1,0 +1,6 @@
+[flake8]
+count = true
+exit_zero = true
+max_line_length = 125
+exclude = .venv, build
+ignore = W605
