@@ -11,7 +11,8 @@ class VideoEditor:
         video_path: str, intro_path: str = "media/intro.mp4", delete_source: bool = False
     ) -> str:
         """
-        concatenating two videos (intro with the main video) if needed. Intro is to be placed in media folder.
+        concatenating two videos (intro with the main video) if needed.
+        Intro is to be placed in media folder.
         """
         logging.info(f"Concatenating video {video_path} with intro {intro_path}")
 
@@ -32,7 +33,7 @@ class VideoEditor:
         extension = video_path.split(".")[-1]
         concat_filename = f"{filename}_concatenated.{extension}"
         concat_command = f"ffmpeg -f concat -safe 0 -i output/vidlist.txt -c copy {concat_filename}"
-        # line looks like: ffmpeg -f concat -safe 0 -i vidlist.txt -c copy output.mp4. More on ffmpeg.org
+        # looks like: ffmpeg -f concat -safe 0 -i vidlist.txt -c copy output.mp4. More on ffmpeg.org
 
         concat_process = subprocess.Popen(
             "exec " + concat_command,
@@ -47,7 +48,7 @@ class VideoEditor:
 
         concat_process.stdout.readline()  # wait till the process finishes
 
-        # remove source files in necessary
+        # remove source files if necessary
         if delete_source:
             os.remove(video_path)
 
