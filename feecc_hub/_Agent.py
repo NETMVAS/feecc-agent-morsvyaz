@@ -18,7 +18,7 @@ class Agent:
     """Handles agent's state management and high level operation"""
 
     def __init__(self, workbench: WorkBench) -> None:
-        """agent is initialized with state 0 and has an instance of Passport and Camera associated with it"""
+        """agent has an instance of Passport and Camera associated with it"""
         self._workbench: WorkBench = workbench
         self._state: tp.Optional[State] = None
         self._state_thread_list: tp.List[threading.Thread] = []
@@ -41,16 +41,16 @@ class Agent:
         self._state_thread_list.append(state_thread)
 
     @property
-    def state_no(self) -> int:
+    def state_name(self) -> str:
         if self._state is None:
-            return -1
+            return ""
         else:
-            return int(self._state.number)
+            return self._state.name
 
     @property
     def state_description(self) -> str:
         if self._state is not None:
-            return str(self._state.state_description)
+            return str(self._state.description)
         else:
             return ""
 

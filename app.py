@@ -266,7 +266,7 @@ def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]
 
     workbench_status_dict: tp.Dict[str, tp.Any] = {
         "workbench_no": workbench.number,
-        "state": workbench.state_number,
+        "state": workbench.state_name,
         "state_description": workbench.state_description,
         "employee_logged_in": bool(employee),
         "employee": employee_data,

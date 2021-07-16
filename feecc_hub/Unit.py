@@ -1,5 +1,6 @@
 import logging
 import typing as tp
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime as dt
 from uuid import uuid4
@@ -13,12 +14,18 @@ from ._Types import Config
 
 @dataclass
 class ProductionStage:
-    production_stage_name: str
+    name: str
     employee_name: str
     session_start_time: str
-    session_end_time: str
+    session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+
+    @staticmethod
+    def timestamp() -> str:
+        """generate formatted timestamp for the invocation moment"""
+        timestamp: str = dt.now().strftime("%d-%m-%Y %H:%M:%S")
+        return timestamp
 
 
 class Unit:
@@ -67,12 +74,6 @@ class Unit:
     def _generate_uuid() -> str:
         return uuid4().hex
 
-    @staticmethod
-    def _current_timestamp() -> str:
-        """generate formatted timestamp for the invocation moment"""
-        timestamp: str = dt.now().strftime("%d-%m-%Y %H:%M:%S")
-        return timestamp
-
     def start_session(
         self,
         production_stage_name: str,
@@ -86,10 +87,9 @@ class Unit:
         )
 
         operation = ProductionStage(
-            production_stage_name=production_stage_name,
+            name=production_stage_name,
             employee_name=employee_code_name,
-            session_start_time=self._current_timestamp(),
-            session_end_time=self._current_timestamp(),
+            session_start_time=ProductionStage.timestamp(),
             additional_info=additional_info,
         )
 
@@ -101,23 +101,31 @@ class Unit:
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
-        """wrap up the session when video recording stops and save video data as well as session end timestamp"""
+        """
+        wrap up the session when video recording stops and save video data
+        as well as session end timestamp
+        """
         if self.current_operation is None:
             raise ValueError("No ongoing operations found")
 
-        self.current_operation.session_end_time = self._current_timestamp()
+        logging.info(f"Ending production stage {self.current_operation.name}")
+        operation = deepcopy(self.current_operation)
+        operation.session_end_time = ProductionStage.timestamp()
 
         if video_hashes:
-            self.current_operation.video_hashes = video_hashes
+            operation.video_hashes = video_hashes
 
         if additional_info:
-            if self.current_operation.additional_info is not None:
-                self.current_operation.additional_info = {
-                    **self.current_operation.additional_info,
+            if operation.additional_info is not None:
+                operation.additional_info = {
+                    **operation.additional_info,
                     **additional_info,
                 }
             else:
-                self.current_operation.additional_info = additional_info
+                operation.additional_info = additional_info
+
+        self.unit_biography[-1] = operation
+        logging.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
 
         self._associated_passport.save()
         self.employee = None

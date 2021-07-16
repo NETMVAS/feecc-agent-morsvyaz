@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import logging
-import re
 import typing as tp
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from . import _Printer as Printer
-from . import _image_generation as image_generation
-from . import _short_url_generator as url_generator
+from . import (
+    _Printer as Printer,
+    _image_generation as image_generation,
+    _short_url_generator as url_generator,
+)
 
 if tp.TYPE_CHECKING:
     from ._Agent import Agent
+    from .Employee import Employee
     from .Unit import Unit
 
 
@@ -20,7 +22,6 @@ class State(ABC):
 
     def __init__(self, context: Agent) -> None:
         """:param context: object of type Agent which executes the provided state"""
-        self.state_description: str = "Abstract State Object"
         self._context: Agent = context
 
     @property
@@ -28,14 +29,9 @@ class State(ABC):
         return self.__class__.__name__
 
     @property
-    def number(self) -> int:
-        """extract own state number from the class name"""
-        try:
-            state_no = re.findall("\d+", self.name)[0]
-            return int(state_no)
-        except IndexError:
-            logging.error(f"Name of the state '{self.name}' contains no digits. Rename the class.")
-            return -1
+    def description(self) -> tp.Optional[str]:
+        """returns own docstring which describes the state"""
+        return self.__doc__
 
     @abstractmethod
     @tp.no_type_check
@@ -44,50 +40,68 @@ class State(ABC):
         raise NotImplementedError
 
 
-class State0(State):
-    """at state 0 agent awaits for an incoming RFID event and is practically sleeping"""
+class AwaitLogin(State):
+    """
+    State when the workbench is empty and waiting for an employee authorization
+    """
 
-    def __init__(self, context: Agent) -> None:
-        super().__init__(context)
-        self.state_description: str = (
-            "At state 0 agent awaits for an incoming RFID event and is practically sleeping"
+    def run(self) -> None:
+        pass
+
+
+class AuthorizedIdling(State):
+    """
+    State when an employee was authorized at the workbench but doing nothing
+    """
+
+    def run(self) -> None:
+        pass
+
+
+class UnitDataGathering(State):
+    """
+    State when data is being gathered for creating new unit
+    (optional if workbench isn't creating units)
+    """
+
+    def run(self) -> None:
+        pass
+
+
+class UnitInitialization(State):
+    """
+    State when new unit being created
+    (optional if workbench isn't creating units)
+    """
+
+    def run(self) -> None:
+        pass
+
+
+class ProductionStageStarting(State):
+
+    """
+    State when production stage being started
+    """
+
+    def run(
+        self,
+        unit: Unit,
+        employee: Employee,
+        production_stage_name: str,
+        additional_info: tp.Dict[str, tp.Any],
+    ) -> None:
+        # assign unit
+        self._context.associated_unit = unit
+
+        # assign employee to unit
+        self._context.associated_unit.employee = employee
+
+        # start operation at the unit
+        self._context.associated_unit.start_session(
+            production_stage_name, employee.passport_code, additional_info
         )
 
-    def run(self) -> None:
-        pass
-
-
-class State1(State):
-    """
-    at state 1 agent awaits for an incoming RFID event OR form post, thus operation is
-    primarily done in app.py handlers, sleeping
-    """
-
-    def __init__(self, context: Agent) -> None:
-        super().__init__(context)
-        self.state_description: str = """
-            at state 1 agent awaits for an incoming RFID event OR form post, thus operation is
-            primarily done in app.py handlers, sleeping
-            """
-
-    def run(self) -> None:
-        pass
-
-
-class State2(State):
-    """
-    at state 2 agent is recording the work process using an IP camera and awaits an
-    RFID event which would stop the recording
-    """
-
-    def __init__(self, context: Agent) -> None:
-        super().__init__(context)
-        self.state_description: str = """
-            at state 2 agent is recording the work process using an IP camera and awaits an
-            RFID event which would stop the recording
-            """
-
-    def run(self) -> None:
         # start the recording in the background and send the path to the video
         try:
             unit = self._context.associated_unit
@@ -96,6 +110,7 @@ class State2(State):
                 raise ValueError("No associated unit found")
 
             passport_id = unit.uuid
+
         except AttributeError as E:
             logging.error(
                 f"Failed to start video recording: error retrieving associated passport ID.\n\
@@ -129,23 +144,24 @@ class State2(State):
         if self._context.associated_camera is not None:
             self._context.associated_camera.start_record(passport_id)
 
+        self._context.execute_state(ProductionStageOngoing, background=False)
 
-class State3(State):
+
+class ProductionStageOngoing(State):
     """
-    then the agent receives an RFID event, recording is stopped and published to IPFS.
-    Passport is dumped and also published into IPFS, it's checksum is stored in Robonomics.
-    A short link is generated for the video and gets encoded in a QR code, which is printed on a sticker.
-    When everything is done, background pinning of the files is started, own state is changed to 0.
+    State when job is ongoing
     """
 
-    def __init__(self, context: Agent) -> None:
-        super().__init__(context)
-        self.state_description: str = (
-            "at state 3 Unit is wrapped up, it's passport is published online"
-        )
+    def run(self) -> None:
+        pass
+
+
+class ProductionStageEnding(State):
+    """
+    State when production stage is being ended
+    """
 
     def run(self, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None) -> None:
-
         # make a copy of unit to work with securely in another thread
         if self._context.associated_unit is None:
             raise ValueError("No context associated unit found")
@@ -169,5 +185,16 @@ class State3(State):
         # add video IPFS hash to the passport
         unit.end_session(ipfs_hashes, additional_info)
 
-        # change own state back to 0
-        self._context.execute_state(State0, background=False)
+        # reset own state
+        self._context.execute_state(AuthorizedIdling, background=False)
+
+
+class UnitWrapUp(State):
+    """
+    State when unit data are being wrapped up
+    Uploaded to IPFS, pinned to Pinata, etc
+    (optional if workbench isn't creating units)
+    """
+
+    def run(self) -> None:
+        pass

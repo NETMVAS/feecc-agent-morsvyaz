@@ -46,7 +46,7 @@ class EmployeeOut(BaseOut):
 
 
 class WorkbenchOut(WorkbenchData):
-    state: int
+    state_name: str
     state_description: tp.Optional[str]
     employee_logged_in: bool
     employee: tp.Optional[EmployeeData]

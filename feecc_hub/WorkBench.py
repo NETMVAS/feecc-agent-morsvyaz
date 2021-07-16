@@ -52,8 +52,8 @@ class WorkBench:
         return bool(self.unit_in_operation)
 
     @property
-    def state_number(self) -> int:
-        return self._associated_agent.state_no
+    def state_name(self) -> str:
+        return self._associated_agent.state_name
 
     @property
     def state_description(self) -> str:
@@ -72,7 +72,7 @@ class WorkBench:
 
     def _get_agent(self) -> Agent:
         agent = Agent(self)
-        agent.execute_state(State.State0)
+        agent.execute_state(State.AwaitLogin)
         return agent
 
     def start_shift(self, employee: Employee) -> None:
@@ -85,11 +85,11 @@ class WorkBench:
 
         self.employee = employee
         logging.info(f"Employee {employee.id} is logged in at the workbench no. {self.number}")
-        self._associated_agent.execute_state(State.State1)
+        self._associated_agent.execute_state(State.AuthorizedIdling)
 
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
-        if self._associated_agent.state_no == 2:
+        if self._associated_agent.state_name == "ProductionStageOngoing":
             self.end_operation(self.unit_in_operation)
 
         if self.employee is None:
@@ -100,7 +100,7 @@ class WorkBench:
         else:
             self.employee = None
 
-        self._associated_agent.execute_state(State.State0)
+        self._associated_agent.execute_state(State.AwaitLogin)
 
     def start_operation(
         self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
@@ -120,19 +120,15 @@ class WorkBench:
             message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self.number}"
             raise AgentBusyError(message)
 
-        # assign unit
-        self._associated_agent.associated_unit = unit
-
-        # assign employee to unit
-        self._associated_agent.associated_unit.employee = self.employee
-
-        # start operation at the unit
-        self._associated_agent.associated_unit.start_session(
-            production_stage_name, self.employee.passport_code, additional_info
+        # start operation
+        self._associated_agent.execute_state(
+            State.ProductionStageStarting,
+            True,
+            unit,
+            self.employee,
+            production_stage_name,
+            additional_info,
         )
-
-        # start recording video
-        self._associated_agent.execute_state(State.State2)
 
         logging.info(
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
