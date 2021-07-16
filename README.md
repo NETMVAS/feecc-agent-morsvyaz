@@ -18,7 +18,7 @@
 
 Установим зависимости, необходимые для сборки некоторых используемых модулей:
 
-`sudo apt update && sudo apt install -y zlib libjpeg`
+`sudo apt update && sudo apt install -y zlib1g libjpeg-dev`
 
 Установим все необходимые зависимости и активируем виртуальное окружение:
 

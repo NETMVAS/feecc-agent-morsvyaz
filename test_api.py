@@ -186,10 +186,6 @@ def test_api_integrate() -> None:
         },
     )
 
-    check_state("ProductionStageStarting")
-
-    time.sleep(2)
-
     check_state("ProductionStageOngoing")
 
     assert unit_start_resp.json()[
@@ -211,8 +207,6 @@ def test_api_integrate() -> None:
         TEST_SERVER + f"/api/unit/{test_unit_id}/upload",
         json={"workbench_no": 2},
     )
-
-    # check_state("UnitWrapUp")
 
     assert unit_stop_resp.json()[
         "status"
