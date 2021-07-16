@@ -2,9 +2,15 @@ import os
 import time
 import typing as tp
 from datetime import datetime as dt
+from math import floor
 
 import qrcode
 from PIL import Image, ImageOps, ImageDraw, ImageFont
+
+# color values
+color = tp.Tuple[int, int, int]
+WHITE: color = (255, 255, 255)
+BLACK: color = (0, 0, 0)
 
 
 def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
@@ -58,19 +64,10 @@ def create_qr(link: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
 
 
 def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
-    """
-    :param config: dictionary containing all the configurations
-    :type config: dict
-    :return: full filename of a resulted qr-code
-    :rtype: str
-
-    This is a qr-creating submodule. Inserts a robonomics logo inside the qr and adds logos aside if required
-    """
-    # figure out the filename
-    tag_timestamp = dt.now().strftime("%d.%m.%Y")
-    timestamp_enabled = config["print_security_tag"]["enable_timestamp"]
-
-    dir_ = "output/seal_tags"
+    """generate a custom seal tag with required parameters"""
+    timestamp_enabled: bool = config["print_security_tag"]["enable_timestamp"]
+    tag_timestamp: str = dt.now().strftime("%d.%m.%Y")
+    dir_: str = "output/seal_tags"
 
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
@@ -86,26 +83,26 @@ def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     # make a basic security tag with needed dimensions
     image_height = 200
     image_width = 554
-    seal_tag_image = Image.new(mode="RGB", size=(image_width, image_height), color=(255, 255, 255))
+    seal_tag_image = Image.new(mode="RGB", size=(image_width, image_height), color=WHITE)
     seal_tag_draw = ImageDraw.Draw(seal_tag_image)
 
     # specify fonts
     font_path = "media/helvetica-cyrillic-bold.ttf"
-    large_font = ImageFont.truetype(font=font_path, size=52)
+    font_size: int = 52
+    font = ImageFont.truetype(font=font_path, size=font_size)
 
     # add text to the image
+    upper_field: int = 30
     text = "ОПЛОМБИРОВАНО"
-    txt_w, _ = seal_tag_draw.textsize(text, large_font)
-    x = (image_width - txt_w) / 2
-    seal_tag_draw.text(xy=(x, 30), text=text, fill=(0, 0, 0), font=large_font, align="center")
+    main_txt_w, main_txt_h = seal_tag_draw.textsize(text, font)
+    x: int = floor((image_width - main_txt_w) / 2)
+    seal_tag_draw.text(xy=(x, upper_field), text=text, fill=BLACK, font=font, align="center")
 
     # add a timestamp to the seal tag if needed
     if timestamp_enabled:
-        txt_w, _ = seal_tag_draw.textsize(tag_timestamp, large_font)
-        x = (image_width - txt_w) / 2
-        seal_tag_draw.text(
-            xy=(x, 82), text=tag_timestamp, fill=(0, 0, 0), font=large_font, align="center"
-        )
+        txt_w, _ = seal_tag_draw.textsize(tag_timestamp, font)
+        xy: tp.Tuple[int, int] = floor((image_width - txt_w) / 2), (upper_field + main_txt_h)
+        seal_tag_draw.text(xy=xy, text=tag_timestamp, fill=BLACK, font=font, align="center")
 
     # save the image in the output folder
     seal_tag_image.save(seal_tag_path)
