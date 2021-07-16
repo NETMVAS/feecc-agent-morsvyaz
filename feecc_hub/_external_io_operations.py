@@ -15,8 +15,8 @@ from ._short_url_generator import update_short_url
 class File:
     """stores data about one file-like entity with related attributes"""
 
-    def __init__(self, path: str) -> None:
-        if not os.path.exists(path):
+    def __init__(self, path: str, check_presence: bool = False) -> None:
+        if check_presence and not os.path.exists(path):
             message = f"Path {path} doesn't point to an actual file"
             logging.error(message)
             raise FileNotFoundError(message)

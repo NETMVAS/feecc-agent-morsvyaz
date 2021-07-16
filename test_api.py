@@ -2,7 +2,7 @@ import time
 
 import requests
 
-TEST_SERVER = "http://127.0.0.1:8000"
+TEST_SERVER = "http://127.0.0.1:5000"
 
 
 def get_unit(server_address: str) -> requests.Response:

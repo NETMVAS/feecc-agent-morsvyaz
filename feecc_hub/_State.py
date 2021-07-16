@@ -5,7 +5,7 @@ import typing as tp
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from _external_io_operations import File
+from ._external_io_operations import File
 from . import (
     _Printer as Printer,
     _image_generation as image_generation,
