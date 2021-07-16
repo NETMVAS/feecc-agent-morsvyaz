@@ -1,3 +1,5 @@
+import time
+
 import requests
 
 TEST_SERVER = "http://127.0.0.1:5000"
@@ -24,15 +26,6 @@ def test_employee_login() -> None:
 
 
 unit = get_unit(TEST_SERVER)
-
-
-# def test_multiple_unit_creation() -> None:
-#     """Test to check if multiple units could be created"""
-#     for _ in range(3):
-#         resp = requests.post(test_server + "/api/unit/new", json={"workbench_no": 1})
-#         assert resp.json()["status"] is True
-#
-#         assert int(resp.json()["unit_internal_id"])
 
 
 def test_unit_creation() -> None:
@@ -156,3 +149,77 @@ def test_workbench_status_handler() -> None:
 
     assert status_resp.ok, f"{status_resp.json()}"
     assert status_resp.json() is not None, f"{status_resp.json()}"
+
+
+def test_api_integrate() -> None:
+    def check_state(expected: str) -> None:
+        current_state = requests.get(TEST_SERVER + "/api/workbench/1/status").json()["status"]
+        assert (
+            current_state == expected
+        ), f"Failed to assert state. expected {expected}, got {current_state}"
+
+    login_resp = requests.post(
+        TEST_SERVER + "/api/employee/log-in",
+        json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"},
+    )
+
+    check_state("AwaitLogin")
+
+    assert login_resp.json()["status"], f"Got error while logging in: {login_resp.json()}"
+
+    check_state("AuthorizedIdling")
+
+    test_unit = get_unit(TEST_SERVER)
+
+    check_state("UnitInitialization")
+
+    assert test_unit.json()["status"], f"Got error while creating unit: {test_unit.json()}"
+
+    test_unit_id = test_unit.json()["unit_internal_id"]
+
+    unit_start_resp = requests.post(
+        TEST_SERVER + f"/api/unit/{test_unit_id}/start",
+        json={
+            "workbench_no": 1,
+            "production_stage_name": "Testing API",
+            "additional_info": {"API": "Testing"},
+        },
+    )
+
+    check_state("ProductionStageStarting")
+
+    time.sleep(2)
+
+    check_state("ProductionStageOngoing")
+
+    assert unit_start_resp.json()[
+        "status"
+    ], f"Got error while starting operation: {unit_start_resp.json()}"
+
+    unit_stop_resp = requests.post(
+        TEST_SERVER + f"/api/unit/{test_unit_id}/end",
+        json={"workbench_no": 1, "additional_info": {"test": "test"}},
+    )
+
+    check_state("ProductionStageEnding")
+
+    assert unit_stop_resp.json()[
+        "status"
+    ], f"Got error while stopping operation: {unit_stop_resp.json()}"
+
+    unit_upload_resp = requests.post(
+        TEST_SERVER + f"/api/unit/{test_unit_id}/upload",
+        json={"workbench_no": 1},
+    )
+
+    check_state("UnitWrapUp")
+
+    assert unit_stop_resp.json()[
+        "status"
+    ], f"Got error while wrapping up session: {unit_upload_resp.json()}"
+
+    logout_resp = requests.post(TEST_SERVER + "/api/employee/log-out", json={"workbench_no": 1})
+
+    check_state("")
+
+    assert logout_resp.json()["AwaitLogin"]
