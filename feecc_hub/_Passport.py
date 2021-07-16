@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import typing as tp
-
+from ._external_io_operations import File
 import yaml
 
 if tp.TYPE_CHECKING:
@@ -15,7 +15,8 @@ class Passport:
 
     def __init__(self, unit: Unit) -> None:
         self._unit: Unit = unit
-        self.filename: str = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
+        path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
+        self.file: File = File(path)
         logging.info(
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
         )
@@ -67,7 +68,7 @@ class Passport:
         if not os.path.isdir("unit-passports"):
             os.mkdir("unit-passports")
 
-        with open(self.filename, "w") as passport_file:
+        with open(self.file.path, "w") as passport_file:
             yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
 
         logging.info(f"Unit passport with UUID {self._unit.uuid} has been dumped successfully")

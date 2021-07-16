@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from datetime import datetime as dt
 from uuid import uuid4
 
-from . import _external_io_operations as external_io
 from .Employee import Employee
 from ._Barcode import Barcode
 from ._Passport import Passport
 from ._Types import Config
+from ._external_io_operations import ExternalIoGateway
 
 
 @dataclass
@@ -134,5 +134,5 @@ class Unit:
 
         # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
         self._associated_passport.save()
-        gateway = external_io.ExternalIoGateway(self._config)
-        gateway.send(self._associated_passport.filename, self._keyword)
+        gateway = ExternalIoGateway(self._config)
+        gateway.send(self._associated_passport.file)

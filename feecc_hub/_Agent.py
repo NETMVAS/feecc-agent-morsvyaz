@@ -4,10 +4,10 @@ import logging
 import threading
 import typing as tp
 
-from . import _external_io_operations as external_io
 from .Unit import Unit
 from ._Camera import Camera
 from ._State import State
+from ._external_io_operations import ExternalIoGateway, File
 
 if tp.TYPE_CHECKING:
     from .WorkBench import WorkBench
@@ -22,12 +22,10 @@ class Agent:
         self._workbench: WorkBench = workbench
         self._state: tp.Optional[State] = None
         self._state_thread_list: tp.List[threading.Thread] = []
-        self.io_gateway: external_io.ExternalIoGateway = external_io.ExternalIoGateway(self.config)
+        self.io_gateway: ExternalIoGateway = ExternalIoGateway(self.config)
         self.associated_unit: tp.Optional[Unit] = None
         self.associated_camera: tp.Optional[Camera] = self._workbench.camera
-        self.latest_record_filename: str = ""
-        self.latest_record_short_link: str = ""
-        self.latest_record_qrpic_filename: str = ""
+        self.latest_video: tp.Optional[File] = None
 
     @property
     def _state_thread(self) -> tp.Optional[threading.Thread]:

@@ -5,6 +5,7 @@ import typing as tp
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
+from _external_io_operations import File
 from . import (
     _Printer as Printer,
     _image_generation as image_generation,
@@ -79,7 +80,6 @@ class UnitInitialization(State):
 
 
 class ProductionStageStarting(State):
-
     """
     State when production stage being started
     """
@@ -118,21 +118,23 @@ class ProductionStageStarting(State):
             )
             return
 
-        # generate a video short link (a dummy for now)
-        self._context.latest_record_short_link = url_generator.generate_short_url(
-            self._context.config
-        )[1]
+        if self._context.latest_video is not None:
+            # generate a video short link (a dummy for now)
+            self._context.latest_video.short_url = url_generator.generate_short_url(
+                self._context.config
+            )[1]
 
-        # generate a QR code with the short link
-        self._context.latest_record_qrpic_filename = image_generation.create_qr(
-            link=self._context.latest_record_short_link, config=self._context.config
-        )
+            # generate a QR code with the short link
+            if self._context.latest_video.short_url is not None:
+                self._context.latest_video.qrcode = image_generation.create_qr(
+                    link=self._context.latest_video.short_url, config=self._context.config
+                )
 
-        # print the QR code onto a sticker if set to do so in the config
-        if self._context.config["print_qr"]["enable"]:
-            Printer.Task(
-                picname=self._context.latest_record_qrpic_filename, config=self._context.config
-            )
+                # print the QR code onto a sticker if set to do so in the config
+                if self._context.config["print_qr"]["enable"]:
+                    Printer.Task(
+                        picname=self._context.latest_video.qrcode, config=self._context.config
+                    )
 
         # print the seal tag onto a sticker if set to do so in the config
         if self._context.config["print_security_tag"]["enable"]:
@@ -171,16 +173,17 @@ class ProductionStageEnding(State):
 
         # stop recording and save the file
         if self._context.associated_camera is not None:
-            self._context.latest_record_filename = self._context.associated_camera.stop_record()
+            self._context.latest_video = File(self._context.associated_camera.stop_record())
 
         # publish video into IPFS and pin to Pinata
         # update the short link to point to an actual recording
-        ipfs_hash = self._context.io_gateway.send(
-            filename=self._context.latest_record_filename,
-            keyword=self._context.latest_record_short_link.split("/")[-1],
-        )
+        ipfs_hashes: tp.List[str] = []
+        file = self._context.latest_video
+        if file is not None:
+            self._context.io_gateway.send(file)
 
-        ipfs_hashes: tp.List[str] = [ipfs_hash] if ipfs_hash is not None else []
+            if file.ipfs_hash is not None:
+                ipfs_hashes.append(file.ipfs_hash)
 
         # add video IPFS hash to the passport
         unit.end_session(ipfs_hashes, additional_info)
