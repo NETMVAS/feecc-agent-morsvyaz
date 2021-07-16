@@ -140,10 +140,10 @@ class WorkBench:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self.unit_in_operation:
-            self._associated_agent.execute_state(State.State3, True, additional_info)
+            self._associated_agent.execute_state(State.ProductionStageEnding, True, additional_info)
 
         else:
-            message = f"Unit with int. id {unit_internal_id} is not associated with the Workbench no.{self.number}"
+            message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"
             logging.error(message)
             logging.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
             raise UnitNotFoundError(message)
