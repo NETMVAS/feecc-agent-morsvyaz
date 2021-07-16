@@ -2,7 +2,6 @@ import os
 import time
 import typing as tp
 from datetime import datetime as dt
-from math import floor
 
 import qrcode
 from PIL import Image, ImageOps, ImageDraw, ImageFont
@@ -95,13 +94,13 @@ def create_seal_tag(config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> str:
     upper_field: int = 30
     text = "ОПЛОМБИРОВАНО"
     main_txt_w, main_txt_h = seal_tag_draw.textsize(text, font)
-    x: int = floor((image_width - main_txt_w) / 2)
+    x: int = int((image_width - main_txt_w) / 2)
     seal_tag_draw.text(xy=(x, upper_field), text=text, fill=BLACK, font=font, align="center")
 
     # add a timestamp to the seal tag if needed
     if timestamp_enabled:
         txt_w, _ = seal_tag_draw.textsize(tag_timestamp, font)
-        xy: tp.Tuple[int, int] = floor((image_width - txt_w) / 2), (upper_field + main_txt_h)
+        xy: tp.Tuple[int, int] = int((image_width - txt_w) / 2), (upper_field + main_txt_h)
         seal_tag_draw.text(xy=xy, text=tag_timestamp, fill=BLACK, font=font, align="center")
 
     # save the image in the output folder
