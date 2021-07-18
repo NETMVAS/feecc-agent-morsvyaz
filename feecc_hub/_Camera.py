@@ -6,6 +6,8 @@ import subprocess
 import time
 import typing as tp
 
+from ._external_io_operations import File
+
 
 class Camera:
     def __init__(self, config: tp.Dict[str, str]) -> None:
@@ -15,9 +17,6 @@ class Camera:
 
         Class description. On initiating state some attributes and methods to be described below
         """
-        self.keyword = (
-            None  # shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
-        )
         self.ip: str = config["ip"]  # dictionary containing all the configurations
         self.port: str = config["port"]  # port where the camera streams, required for rtsp
         self.login: str = config["login"]  # camera login to obtain access to the stream
@@ -30,17 +29,17 @@ class Camera:
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
 
-    def stop_record(self) -> str:
+    def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
         recording = self._ongoing_records.pop(-1) if self._ongoing_records else None
         logging.debug(f"Trying to stop record for {recording}")
         if not recording:
             logging.error("Could not stop record for unit: no ongoing record found")
-            return ""
+            return None
 
-        filename = recording.stop()
+        file = recording.stop()
         logging.info("Stopped record for unit")
-        return filename
+        return file
 
 
 class Recording:
@@ -52,7 +51,7 @@ class Recording:
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
         logging.debug(f"New Recording object initialized at {self}")
-        self._filename: str = self._start_record()
+        self._file: File = File(self._start_record())
 
     def _toggle_record_flag(self) -> None:
         self.recording_ongoing = not self.recording_ongoing
@@ -89,7 +88,7 @@ class Recording:
 
         return filename
 
-    def stop(self) -> str:
+    def stop(self) -> File:
         """stop recording a video"""
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
@@ -97,7 +96,7 @@ class Recording:
             self._toggle_record_flag()
             time.sleep(1)  # some time to finish the process
 
-        return self._filename
+        return self._file
 
     def _execute_ffmpeg(self, filename: str) -> None:
         """Execute ffmpeg command"""

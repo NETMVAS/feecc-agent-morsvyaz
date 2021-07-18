@@ -5,7 +5,6 @@ import typing as tp
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from ._external_io_operations import File
 from . import (
     _Printer as Printer,
     _image_generation as image_generation,
@@ -173,7 +172,7 @@ class ProductionStageEnding(State):
 
         # stop recording and save the file
         if self._context.associated_camera is not None:
-            self._context.latest_video = File(self._context.associated_camera.stop_record())
+            self._context.latest_video = self._context.associated_camera.stop_record()
 
         # publish video into IPFS and pin to Pinata
         # update the short link to point to an actual recording

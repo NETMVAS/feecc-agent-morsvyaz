@@ -39,7 +39,6 @@ class Unit:
         self.employee: tp.Optional[Employee] = None
         self.model: str = model
         self.unit_biography: tp.List[ProductionStage] = []
-        self._keyword: str = ""
         self._associated_passport: Passport = Passport(self)
 
         if self._config["print_barcode"]["enable"]:
