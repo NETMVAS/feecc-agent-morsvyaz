@@ -161,7 +161,7 @@ def test_api_integrate() -> None:
     def check_state(expected: str) -> None:
         current_state = client.get(TEST_SERVER + "/api/workbench/2/status").json()
         assert (
-                current_state["state"] == expected
+            current_state["state"] == expected
         ), f"Failed to assert state. expected {expected}, got {current_state['state']}. state: {current_state}"
         time.sleep(0.1)
 
