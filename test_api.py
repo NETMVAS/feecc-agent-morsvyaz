@@ -161,9 +161,17 @@ def test_api_integrate() -> None:
     def check_state(expected: str) -> None:
         current_state = client.get(TEST_SERVER + "/api/workbench/2/status").json()
         assert (
-            current_state["state"] == expected
+                current_state["state"] == expected
         ), f"Failed to assert state. expected {expected}, got {current_state['state']}. state: {current_state}"
         time.sleep(0.1)
+
+    def check_multiple_states(st1: str, st2: str) -> None:
+        try:
+            check_state(st1)
+        except AssertionError:
+            check_state(st2)
+        else:
+            assert None, f"Neither {st1} nor {st2} is valid"
 
     check_state("AwaitLogin")
 
@@ -178,8 +186,6 @@ def test_api_integrate() -> None:
 
     test_unit = get_unit(TEST_SERVER)
 
-    # check_state("UnitInitialization")
-
     assert test_unit.json()["status"], f"Got error while creating unit: {test_unit.json()}"
 
     test_unit_id = test_unit.json()["unit_internal_id"]
@@ -193,7 +199,7 @@ def test_api_integrate() -> None:
         },
     )
 
-    check_state("ProductionStageOngoing")
+    check_multiple_states("ProductionStageStarting", "ProductionStageOngoing")
 
     assert unit_start_resp.json()[
         "status"
