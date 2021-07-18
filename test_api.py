@@ -1,3 +1,5 @@
+import time
+
 from fastapi.testclient import TestClient
 
 from app import api
@@ -78,7 +80,7 @@ def test_unit_record_second_stage() -> None:
     )
 
     assert resp.status_code == 200, f"{resp.json()}"
-    assert resp.json()["status"] is True
+    assert resp.json()["status"] is True, f"{resp.json()}"
 
 
 def test_unit_stop_record_second_stage() -> None:
@@ -157,10 +159,11 @@ def test_workbench_status_handler() -> None:
 
 def test_api_integrate() -> None:
     def check_state(expected: str) -> None:
-        current_state = client.get(TEST_SERVER + "/api/workbench/2/status").json()["state"]
+        current_state = client.get(TEST_SERVER + "/api/workbench/2/status").json()
         assert (
-            current_state == expected
-        ), f"Failed to assert state. expected {expected}, got {current_state}"
+            current_state["state"] == expected
+        ), f"Failed to assert state. expected {expected}, got {current_state['state']}. state: {current_state}"
+        time.sleep(0.1)
 
     check_state("AwaitLogin")
 
