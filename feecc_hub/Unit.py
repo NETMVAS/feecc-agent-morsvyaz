@@ -29,6 +29,15 @@ class ProductionStage:
         timestamp: str = dt.now().strftime("%d-%m-%Y %H:%M:%S")
         return timestamp
 
+    def update_attributes(self, new_values: tp.Dict[str, tp.Any]) -> None:
+        for key, value in new_values.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                logging.error(
+                    f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}"
+                )
+
 
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
