@@ -159,7 +159,7 @@ def test_api_integrate() -> None:
     def check_state(expected: str) -> None:
         current_state = client.get(TEST_SERVER + "/api/workbench/2/status").json()
         assert (
-                current_state["state"] == expected
+            current_state["state"] == expected
         ), f"Failed to assert state. expected {expected}, got {current_state['state']}. state: {current_state}"
         time.sleep(0.1)
 
@@ -197,7 +197,9 @@ def test_api_integrate() -> None:
 
     check_multiple_states("ProductionStageStarting", "ProductionStageOngoing")
 
-    assert unit_start_resp.json()["status"], f"Got error while starting operation: {unit_start_resp.json()}"
+    assert unit_start_resp.json()[
+        "status"
+    ], f"Got error while starting operation: {unit_start_resp.json()}"
 
     unit_stop_resp = client.post(
         TEST_SERVER + f"/api/unit/{test_unit_id}/end",
@@ -206,14 +208,18 @@ def test_api_integrate() -> None:
 
     check_state("ProductionStageEnding")
 
-    assert unit_stop_resp.json()["status"], f"Got error while stopping operation: {unit_stop_resp.json()}"
+    assert unit_stop_resp.json()[
+        "status"
+    ], f"Got error while stopping operation: {unit_stop_resp.json()}"
 
     unit_upload_resp = client.post(
         TEST_SERVER + f"/api/unit/{test_unit_id}/upload",
         json={"workbench_no": 2},
     )
 
-    assert unit_stop_resp.json()["status"], f"Got error while wrapping up session: {unit_upload_resp.json()}"
+    assert unit_stop_resp.json()[
+        "status"
+    ], f"Got error while wrapping up session: {unit_upload_resp.json()}"
 
     logout_resp = client.post(TEST_SERVER + "/api/employee/log-out", json={"workbench_no": 2})
 
