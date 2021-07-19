@@ -10,6 +10,7 @@ from ._Barcode import Barcode
 from ._Passport import Passport
 from ._Types import Config
 from ._external_io_operations import ExternalIoGateway
+from .exceptions import OperationNotFoundError
 
 
 @dataclass
@@ -20,6 +21,7 @@ class ProductionStage:
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+    id: str = uuid4().hex
 
     @staticmethod
     def timestamp() -> str:
@@ -43,6 +45,14 @@ class Unit:
 
         if self._config["print_barcode"]["enable"]:
             self._print_barcode()
+
+    def production_stage(self, id_: str) -> ProductionStage:
+        """find production stage with provided ID"""
+        for stage in self.unit_biography:
+            if stage.id == id_:
+                return stage
+
+        raise OperationNotFoundError
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""

@@ -6,6 +6,10 @@ class UnitNotFoundError(Exception):
     pass
 
 
+class OperationNotFoundError(Exception):
+    pass
+
+
 class WorkbenchNotFoundError(Exception):
     pass
 
