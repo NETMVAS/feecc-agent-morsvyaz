@@ -1,7 +1,7 @@
 import logging
 import typing as tp
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime as dt
 from uuid import uuid4
 
@@ -21,7 +21,11 @@ class ProductionStage:
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
-    id: str = uuid4().hex
+    id: tp.Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.id is None:
+            self.id = uuid4().hex
 
     @staticmethod
     def timestamp() -> str:
@@ -39,18 +43,22 @@ class ProductionStage:
                 )
 
 
+@dataclass
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    def __init__(self, config: Config, model: str, uuid: str = "") -> None:
-        self._config: Config = config
+    _config: Config
+    model: str
+    uuid: str = ""
+    employee: tp.Optional[Employee] = None
+    unit_biography: tp.List[ProductionStage] = field(default_factory=list)
+    _associated_passport: tp.Optional[Passport] = None
 
-        # product data
-        self.uuid: str = uuid or self._generate_uuid()
-        self.employee: tp.Optional[Employee] = None
-        self.model: str = model
-        self.unit_biography: tp.List[ProductionStage] = []
-        self._associated_passport: Passport = Passport(self)
+    def __post_init__(self) -> None:
+        self._associated_passport = Passport(self)
+
+        if not self.uuid:
+            self.uuid = self._generate_uuid()
 
         if self._config["print_barcode"]["enable"]:
             self._print_barcode()
@@ -145,12 +153,14 @@ class Unit:
         self.unit_biography[-1] = operation
         logging.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
 
-        self._associated_passport.save()
+        if self._associated_passport is not None:
+            self._associated_passport.save()
         self.employee = None
 
     def upload(self) -> None:
 
         # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
-        self._associated_passport.save()
-        gateway = ExternalIoGateway(self._config)
-        gateway.send(self._associated_passport.file)
+        if self._associated_passport is not None:
+            self._associated_passport.save()
+            gateway = ExternalIoGateway(self._config)
+            gateway.send(self._associated_passport.file)

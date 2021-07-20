@@ -1,14 +1,17 @@
 import hashlib
 import logging
 import typing as tp
+from dataclasses import dataclass
 
 
+@dataclass(frozen=True)
 class Employee:
-    def __init__(self, rfid_card_id: str, name: str, position: str) -> None:
-        self.id: str = rfid_card_id
-        self.name: str = name
-        self.position: str = position
-        logging.info(f"Initialized Employee with id {self.id}, data: {self.data}")
+    rfid_card_id: str
+    name: str
+    position: str
+
+    def __post_init__(self) -> None:
+        logging.info(f"Initialized Employee with id {self.rfid_card_id}, data: {self.data}")
 
     @property
     def data(self) -> tp.Dict[str, str]:
@@ -26,7 +29,7 @@ class Employee:
         employee, it is safe to assume, that collision is practically impossible.
         """
 
-        employee_passport_string: str = " ".join([self.id, self.name, self.position])
+        employee_passport_string: str = " ".join([self.rfid_card_id, self.name, self.position])
         employee_passport_string_encoded: bytes = employee_passport_string.encode()
         employee_passport_code: str = hashlib.sha256(employee_passport_string_encoded).hexdigest()
         return employee_passport_code

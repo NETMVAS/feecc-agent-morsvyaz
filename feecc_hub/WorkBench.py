@@ -78,13 +78,13 @@ class WorkBench:
     def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
         if self.employee is not None:
-            message = (
-                f"Employee {employee.id} is already logged in at the workbench no. {self.number}"
-            )
+            message = f"Employee {employee.rfid_card_id} is already logged in at the workbench no. {self.number}"
             raise AgentBusyError(message)
 
         self.employee = employee
-        logging.info(f"Employee {employee.id} is logged in at the workbench no. {self.number}")
+        logging.info(
+            f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self.number}"
+        )
         self._associated_agent.execute_state(State.AuthorizedIdling)
 
     def end_shift(self) -> None:
