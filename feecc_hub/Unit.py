@@ -21,11 +21,7 @@ class ProductionStage:
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
-    id: tp.Optional[str] = None
-
-    def __post_init__(self) -> None:
-        if self.id is None:
-            self.id = uuid4().hex
+    id: str = field(default_factory=lambda: uuid4().hex)
 
     @staticmethod
     def timestamp() -> str:
