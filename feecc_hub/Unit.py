@@ -49,16 +49,13 @@ class Unit:
 
     _config: Config
     model: str
-    uuid: str = ""
+    uuid: str = field(default_factory=lambda: uuid4().hex)
     employee: tp.Optional[Employee] = None
     unit_biography: tp.List[ProductionStage] = field(default_factory=list)
     _associated_passport: tp.Optional[Passport] = None
 
     def __post_init__(self) -> None:
         self._associated_passport = Passport(self)
-
-        if not self.uuid:
-            self.uuid = self._generate_uuid()
 
         if self._config["print_barcode"]["enable"]:
             self._print_barcode()
@@ -95,10 +92,6 @@ class Unit:
     @current_operation.setter
     def current_operation(self, current_operation: ProductionStage) -> None:
         self.unit_biography.append(current_operation)
-
-    @staticmethod
-    def _generate_uuid() -> str:
-        return uuid4().hex
 
     def start_session(
         self,
