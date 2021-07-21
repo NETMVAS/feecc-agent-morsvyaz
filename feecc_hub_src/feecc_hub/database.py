@@ -12,8 +12,11 @@ Collection = collection
 class MongoDbWrapper:
     """handles interactions with MongoDB database"""
 
-    def __init__(self, username: str, password: str) -> None:
-        mongo_client: str = f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
+    def __init__(self, username: str, password: str, url: tp.Optional[str] = None) -> None:
+        mongo_client: str = (
+            url
+            or f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
+        )
         self._client: MongoClient = MongoClient(mongo_client)
         self._database = self._client["Feecc-Hub"]
 
@@ -58,10 +61,7 @@ class MongoDbWrapper:
 
     @staticmethod
     def _update_document(
-            key: str,
-            value: str,
-            new_document: Document,
-            collection_: Collection
+        key: str, value: str, new_document: Document, collection_: Collection
     ) -> None:
         """
         finds matching document in the specified collection, and replace it's data
