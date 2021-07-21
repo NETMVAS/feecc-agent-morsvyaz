@@ -6,6 +6,7 @@ from .Employee import Employee
 from dataclasses import asdict
 
 Collection = tp.Type[collection]
+Document = tp.Dict[str, tp.Any]
 
 
 class MongoDbWrapper:
@@ -22,7 +23,7 @@ class MongoDbWrapper:
         self._prod_stage_collection: Collection = self._database["Production-stages-data "]
 
     @staticmethod
-    def _upload_dict(document: tp.Dict[str, tp.Any], collection_: Collection) -> None:
+    def _upload_dict(document: Document, collection_: Collection) -> None:
         """insert a document into specified collection"""
         collection_.insert_one(document)
 
@@ -31,11 +32,11 @@ class MongoDbWrapper:
         convert an arbitrary dataclass to dictionary and insert it
         into the desired collection in the database
         """
-        dataclass_dict: tp.Dict[str, tp.Any] = asdict(dataclass)
+        dataclass_dict: Document = asdict(dataclass)
         self._upload_dict(dataclass_dict, collection_)
 
     @staticmethod
-    def _find_item(key: str, value: str, collection_: Collection) -> tp.Dict[str, tp.Any]:
+    def _find_item(key: str, value: str, collection_: Collection) -> Document:
         """
         finds one element in the specified collection, which has
         specified key matching specified value
@@ -43,7 +44,7 @@ class MongoDbWrapper:
         return collection_.find_one({key: value})  # type: ignore
 
     @staticmethod
-    def _find_many(key: str, value: str, collection_: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
+    def _find_many(key: str, value: str, collection_: Collection) -> tp.List[Document]:
         """
         finds all elements in the specified collection, which have
         specified key matching specified value
@@ -51,7 +52,7 @@ class MongoDbWrapper:
         return collection_.find({key: value})  # type: ignore
 
     @staticmethod
-    def _get_all_items_in_collection(collection_: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
+    def _get_all_items_in_collection(collection_: Collection) -> tp.List[Document]:
         """get all documents in the provided collection"""
         return collection_.find()  # type: ignore
 
