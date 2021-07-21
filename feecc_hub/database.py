@@ -56,6 +56,24 @@ class MongoDbWrapper:
         """get all documents in the provided collection"""
         return collection_.find()  # type: ignore
 
+    @staticmethod
+    def _update_document(
+            key: str,
+            value: str,
+            new_document: Document,
+            collection_: Collection
+    ) -> None:
+        """
+        finds matching document in the specified collection, and replace it's data
+        with what is provided in the new_document argument
+        """
+        collection_.find_one_and_update({key: value}, new_document)
+
+    def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
+        stage_dict: Document = asdict(updated_production_stage)
+        stage_id: str = updated_production_stage.id
+        self._update_document("id", stage_id, {"$set": stage_dict}, self._prod_stage_collection)
+
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)
 
