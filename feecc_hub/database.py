@@ -5,7 +5,7 @@ from .Unit import Unit, ProductionStage
 from .Employee import Employee
 from dataclasses import asdict
 
-Collection = tp.Type[collection]
+Collection = collection
 Document = tp.Dict[str, tp.Any]
 
 
@@ -100,6 +100,9 @@ class MongoDbWrapper:
         employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(
             self._employee_collection
         )
+        for data in employee_data:
+            del data["_id"]
+
         employees = [Employee(**data) for data in employee_data]
         return employees
 

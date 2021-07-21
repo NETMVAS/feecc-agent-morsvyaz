@@ -1,11 +1,10 @@
-import csv
 import logging
-import os
 import sys
 import typing as tp
 
 import yaml
 
+from .database import MongoDbWrapper
 from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
@@ -22,6 +21,7 @@ class Hub:
     def __init__(self) -> None:
         logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
+        self.database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._units: tp.List[Unit] = []
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
@@ -36,27 +36,28 @@ class Hub:
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
         workbench.start_shift(employee)
 
-    @staticmethod
-    def _get_employees(db_path: str = "config/employee_db.csv") -> tp.Dict[str, Employee]:
-        """load up employee database and initialize an array of Employee objects"""
-        if not os.path.exists(db_path):
-            message: str = (
-                f"File '{db_path}' is not in the working directory, cannot retrieve employee data"
-            )
-            logging.critical(message)
-            sys.exit(message)
+    def _get_database(self) -> MongoDbWrapper:
+        """establish MongoDB connection and initialize the wrapper"""
+        try:
+            username: str = self.config["mongo_db"]["username"]
+            password: str = self.config["mongo_db"]["password"]
+            wrapper: MongoDbWrapper = MongoDbWrapper(username, password)
+            return wrapper
 
+        except Exception as e:
+            message: str = f"Failed to establish database connection: {e}. Exiting."
+            logging.critical(message)
+            sys.exit()
+
+    def _get_employees(self) -> tp.Dict[str, Employee]:
+        """load up employee database and initialize an array of Employee objects"""
+        employee_list = self.database.get_all_employees()
         employees: tp.Dict[str, Employee] = {}
 
-        with open(db_path, "r", encoding="utf-8") as file:
-            employee_db = csv.reader(file)
-            next(employee_db)  # skip the header
+        for employee in employee_list:
+            employees[employee.rfid_card_id] = employee
 
-            for rfid_card_id, name, position in employee_db:
-                employee = Employee(rfid_card_id, name, position)
-                employees[rfid_card_id] = employee
-
-        logging.info(f"Initialized {len(employees.keys())} employees using {db_path}")
+        logging.info(f"Initialized {len(employees.keys())} employees")
         return employees
 
     @staticmethod
