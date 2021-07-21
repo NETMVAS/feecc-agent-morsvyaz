@@ -1,3 +1,4 @@
+from ._Types import Document
 from .exceptions import UnitNotFoundError
 import typing as tp
 from pymongo import MongoClient, collection
@@ -6,7 +7,6 @@ from .Employee import Employee
 from dataclasses import asdict
 
 Collection = collection
-Document = tp.Dict[str, tp.Any]
 
 
 class MongoDbWrapper:

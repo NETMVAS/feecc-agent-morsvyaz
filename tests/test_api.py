@@ -1,7 +1,7 @@
 import time
 
 import requests
-from app import api
+from feecc_hub_src.app import api
 from fastapi.testclient import TestClient
 
 client = TestClient(api)
