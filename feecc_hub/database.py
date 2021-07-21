@@ -1,9 +1,11 @@
 from .exceptions import UnitNotFoundError
 import typing as tp
-from pymongo import MongoClient, collection as Collection
+from pymongo import MongoClient, collection
 from .Unit import Unit, ProductionStage
 from .Employee import Employee
 from dataclasses import asdict
+
+Collection = tp.Type[collection]
 
 
 class MongoDbWrapper:
@@ -13,43 +15,45 @@ class MongoDbWrapper:
         mongo_client: str = f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
         self._client: MongoClient = MongoClient(mongo_client)
         self._database = self._client["Feecc-Hub"]
-        self._employee_collection = self._database["Employee-data"]
-        self._unit_collection = self._database["Unit-data"]
-        self._prod_stage_collection = self._database["Production-stages-data "]
+
+        # collections
+        self._employee_collection: Collection = self._database["Employee-data"]
+        self._unit_collection: Collection = self._database["Unit-data"]
+        self._prod_stage_collection: Collection = self._database["Production-stages-data "]
 
     @staticmethod
-    def _upload_dict(document: tp.Dict[str, tp.Any], collection: Collection) -> None:
+    def _upload_dict(document: tp.Dict[str, tp.Any], collection_: Collection) -> None:
         """insert a document into specified collection"""
-        collection.insert_one(document)
+        collection_.insert_one(document)
 
-    def _upload_dataclass(self, dataclass: tp.Any, collection: Collection) -> None:
+    def _upload_dataclass(self, dataclass: tp.Any, collection_: Collection) -> None:
         """
         convert an arbitrary dataclass to dictionary and insert it
         into the desired collection in the database
         """
         dataclass_dict: tp.Dict[str, tp.Any] = asdict(dataclass)
-        self._upload_dict(dataclass_dict, collection)
+        self._upload_dict(dataclass_dict, collection_)
 
     @staticmethod
-    def _find_item(key: str, value: str, collection: Collection) -> tp.Dict[str, tp.Any]:
+    def _find_item(key: str, value: str, collection_: Collection) -> tp.Dict[str, tp.Any]:
         """
         finds one element in the specified collection, which has
         specified key matching specified value
         """
-        return collection.find_one({key: value})  # type: ignore
+        return collection_.find_one({key: value})  # type: ignore
 
     @staticmethod
-    def _find_many(key: str, value: str, collection: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
+    def _find_many(key: str, value: str, collection_: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
         """
         finds all elements in the specified collection, which have
         specified key matching specified value
         """
-        return collection.find({key: value})  # type: ignore
+        return collection_.find({key: value})  # type: ignore
 
     @staticmethod
-    def _get_all_items_in_collection(collection: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
+    def _get_all_items_in_collection(collection_: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
         """get all documents in the provided collection"""
-        return collection.find()  # type: ignore
+        return collection_.find()  # type: ignore
 
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)
@@ -92,6 +96,6 @@ class MongoDbWrapper:
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit.unit_biography = prod_stages
             return unit
-        
+
         except Exception as e:
             raise UnitNotFoundError(e)
