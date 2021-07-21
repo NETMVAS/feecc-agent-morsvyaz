@@ -1,7 +1,7 @@
 from .exceptions import UnitNotFoundError
 import typing as tp
 from pymongo import MongoClient, collection as Collection
-from .Unit import Unit
+from .Unit import Unit, ProductionStage
 from .Employee import Employee
 from dataclasses import asdict
 
@@ -84,6 +84,14 @@ class MongoDbWrapper:
         try:
             unit_dict = self._find_item("internal_id", unit_internal_id, self._unit_collection)
             unit = Unit(**unit_dict)
+
+            # get units biography
+            prod_stage_dicts = self._find_many(
+                "parent_unit_uuid", unit.uuid, self._prod_stage_collection
+            )
+            prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
+            unit.unit_biography = prod_stages
             return unit
+        
         except Exception as e:
             raise UnitNotFoundError(e)
