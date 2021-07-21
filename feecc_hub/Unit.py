@@ -17,6 +17,7 @@ from .exceptions import OperationNotFoundError
 class ProductionStage:
     name: str
     employee_name: str
+    parent_unit_uuid: str
     session_start_time: str
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
@@ -46,12 +47,16 @@ class Unit:
     _config: Config
     model: str
     uuid: str = field(default_factory=lambda: uuid4().hex)
+    internal_id: tp.Optional[str] = None
     employee: tp.Optional[Employee] = None
     unit_biography: tp.List[ProductionStage] = field(default_factory=list)
     _associated_passport: tp.Optional[Passport] = None
 
     def __post_init__(self) -> None:
         self._associated_passport = Passport(self)
+
+        if self.internal_id is None:
+            self.internal_id = self.get_internal_id()
 
         if self._config["print_barcode"]["enable"]:
             self._print_barcode()
@@ -68,15 +73,14 @@ class Unit:
         """print barcode with own int. id"""
         self.associated_barcode.print_barcode(self._config)
 
+    def get_internal_id(self) -> str:
+        """get own internal id using own uuid"""
+        return str(self.associated_barcode.barcode.get_fullcode())
+
     @property
     def associated_barcode(self) -> Barcode:
         barcode = Barcode(str(int(self.uuid, 16))[:12])
         return barcode
-
-    @property
-    def internal_id(self) -> str:
-        """get own internal id using own uuid"""
-        return str(self.associated_barcode.barcode.get_fullcode())
 
     @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
@@ -104,6 +108,7 @@ class Unit:
         operation = ProductionStage(
             name=production_stage_name,
             employee_name=employee_code_name,
+            parent_unit_uuid=self.uuid,
             session_start_time=ProductionStage.timestamp(),
             additional_info=additional_info,
         )
