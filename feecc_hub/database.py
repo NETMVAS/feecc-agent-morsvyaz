@@ -1,6 +1,6 @@
 from .exceptions import UnitNotFoundError
 import typing as tp
-from pymongo import MongoClient
+from pymongo import MongoClient, collection as Collection
 from .Unit import Unit
 from .Employee import Employee
 from dataclasses import asdict
@@ -18,11 +18,11 @@ class MongoDbWrapper:
         self._prod_stage_collection = self._database["Production-stages-data "]
 
     @staticmethod
-    def _upload_dict(document: tp.Dict[str, tp.Any], collection) -> None:
+    def _upload_dict(document: tp.Dict[str, tp.Any], collection: Collection) -> None:
         """insert a document into specified collection"""
         collection.insert_one(document)
 
-    def _upload_dataclass(self, dataclass, collection) -> None:
+    def _upload_dataclass(self, dataclass: tp.Any, collection: Collection) -> None:
         """
         convert an arbitrary dataclass to dictionary and insert it
         into the desired collection in the database
@@ -31,25 +31,25 @@ class MongoDbWrapper:
         self._upload_dict(dataclass_dict, collection)
 
     @staticmethod
-    def _find_item(key: str, value: str, collection) -> tp.Dict[str, tp.Any]:
+    def _find_item(key: str, value: str, collection: Collection) -> tp.Dict[str, tp.Any]:
         """
         finds one element in the specified collection, which has
         specified key matching specified value
         """
-        return collection.find_one({key: value})
+        return collection.find_one({key: value})  # type: ignore
 
     @staticmethod
-    def _find_many(key: str, value: str, collection) -> tp.List[tp.Dict[str, tp.Any]]:
+    def _find_many(key: str, value: str, collection: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
         """
         finds all elements in the specified collection, which have
         specified key matching specified value
         """
-        return collection.find({key: value})
+        return collection.find({key: value})  # type: ignore
 
     @staticmethod
-    def _get_all_items_in_collection(collection) -> tp.List[tp.Dict[str, tp.Any]]:
+    def _get_all_items_in_collection(collection: Collection) -> tp.List[tp.Dict[str, tp.Any]]:
         """get all documents in the provided collection"""
-        return collection.find()
+        return collection.find()  # type: ignore
 
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)
@@ -64,7 +64,8 @@ class MongoDbWrapper:
         base_dict = asdict(unit)
 
         # upload nested dataclasses
-        map(self._upload_dataclass, unit.unit_biography)
+        for stage in unit.unit_biography:
+            self._upload_dataclass(stage, self._prod_stage_collection)
 
         # removing unnecessary keys
         for key in ("_associated_passport", "_config", "unit_biography"):
@@ -72,11 +73,11 @@ class MongoDbWrapper:
 
         self._upload_dict(base_dict, self._unit_collection)
 
-    def get_all_employees(self) -> tp.Tuple[Employee]:
+    def get_all_employees(self) -> tp.List[Employee]:
         employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(
             self._employee_collection
         )
-        employees = tuple(Employee(**data) for data in employee_data)
+        employees = [Employee(**data) for data in employee_data]
         return employees
 
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:

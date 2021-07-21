@@ -45,7 +45,7 @@ class WorkBench:
         if self._associated_agent.associated_unit is None:
             return ""
         else:
-            return self._associated_agent.associated_unit.internal_id
+            return str(self._associated_agent.associated_unit.internal_id)
 
     @property
     def is_operation_ongoing(self) -> bool:

@@ -96,7 +96,11 @@ class Hub:
         """initialize a new instance of the Unit class"""
         unit = Unit(self.config, unit_type)
         self._units.append(unit)
-        return unit.internal_id
+
+        if unit.internal_id is not None:
+            return unit.internal_id
+        else:
+            raise ValueError("Unit internal_id is None")
 
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
