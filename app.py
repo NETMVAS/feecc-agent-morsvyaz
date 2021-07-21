@@ -53,8 +53,7 @@ api.add_middleware(
 def end_session() -> None:
     """a function to execute when daemon exits"""
     logging.info("Sigterm registered. Handling.")
-    global hub
-    hub.end_session()
+    pass
     logging.info("Sigterm handling success")
 
 

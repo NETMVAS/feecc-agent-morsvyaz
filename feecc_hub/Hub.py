@@ -1,7 +1,6 @@
 import csv
 import logging
 import os
-import shelve
 import sys
 import typing as tp
 
@@ -11,7 +10,7 @@ from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
 from ._Types import Config
-from .exceptions import EmployeeNotFoundError, WorkbenchNotFoundError, UnitNotFoundError
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
 class Hub:
@@ -24,7 +23,7 @@ class Hub:
         logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
-        self._units: tp.List[Unit] = self._unshelve_units()
+        self._units: tp.List[Unit] = []
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
@@ -83,10 +82,6 @@ class Hub:
             logging.error(f"Error parsing configuration file {config_path}: {E}")
             sys.exit(1)
 
-    def end_session(self) -> None:
-        """a method to execute when daemon exits"""
-        self._dump_open_units()
-
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
         for workbench in self._workbenches:
@@ -130,39 +125,3 @@ class Hub:
             sys.exit(1)
 
         return workbenches
-
-    @staticmethod
-    def _unshelve_units(shelve_path: str = "config/Unit.shelve") -> tp.List[Unit]:
-        """initialize a Unit object for every unfinished Unit using it's data files"""
-        try:
-            if not os.path.exists(shelve_path):
-                logging.info(
-                    f"File {shelve_path} doesn't exist. Assuming there are no units to unshelve"
-                )
-                return []
-
-            with shelve.open(shelve_path) as unit_shelve:
-                units: tp.List[Unit] = unit_shelve["unfinished_units"]
-
-            logging.info(f"Unshelved {len(units)} units from {shelve_path}")
-            units_ids = [unit.internal_id for unit in units]
-            logging.debug(f"internal ids of the units initialised: {units_ids}")
-            return units
-
-        except Exception as e:
-            logging.error(f"An error occurred during unshelving units from {shelve_path}: {e}")
-            return []
-
-    def _dump_open_units(self, shelve_path: str = "config/Unit.shelve") -> None:
-        """shelve every unfinished Unit"""
-        if not len(self._units):
-            logging.info("Shelving stopped: no units to shelve.")
-
-        try:
-            logging.info(f"Shelving {len(self._units)} units to {shelve_path}")
-            with shelve.open(shelve_path) as unit_shelve:
-                unit_shelve["unfinished_units"] = self._units
-            logging.info(f"Successfully shelved {len(self._units)} units to {shelve_path}")
-
-        except Exception as e:
-            logging.error(f"An error occurred during shelving units to {shelve_path}: {e}")
