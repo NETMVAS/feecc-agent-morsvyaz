@@ -32,6 +32,9 @@ ipfs:
   gateway_address: "https://gateway.ipfs.io/ipfs/" # IPFS gateway to use when creating links
 datalog:
   enable: true # Whether to write certain data to Robonomics datalog or not
-api_server:  # socket for the Api server to run on
+api_server: # socket for the Api server to run on
   ip: "0.0.0.0"
   port: 5000
+mongo_db: # MongoDB credentials
+  username: your_username
+  password: your_password
