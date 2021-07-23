@@ -15,7 +15,7 @@ class Passport:
 
     def __init__(self, unit: Unit) -> None:
         self._unit: Unit = unit
-        path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
+        path = f"feecc_hub_src/unit-passports/unit-passport-{self._unit.uuid}.yaml"
         self.file: File = File(path)
         logging.info(
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
