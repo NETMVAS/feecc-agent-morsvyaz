@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import typing as tp
 from copy import deepcopy
@@ -11,6 +13,9 @@ from ._Passport import Passport
 from ._Types import Config
 from ._external_io_operations import ExternalIoGateway
 from .exceptions import OperationNotFoundError
+
+if tp.TYPE_CHECKING:
+    from .database import DbWrapper
 
 
 @dataclass
@@ -118,6 +123,7 @@ class Unit:
 
     def end_session(
         self,
+        database: DbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
@@ -146,10 +152,8 @@ class Unit:
 
         self.unit_biography[-1] = operation
         logging.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
-
-        if self._associated_passport is not None:
-            self._associated_passport.save()
         self.employee = None
+        database.update_unit(self)
 
     def upload(self) -> None:
 

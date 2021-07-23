@@ -9,10 +9,11 @@ from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
 from ._Types import Config
-from .exceptions import EmployeeUnauthorizedError, AgentBusyError, UnitNotFoundError
+from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
     from .Hub import Hub
+    from .database import DbWrapper
 
 
 class WorkBench:
@@ -140,7 +141,11 @@ class WorkBench:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self.unit_in_operation:
-            self._associated_agent.execute_state(State.ProductionStageEnding, True, additional_info)
+            database: DbWrapper = self._associated_hub.database
+
+            self._associated_agent.execute_state(
+                State.ProductionStageEnding, True, database, additional_info
+            )
 
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"

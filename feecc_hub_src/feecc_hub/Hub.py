@@ -21,7 +21,7 @@ class Hub:
     def __init__(self) -> None:
         logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
-        self._database: DbWrapper = self._get_database()
+        self.database: DbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
 
@@ -50,7 +50,7 @@ class Hub:
 
     def _get_employees(self) -> tp.Dict[str, Employee]:
         """load up employee database and initialize an array of Employee objects"""
-        employee_list = self._database.get_all_employees()
+        employee_list = self.database.get_all_employees()
         employees: tp.Dict[str, Employee] = {}
 
         for employee in employee_list:
@@ -95,7 +95,7 @@ class Hub:
     def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
         unit = Unit(self.config, unit_type)
-        self._database.upload_unit(unit)
+        self.database.upload_unit(unit)
 
         if unit.internal_id is not None:
             return unit.internal_id
@@ -105,7 +105,7 @@ class Hub:
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         try:
-            unit: Unit = self._database.get_unit_by_internal_id(unit_internal_id, self.config)
+            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self.config)
             return unit
 
         except Exception as e:
