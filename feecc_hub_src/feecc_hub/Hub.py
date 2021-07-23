@@ -8,7 +8,7 @@ from .database import MongoDbWrapper
 from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
-from ._Types import Config
+from ._Types import Config, Document
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
@@ -21,9 +21,8 @@ class Hub:
     def __init__(self) -> None:
         logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
-        self.database: MongoDbWrapper = self._get_database()
+        self._database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
-        self._units: tp.List[Unit] = []
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
@@ -51,7 +50,7 @@ class Hub:
 
     def _get_employees(self) -> tp.Dict[str, Employee]:
         """load up employee database and initialize an array of Employee objects"""
-        employee_list = self.database.get_all_employees()
+        employee_list = self._database.get_all_employees()
         employees: tp.Dict[str, Employee] = {}
 
         for employee in employee_list:
@@ -96,7 +95,7 @@ class Hub:
     def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
         unit = Unit(self.config, unit_type)
-        self._units.append(unit)
+        self._database.upload_unit(unit)
 
         if unit.internal_id is not None:
             return unit.internal_id
@@ -105,12 +104,16 @@ class Hub:
 
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
-        for unit in self._units:
-            if unit.internal_id == unit_internal_id:
-                return unit
+        try:
+            unit_dict: Document = self._database.get_unit_by_internal_id(unit_internal_id)
+            unit: Unit = Unit(self.config, **unit_dict)
 
-        message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
-        raise UnitNotFoundError(message)
+            return unit
+
+        except Exception as e:
+            logging.error(e)
+            message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
+            raise UnitNotFoundError(message)
 
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""

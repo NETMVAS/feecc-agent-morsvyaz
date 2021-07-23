@@ -1,21 +1,20 @@
-from ._Types import Document
-from .exceptions import UnitNotFoundError
 import typing as tp
-from pymongo import MongoClient, collection
-from .Unit import Unit, ProductionStage
-from .Employee import Employee
 from dataclasses import asdict
 
-Collection = collection
+from pymongo import MongoClient
+
+from .Employee import Employee
+from .Unit import ProductionStage, Unit
+from ._Types import Collection, Document
+from .exceptions import UnitNotFoundError
 
 
 class MongoDbWrapper:
     """handles interactions with MongoDB database"""
 
     def __init__(self, username: str, password: str, url: tp.Optional[str] = None) -> None:
-        mongo_client: str = (
-            url
-            or f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
+        mongo_client: str = url or (
+            f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
         )
         self._client: MongoClient = MongoClient(mongo_client)
         self._database = self._client["Feecc-Hub"]
@@ -44,7 +43,9 @@ class MongoDbWrapper:
         finds one element in the specified collection, which has
         specified key matching specified value
         """
-        return collection_.find_one({key: value})  # type: ignore
+        result: Document = collection_.find_one({key: value})
+        del result["_id"]
+        return result
 
     @staticmethod
     def _find_many(key: str, value: str, collection_: Collection) -> tp.List[Document]:
@@ -52,12 +53,22 @@ class MongoDbWrapper:
         finds all elements in the specified collection, which have
         specified key matching specified value
         """
-        return collection_.find({key: value})  # type: ignore
+        result: tp.List[Document] = list(collection_.find({key: value}))
+
+        for doc in result:
+            del doc["_id"]
+
+        return result
 
     @staticmethod
     def _get_all_items_in_collection(collection_: Collection) -> tp.List[Document]:
         """get all documents in the provided collection"""
-        return collection_.find()  # type: ignore
+        result: tp.List[Document] = list(collection_.find())
+
+        for doc in result:
+            del doc["_id"]
+
+        return result
 
     @staticmethod
     def _update_document(
@@ -100,24 +111,23 @@ class MongoDbWrapper:
         employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(
             self._employee_collection
         )
-        for data in employee_data:
-            del data["_id"]
 
         employees = [Employee(**data) for data in employee_data]
         return employees
 
-    def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
+    def get_unit_by_internal_id(self, unit_internal_id: str) -> Document:
         try:
-            unit_dict = self._find_item("internal_id", unit_internal_id, self._unit_collection)
-            unit = Unit(**unit_dict)
+            unit_dict: Document = self._find_item(
+                "internal_id", unit_internal_id, self._unit_collection
+            )
 
             # get units biography
             prod_stage_dicts = self._find_many(
-                "parent_unit_uuid", unit.uuid, self._prod_stage_collection
+                "parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection
             )
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
-            unit.unit_biography = prod_stages
-            return unit
+            unit_dict["unit_biography"] = prod_stages
+            return unit_dict
 
         except Exception as e:
             raise UnitNotFoundError(e)
