@@ -4,8 +4,9 @@ from mockupdb import *
 
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
-test_login, test_password = os.environ.get("secrets.MONGO_LOGIN"), os.environ.get(
-    "secrets.MONGO_PASS"
+test_login, test_password = (
+    os.environ["env.MONGO_LOGIN"] or os.environ["MONGO_LOGIN"],
+    os.environ["env.MONGO_PASS"] or os.environ["MONGO_PASS"],
 )
 
 

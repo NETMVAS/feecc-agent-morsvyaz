@@ -68,6 +68,9 @@ jobs:
       #              run tests
       #----------------------------------------------
       - name: Run tests
+        env:
+          MONGO_LOGIN: {{ secrets.MONGO_LOGIN }}
+          MONGO_PASS: {{ secrets.MONGO_PASS }}
         run: |
           source .venv/bin/activate
           pytest .

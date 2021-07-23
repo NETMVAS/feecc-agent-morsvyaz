@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import typing as tp
 
@@ -35,11 +36,32 @@ class Hub:
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
         workbench.start_shift(employee)
 
+    @staticmethod
+    def _get_credentials_from_env() -> tp.Optional[tp.Tuple[str, str]]:
+        """getting credentials from environment variables"""
+        username, password = (
+            os.environ["env.MONGO_LOGIN"] or os.environ["MONGO_LOGIN"],
+            os.environ["env.MONGO_PASS"] or os.environ["MONGO_PASS"],
+        )
+
+        if all((username, password)):
+            return username, password
+
+        logging.info("Failed to get credentials from environment variables. Trying to get from config")
+
+        return None
+
     def _get_database(self) -> MongoDbWrapper:
         """establish MongoDB connection and initialize the wrapper"""
         try:
-            username: str = self.config["mongo_db"]["username"]
-            password: str = self.config["mongo_db"]["password"]
+            env_credentials = self._get_credentials_from_env()
+
+            if env_credentials is None:
+                username: str = self.config["mongo_db"]["username"]
+                password: str = self.config["mongo_db"]["password"]
+            else:
+                username, password = env_credentials
+
             wrapper: MongoDbWrapper = MongoDbWrapper(username, password)
             return wrapper
 

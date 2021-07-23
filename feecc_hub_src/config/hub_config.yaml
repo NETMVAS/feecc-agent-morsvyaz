@@ -4,8 +4,8 @@ api_server: # socket for the Api server to run on
   port: 5000
 
 mongo_db: # MongoDB credentials
-  username: your_username
-  password: your_password
+  username: nikolai-timofeev
+  password: DEFL1O0szP7NV0he
 
 
 # EXTERNAL IO SECTION
