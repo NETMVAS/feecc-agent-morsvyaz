@@ -5,7 +5,9 @@ from mockupdb import *
 import os
 import requests
 
-test_login, test_password = os.environ.get("MONGO_LOGIN"), os.environ.get("MONGO_PASS")
+test_login, test_password = os.environ.get("secrets.MONGO_LOGIN"), os.environ.get(
+    "secrets.MONGO_PASS"
+)
 
 
 def test_check_credentials():
