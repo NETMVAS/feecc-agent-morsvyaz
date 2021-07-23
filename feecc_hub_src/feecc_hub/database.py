@@ -50,7 +50,7 @@ class MongoDbWrapper(DbWrapper):
         # collections
         self._employee_collection: Collection = self._database["Employee-data"]
         self._unit_collection: Collection = self._database["Unit-data"]
-        self._prod_stage_collection: Collection = self._database["Production-stages-data "]
+        self._prod_stage_collection: Collection = self._database["Production-stages-data"]
 
     @property
     def mongo_client_url(self) -> str:
