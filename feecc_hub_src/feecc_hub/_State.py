@@ -15,6 +15,7 @@ if tp.TYPE_CHECKING:
     from ._Agent import Agent
     from .Employee import Employee
     from .Unit import Unit
+    from .database import DbWrapper
 
 
 class State(ABC):
@@ -162,7 +163,9 @@ class ProductionStageEnding(State):
     State when production stage is being ended
     """
 
-    def run(self, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None) -> None:
+    def run(
+        self, database: DbWrapper, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+    ) -> None:
         # make a copy of unit to work with securely in another thread
         if self._context.associated_unit is None:
             raise ValueError("No context associated unit found")
@@ -185,7 +188,7 @@ class ProductionStageEnding(State):
                 ipfs_hashes.append(file.ipfs_hash)
 
         # add video IPFS hash to the passport
-        unit.end_session(ipfs_hashes, additional_info)
+        unit.end_session(database, ipfs_hashes, additional_info)
 
         # reset own state
         self._context.execute_state(AuthorizedIdling, background=False)
