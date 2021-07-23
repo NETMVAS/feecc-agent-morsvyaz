@@ -21,6 +21,10 @@ class DbWrapper(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def update_unit(self, unit: Unit) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def upload_employee(self, employee: Employee) -> None:
         raise NotImplementedError
 
@@ -117,9 +121,15 @@ class MongoDbWrapper(DbWrapper):
         collection_.find_one_and_update({key: value}, new_document)
 
     def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
+        """update data about the production stage in the DB"""
         stage_dict: Document = asdict(updated_production_stage)
         stage_id: str = updated_production_stage.id
         self._update_document("id", stage_id, {"$set": stage_dict}, self._prod_stage_collection)
+
+    def update_unit(self, unit: Unit) -> None:
+        """update data about the unit in the DB"""
+        # TODO
+        raise NotImplementedError
 
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)
