@@ -4,10 +4,10 @@ from mockupdb import *
 
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
-test_login, test_password = (
-    os.environ["env.MONGO_LOGIN"] or os.environ["MONGO_LOGIN"],
-    os.environ["env.MONGO_PASS"] or os.environ["MONGO_PASS"],
-)
+try:
+    test_login, test_password = os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
+except KeyError:
+    test_login, test_password = os.environ["env.MONGO_LOGIN"], os.environ["env.MONGO_PASS"]
 
 
 def test_check_credentials() -> None:

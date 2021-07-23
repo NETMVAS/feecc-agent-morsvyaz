@@ -39,10 +39,10 @@ class Hub:
     @staticmethod
     def _get_credentials_from_env() -> tp.Optional[tp.Tuple[str, str]]:
         """getting credentials from environment variables"""
-        username, password = (
-            os.environ["env.MONGO_LOGIN"] or os.environ["MONGO_LOGIN"],
-            os.environ["env.MONGO_PASS"] or os.environ["MONGO_PASS"],
-        )
+        try:
+            username, password = os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
+        except KeyError:
+            username, password = os.environ["env.MONGO_LOGIN"], os.environ["env.MONGO_PASS"]
 
         if all((username, password)):
             return username, password
