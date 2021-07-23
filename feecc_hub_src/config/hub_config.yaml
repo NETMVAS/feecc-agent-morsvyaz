@@ -1,8 +1,3 @@
-# GENERAL SECTION
-general:
-  delete_after_record: false # Whether to delete local versions of videos after record or not
-
-
 # SERVICE IO SECTION
 api_server: # socket for the Api server to run on
   ip: "0.0.0.0"
@@ -54,6 +49,9 @@ print_security_tag: # Whether to print seal tags with optional timestamp on them
 
 
 # VIDEO SECTION
+video:
+  delete_after_publishing: false # Whether to delete local copies of videos
+
 intro:
   intro_path: "media/intro.mp4"
   enable: false # If you want to attach an intro to the main video
