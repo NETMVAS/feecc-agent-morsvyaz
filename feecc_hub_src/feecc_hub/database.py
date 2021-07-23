@@ -1,15 +1,43 @@
 import typing as tp
+from abc import ABC, abstractmethod
 from dataclasses import asdict
 
 from pymongo import MongoClient
 
 from .Employee import Employee
 from .Unit import ProductionStage, Unit
-from ._Types import Collection, Document
+from ._Types import Collection, Config, Document
 from .exceptions import UnitNotFoundError
 
 
-class MongoDbWrapper:
+class DbWrapper(ABC):
+    """
+    abstract database wrapper base class. implements common interfaces and
+    declares common wrapper functionality
+    """
+
+    @abstractmethod
+    def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def upload_employee(self, employee: Employee) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def upload_unit(self, unit: Unit) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_all_employees(self) -> tp.List[Employee]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
+        raise NotImplementedError
+
+
+class MongoDbWrapper(DbWrapper):
     """handles interactions with MongoDB database"""
 
     def __init__(self, username: str, password: str, url: tp.Optional[str] = None) -> None:
@@ -23,6 +51,14 @@ class MongoDbWrapper:
         self._employee_collection: Collection = self._database["Employee-data"]
         self._unit_collection: Collection = self._database["Unit-data"]
         self._prod_stage_collection: Collection = self._database["Production-stages-data "]
+
+    @property
+    def mongo_client_url(self) -> str:
+        return self._mongo_client_url
+
+    @property
+    def mongo_client(self) -> MongoClient:
+        return self._client
 
     @staticmethod
     def _upload_dict(document: Document, collection_: Collection) -> None:
@@ -72,7 +108,7 @@ class MongoDbWrapper:
 
     @staticmethod
     def _update_document(
-            key: str, value: str, new_document: Document, collection_: Collection
+        key: str, value: str, new_document: Document, collection_: Collection
     ) -> None:
         """
         finds matching document in the specified collection, and replace it's data
@@ -115,7 +151,7 @@ class MongoDbWrapper:
         employees = [Employee(**data) for data in employee_data]
         return employees
 
-    def get_unit_by_internal_id(self, unit_internal_id: str) -> Document:
+    def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
         try:
             unit_dict: Document = self._find_item(
                 "internal_id", unit_internal_id, self._unit_collection
@@ -127,15 +163,9 @@ class MongoDbWrapper:
             )
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit_dict["unit_biography"] = prod_stages
-            return unit_dict
+            unit: Unit = Unit(config, **unit_dict)
+
+            return unit
 
         except Exception as e:
             raise UnitNotFoundError(e)
-
-    @property
-    def mongo_client_url(self):
-        return self._mongo_client_url
-
-    @property
-    def mongo_client(self):
-        return self._client

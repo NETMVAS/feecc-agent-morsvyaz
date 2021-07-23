@@ -4,11 +4,11 @@ import typing as tp
 
 import yaml
 
-from .database import MongoDbWrapper
+from .database import DbWrapper, MongoDbWrapper
 from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
-from ._Types import Config, Document
+from ._Types import Config
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
@@ -21,7 +21,7 @@ class Hub:
     def __init__(self) -> None:
         logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
-        self._database: MongoDbWrapper = self._get_database()
+        self._database: DbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
 
@@ -105,9 +105,7 @@ class Hub:
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         try:
-            unit_dict: Document = self._database.get_unit_by_internal_id(unit_internal_id)
-            unit: Unit = Unit(self.config, **unit_dict)
-
+            unit: Unit = self._database.get_unit_by_internal_id(unit_internal_id, self.config)
             return unit
 
         except Exception as e:
