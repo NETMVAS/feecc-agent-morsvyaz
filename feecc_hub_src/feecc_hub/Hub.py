@@ -47,7 +47,9 @@ class Hub:
         if all((username, password)):
             return username, password
 
-        logging.info("Failed to get credentials from environment variables. Trying to get from config")
+        logging.info(
+            "Failed to get credentials from environment variables. Trying to get from config"
+        )
 
         return None
 
