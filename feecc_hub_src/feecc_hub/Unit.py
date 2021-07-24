@@ -28,6 +28,7 @@ class ProductionStage:
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
     id: str = field(default_factory=lambda: uuid4().hex)
+    is_in_db: bool = False
 
     @staticmethod
     def timestamp() -> str:
@@ -56,6 +57,7 @@ class Unit:
     employee: tp.Optional[Employee] = None
     unit_biography: tp.List[ProductionStage] = field(default_factory=list)
     _associated_passport: tp.Optional[Passport] = None
+    is_in_db: bool = False
 
     def __post_init__(self) -> None:
         self._associated_passport = Passport(self)

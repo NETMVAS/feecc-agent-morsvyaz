@@ -128,8 +128,23 @@ class MongoDbWrapper(DbWrapper):
 
     def update_unit(self, unit: Unit) -> None:
         """update data about the unit in the DB"""
-        # TODO
-        raise NotImplementedError
+        if not unit.is_in_db:
+            self.upload_unit(unit)
+            return
+
+        for stage in unit.unit_biography:
+            if not stage.is_in_db:
+                self.upload_unit(unit)
+                stage.is_in_db = True
+                self._upload_dataclass(stage, self._prod_stage_collection)
+            else:
+                self.update_production_stage(stage)
+
+        base_dict = asdict(unit)
+        for key in ("_associated_passport", "_config", "unit_biography"):
+            del base_dict[key]
+
+        self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
 
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)
@@ -141,10 +156,12 @@ class MongoDbWrapper(DbWrapper):
         """
 
         # get basic dict of unit
+        unit.is_in_db = True
         base_dict = asdict(unit)
 
         # upload nested dataclasses
         for stage in unit.unit_biography:
+            stage.is_in_db = True
             self._upload_dataclass(stage, self._prod_stage_collection)
 
         # removing unnecessary keys
