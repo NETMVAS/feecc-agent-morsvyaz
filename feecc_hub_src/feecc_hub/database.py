@@ -146,7 +146,7 @@ class MongoDbWrapper(DbWrapper):
         for key in ("_associated_passport", "_config", "unit_biography"):
             del base_dict[key]
 
-        self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
+        self._update_document("uuid", unit.uuid, {"$set": base_dict}, self._unit_collection)
 
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)

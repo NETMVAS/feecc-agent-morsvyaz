@@ -22,7 +22,7 @@ def test_check_credentials() -> None:
     assert test_password is not None
 
 
-test_db_url = f"mongodb+srv://{test_login}:{test_password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE"
+test_db_url = f"mongodb+srv://{test_login}:{test_password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority&ssl=true&tlsAllowInvalidCertificates=true"
 wrapper = MongoDbWrapper(test_login, test_password, test_db_url)
 
 
