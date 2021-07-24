@@ -20,7 +20,6 @@ uvicorn = "^0.14.0"
 pre-commit = "^2.13.0"
 pymongo = "^3.12.0"
 dnspython = "^2.1.0"
-mockupdb = "^1.8.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.902"

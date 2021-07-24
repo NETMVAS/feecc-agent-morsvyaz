@@ -33,6 +33,10 @@ class DbWrapper(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def upload_production_stage(self, production_stage: ProductionStage) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def get_all_employees(self) -> tp.List[Employee]:
         raise NotImplementedError
 
@@ -134,9 +138,7 @@ class MongoDbWrapper(DbWrapper):
 
         for stage in unit.unit_biography:
             if not stage.is_in_db:
-                self.upload_unit(unit)
-                stage.is_in_db = True
-                self._upload_dataclass(stage, self._prod_stage_collection)
+                self.upload_production_stage(stage)
             else:
                 self.update_production_stage(stage)
 
@@ -161,14 +163,20 @@ class MongoDbWrapper(DbWrapper):
 
         # upload nested dataclasses
         for stage in unit.unit_biography:
-            stage.is_in_db = True
-            self._upload_dataclass(stage, self._prod_stage_collection)
+            self.upload_production_stage(stage)
 
         # removing unnecessary keys
         for key in ("_associated_passport", "_config", "unit_biography"):
             del base_dict[key]
 
         self._upload_dict(base_dict, self._unit_collection)
+
+    def upload_production_stage(self, production_stage: ProductionStage) -> None:
+        if production_stage.is_in_db:
+            return
+
+        production_stage.is_in_db = True
+        self._upload_dataclass(production_stage, self._prod_stage_collection)
 
     def get_all_employees(self) -> tp.List[Employee]:
         employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(

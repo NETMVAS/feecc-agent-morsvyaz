@@ -1,7 +1,5 @@
 import os
 
-from mockupdb import *
-
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
 try:
