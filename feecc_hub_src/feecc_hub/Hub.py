@@ -41,15 +41,14 @@ class Hub:
         """getting credentials from environment variables"""
         try:
             username, password = os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
+
+            if all((username, password)):
+                return username, password
+
         except KeyError:
-            username, password = os.environ["env.MONGO_LOGIN"], os.environ["env.MONGO_PASS"]
-
-        if all((username, password)):
-            return username, password
-
-        logging.info(
-            "Failed to get credentials from environment variables. Trying to get from config"
-        )
+            logging.info(
+                "Failed to get credentials from environment variables. Trying to get from config"
+            )
 
         return None
 

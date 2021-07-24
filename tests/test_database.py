@@ -1,11 +1,20 @@
 import os
 
+import pytest
+from feecc_hub_src.feecc_hub.Hub import Hub
+
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
-try:
-    test_login, test_password = os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
-except KeyError:
-    test_login, test_password = os.environ["env.MONGO_LOGIN"], os.environ["env.MONGO_PASS"]
+
+def credentials():
+    try:
+        return os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
+    except KeyError:
+        db_cfg = Hub._get_config()["mongo_db"]
+        return db_cfg["username"], db_cfg["password"]
+
+
+test_login, test_password = credentials()
 
 
 def test_check_credentials() -> None:
