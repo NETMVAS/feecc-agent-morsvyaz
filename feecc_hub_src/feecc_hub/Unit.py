@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import typing as tp
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime as dt
 from uuid import uuid4
 
@@ -12,16 +14,21 @@ from ._Types import Config
 from ._external_io_operations import ExternalIoGateway
 from .exceptions import OperationNotFoundError
 
+if tp.TYPE_CHECKING:
+    from .database import DbWrapper
+
 
 @dataclass
 class ProductionStage:
     name: str
     employee_name: str
+    parent_unit_uuid: str
     session_start_time: str
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
-    id: str = uuid4().hex
+    id: str = field(default_factory=lambda: uuid4().hex)
+    is_in_db: bool = False
 
     @staticmethod
     def timestamp() -> str:
@@ -39,18 +46,24 @@ class ProductionStage:
                 )
 
 
+@dataclass
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    def __init__(self, config: Config, model: str, uuid: str = "") -> None:
-        self._config: Config = config
+    _config: Config
+    model: str
+    uuid: str = field(default_factory=lambda: uuid4().hex)
+    internal_id: tp.Optional[str] = None
+    employee: tp.Optional[Employee] = None
+    unit_biography: tp.List[ProductionStage] = field(default_factory=list)
+    _associated_passport: tp.Optional[Passport] = None
+    is_in_db: bool = False
 
-        # product data
-        self.uuid: str = uuid or self._generate_uuid()
-        self.employee: tp.Optional[Employee] = None
-        self.model: str = model
-        self.unit_biography: tp.List[ProductionStage] = []
-        self._associated_passport: Passport = Passport(self)
+    def __post_init__(self) -> None:
+        self._associated_passport = Passport(self)
+
+        if self.internal_id is None:
+            self.internal_id = self.get_internal_id()
 
         if self._config["print_barcode"]["enable"]:
             self._print_barcode()
@@ -67,15 +80,14 @@ class Unit:
         """print barcode with own int. id"""
         self.associated_barcode.print_barcode(self._config)
 
+    def get_internal_id(self) -> str:
+        """get own internal id using own uuid"""
+        return str(self.associated_barcode.barcode.get_fullcode())
+
     @property
     def associated_barcode(self) -> Barcode:
         barcode = Barcode(str(int(self.uuid, 16))[:12])
         return barcode
-
-    @property
-    def internal_id(self) -> str:
-        """get own internal id using own uuid"""
-        return str(self.associated_barcode.barcode.get_fullcode())
 
     @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
@@ -87,10 +99,6 @@ class Unit:
     @current_operation.setter
     def current_operation(self, current_operation: ProductionStage) -> None:
         self.unit_biography.append(current_operation)
-
-    @staticmethod
-    def _generate_uuid() -> str:
-        return uuid4().hex
 
     def start_session(
         self,
@@ -107,6 +115,7 @@ class Unit:
         operation = ProductionStage(
             name=production_stage_name,
             employee_name=employee_code_name,
+            parent_unit_uuid=self.uuid,
             session_start_time=ProductionStage.timestamp(),
             additional_info=additional_info,
         )
@@ -116,6 +125,7 @@ class Unit:
 
     def end_session(
         self,
+        database: DbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
@@ -144,13 +154,13 @@ class Unit:
 
         self.unit_biography[-1] = operation
         logging.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
-
-        self._associated_passport.save()
         self.employee = None
+        database.update_unit(self)
 
     def upload(self) -> None:
 
         # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
-        self._associated_passport.save()
-        gateway = ExternalIoGateway(self._config)
-        gateway.send(self._associated_passport.file)
+        if self._associated_passport is not None:
+            self._associated_passport.save()
+            gateway = ExternalIoGateway(self._config)
+            gateway.send(self._associated_passport.file)

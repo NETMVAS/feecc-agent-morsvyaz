@@ -1,7 +1,7 @@
 import time
 
 import requests
-from app import api
+from feecc_hub_src.app import api
 from fastapi.testclient import TestClient
 
 client = TestClient(api)
@@ -206,7 +206,7 @@ def test_api_integrate() -> None:
         json={"workbench_no": 2, "additional_info": {"test": "test"}},
     )
 
-    check_state("ProductionStageEnding")
+    check_multiple_states("ProductionStageEnding", "AuthorizedIdling")
 
     assert unit_stop_resp.json()[
         "status"

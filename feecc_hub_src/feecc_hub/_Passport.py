@@ -15,7 +15,7 @@ class Passport:
 
     def __init__(self, unit: Unit) -> None:
         self._unit: Unit = unit
-        path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
+        path = f"feecc_hub_src/unit-passports/unit-passport-{self._unit.uuid}.yaml"
         self.file: File = File(path)
         logging.info(
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
@@ -65,8 +65,8 @@ class Passport:
         passport_dict = self._construct_passport_dict()
 
         # make directory if it is missing
-        if not os.path.isdir("unit-passports"):
-            os.mkdir("unit-passports")
+        if not os.path.isdir("feecc_hub_src/unit-passports"):
+            os.mkdir("feecc_hub_src/unit-passports")
 
         with open(self.file.path, "w") as passport_file:
             yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)

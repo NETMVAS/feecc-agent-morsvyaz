@@ -65,7 +65,7 @@ class ExternalIoGateway:
                 pinata_worker = PinataWorker(self, self.config)
                 pinata_worker.post(file)
 
-        if self.config["datalog"]["enable"] and file.ipfs_hash:
+        if self.config["robonomics_network"]["enable_datalog"] and file.ipfs_hash:
             try:
                 robonomics_worker = RobonomicsWorker(self, self.config)
                 robonomics_worker.post(file.ipfs_hash)
@@ -131,13 +131,13 @@ class RobonomicsWorker(BaseIoWorker):
 
     def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Robonomics Network")
-        self.config: tp.Dict[str, tp.Any] = config["transaction"]
+        self.config: tp.Dict[str, tp.Any] = config["robonomics_network"]
 
     def post(self, data: str) -> None:
         """write provided string to Robonomics datalog"""
-        robonomics_bin: str = self.config["path_to_robonomics_file"]
+        robonomics_bin: str = self.config["path_to_robonomics_binary"]
         remote: str = self.config["remote"]
-        signature: str = self._context.config["camera"]["key"]
+        signature: str = self.config["key"]
         command: str = f'echo "{data}" | {robonomics_bin} io write datalog {remote} -s {signature}'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
 

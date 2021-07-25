@@ -9,10 +9,11 @@ from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
 from ._Types import Config
-from .exceptions import EmployeeUnauthorizedError, AgentBusyError, UnitNotFoundError
+from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
     from .Hub import Hub
+    from .database import DbWrapper
 
 
 class WorkBench:
@@ -45,7 +46,7 @@ class WorkBench:
         if self._associated_agent.associated_unit is None:
             return ""
         else:
-            return self._associated_agent.associated_unit.internal_id
+            return str(self._associated_agent.associated_unit.internal_id)
 
     @property
     def is_operation_ongoing(self) -> bool:
@@ -78,13 +79,13 @@ class WorkBench:
     def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
         if self.employee is not None:
-            message = (
-                f"Employee {employee.id} is already logged in at the workbench no. {self.number}"
-            )
+            message = f"Employee {employee.rfid_card_id} is already logged in at the workbench no. {self.number}"
             raise AgentBusyError(message)
 
         self.employee = employee
-        logging.info(f"Employee {employee.id} is logged in at the workbench no. {self.number}")
+        logging.info(
+            f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self.number}"
+        )
         self._associated_agent.execute_state(State.AuthorizedIdling)
 
     def end_shift(self) -> None:
@@ -140,7 +141,11 @@ class WorkBench:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self.unit_in_operation:
-            self._associated_agent.execute_state(State.ProductionStageEnding, True, additional_info)
+            database: DbWrapper = self._associated_hub.database
+
+            self._associated_agent.execute_state(
+                State.ProductionStageEnding, True, database, additional_info
+            )
 
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"

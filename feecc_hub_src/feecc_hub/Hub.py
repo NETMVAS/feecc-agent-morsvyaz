@@ -1,17 +1,16 @@
-import csv
 import logging
 import os
-import shelve
 import sys
 import typing as tp
 
 import yaml
 
+from .database import DbWrapper, MongoDbWrapper
 from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
 from ._Types import Config
-from .exceptions import EmployeeNotFoundError, WorkbenchNotFoundError, UnitNotFoundError
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
 class Hub:
@@ -23,8 +22,8 @@ class Hub:
     def __init__(self) -> None:
         logging.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
+        self.database: DbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
-        self._units: tp.List[Unit] = self._unshelve_units()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
@@ -38,30 +37,53 @@ class Hub:
         workbench.start_shift(employee)
 
     @staticmethod
-    def _get_employees(db_path: str = "config/employee_db.csv") -> tp.Dict[str, Employee]:
-        """load up employee database and initialize an array of Employee objects"""
-        if not os.path.exists(db_path):
-            message: str = (
-                f"File '{db_path}' is not in the working directory, cannot retrieve employee data"
-            )
-            logging.critical(message)
-            sys.exit(message)
+    def _get_credentials_from_env() -> tp.Optional[tp.Tuple[str, str]]:
+        """getting credentials from environment variables"""
+        try:
+            username, password = os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
 
+            if all((username, password)):
+                return username, password
+
+        except KeyError:
+            logging.info(
+                "Failed to get credentials from environment variables. Trying to get from config"
+            )
+
+        return None
+
+    def _get_database(self) -> MongoDbWrapper:
+        """establish MongoDB connection and initialize the wrapper"""
+        try:
+            env_credentials = self._get_credentials_from_env()
+
+            if env_credentials is None:
+                username: str = self.config["mongo_db"]["username"]
+                password: str = self.config["mongo_db"]["password"]
+            else:
+                username, password = env_credentials
+
+            wrapper: MongoDbWrapper = MongoDbWrapper(username, password)
+            return wrapper
+
+        except Exception as e:
+            message: str = f"Failed to establish database connection: {e}. Exiting."
+            logging.critical(message)
+            sys.exit()
+
+    def _get_employees(self) -> tp.Dict[str, Employee]:
+        """load up employee database and initialize an array of Employee objects"""
+        employee_list = self.database.get_all_employees()
         employees: tp.Dict[str, Employee] = {}
 
-        with open(db_path, "r", encoding="utf-8") as file:
-            employee_db = csv.reader(file)
-            next(employee_db)  # skip the header
+        for employee in employee_list:
+            employees[employee.rfid_card_id] = employee
 
-            for rfid_card_id, name, position in employee_db:
-                employee = Employee(rfid_card_id, name, position)
-                employees[rfid_card_id] = employee
-
-        logging.info(f"Initialized {len(employees.keys())} employees using {db_path}")
+        logging.info(f"Initialized {len(employees.keys())} employees")
         return employees
 
     @staticmethod
-    def _get_config(config_path: str = "config/hub_config.yaml") -> tp.Any:
+    def _get_config(config_path: str = "feecc_hub_src/config/hub_config.yaml") -> tp.Any:
         """
         :return: dictionary containing all the configurations
         :rtype: dict
@@ -83,10 +105,6 @@ class Hub:
             logging.error(f"Error parsing configuration file {config_path}: {E}")
             sys.exit(1)
 
-    def end_session(self) -> None:
-        """a method to execute when daemon exits"""
-        self._dump_open_units()
-
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
         for workbench in self._workbenches:
@@ -100,22 +118,28 @@ class Hub:
     def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
         unit = Unit(self.config, unit_type)
-        self._units.append(unit)
-        return unit.internal_id
+        self.database.upload_unit(unit)
+
+        if unit.internal_id is not None:
+            return unit.internal_id
+        else:
+            raise ValueError("Unit internal_id is None")
 
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
-        for unit in self._units:
-            if unit.internal_id == unit_internal_id:
-                return unit
+        try:
+            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self.config)
+            return unit
 
-        message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
-        raise UnitNotFoundError(message)
+        except Exception as e:
+            logging.error(e)
+            message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
+            raise UnitNotFoundError(message)
 
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
         workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config(
-            "config/workbench_config.yaml"
+            "feecc_hub_src/config/workbench_config.yaml"
         )
         workbenches = []
 
@@ -130,39 +154,3 @@ class Hub:
             sys.exit(1)
 
         return workbenches
-
-    @staticmethod
-    def _unshelve_units(shelve_path: str = "config/Unit.shelve") -> tp.List[Unit]:
-        """initialize a Unit object for every unfinished Unit using it's data files"""
-        try:
-            if not os.path.exists(shelve_path):
-                logging.info(
-                    f"File {shelve_path} doesn't exist. Assuming there are no units to unshelve"
-                )
-                return []
-
-            with shelve.open(shelve_path) as unit_shelve:
-                units: tp.List[Unit] = unit_shelve["unfinished_units"]
-
-            logging.info(f"Unshelved {len(units)} units from {shelve_path}")
-            units_ids = [unit.internal_id for unit in units]
-            logging.debug(f"internal ids of the units initialised: {units_ids}")
-            return units
-
-        except Exception as e:
-            logging.error(f"An error occurred during unshelving units from {shelve_path}: {e}")
-            return []
-
-    def _dump_open_units(self, shelve_path: str = "config/Unit.shelve") -> None:
-        """shelve every unfinished Unit"""
-        if not len(self._units):
-            logging.info("Shelving stopped: no units to shelve.")
-
-        try:
-            logging.info(f"Shelving {len(self._units)} units to {shelve_path}")
-            with shelve.open(shelve_path) as unit_shelve:
-                unit_shelve["unfinished_units"] = self._units
-            logging.info(f"Successfully shelved {len(self._units)} units to {shelve_path}")
-
-        except Exception as e:
-            logging.error(f"An error occurred during shelving units to {shelve_path}: {e}")

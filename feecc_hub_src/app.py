@@ -6,15 +6,15 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from feecc_hub.Hub import Hub
-from feecc_hub.Unit import Unit
-from feecc_hub.WorkBench import WorkBench
-from feecc_hub.exceptions import (
+from .feecc_hub.Hub import Hub
+from .feecc_hub.Unit import Unit
+from .feecc_hub.WorkBench import WorkBench
+from .feecc_hub.exceptions import (
     WorkbenchNotFoundError,
     EmployeeNotFoundError,
     EmployeeUnauthorizedError,
 )
-from feecc_hub.models import (
+from .feecc_hub.models import (
     NewUnitData,
     WorkbenchData,
     WorkbenchExtraDetailsWithoutStage,
@@ -27,7 +27,7 @@ from feecc_hub.models import (
 )
 
 if tp.TYPE_CHECKING:
-    from feecc_hub.Employee import Employee
+    from .feecc_hub.Employee import Employee
 
 # set up logging
 logging.basicConfig(
@@ -53,8 +53,7 @@ api.add_middleware(
 def end_session() -> None:
     """a function to execute when daemon exits"""
     logging.info("Sigterm registered. Handling.")
-    global hub
-    hub.end_session()
+    pass
     logging.info("Sigterm handling success")
 
 
