@@ -119,10 +119,10 @@ class MongoDbWrapper(DbWrapper):
         key: str, value: str, new_document: Document, collection_: Collection
     ) -> None:
         """
-        finds matching document in the specified collection, and replace it's data
+        finds matching document in the specified collection, and replaces it's data
         with what is provided in the new_document argument
         """
-        collection_.find_one_and_update({key: value}, new_document)
+        collection_.find_one_and_update({key: value}, {"$set": new_document})
 
     def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
         """update data about the production stage in the DB"""
@@ -146,7 +146,7 @@ class MongoDbWrapper(DbWrapper):
         for key in ("_associated_passport", "_config", "unit_biography"):
             del base_dict[key]
 
-        self._update_document("uuid", unit.uuid, {"$set": base_dict}, self._unit_collection)
+        self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
 
     def upload_employee(self, employee: Employee) -> None:
         self._upload_dataclass(employee, self._employee_collection)
