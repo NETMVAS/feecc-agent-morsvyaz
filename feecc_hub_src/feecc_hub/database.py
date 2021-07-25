@@ -128,7 +128,7 @@ class MongoDbWrapper(DbWrapper):
         """update data about the production stage in the DB"""
         stage_dict: Document = asdict(updated_production_stage)
         stage_id: str = updated_production_stage.id
-        self._update_document("id", stage_id, {"$set": stage_dict}, self._prod_stage_collection)
+        self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
     def update_unit(self, unit: Unit) -> None:
         """update data about the unit in the DB"""
