@@ -73,14 +73,14 @@ def create_unit(payload: NewUnitData) -> tp.Dict[str, tp.Any]:
             unit_internal_id=new_unit_internal_id,
         )
         logging.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
-        return response.dict()  # type : ignore
+        return dict(response.dict())
 
     except Exception as E:
         logging.error(f"Exception occurred while creating new Unit: {E}")
         response = UnitOut(
             status=False, comment=f"Could not create a new Unit. Internal error occurred: {E}"
         )
-        return response.dict()
+        return dict(response.dict())
 
 
 @api.post("/api/unit/{unit_internal_id}/start", response_model=BaseOut)

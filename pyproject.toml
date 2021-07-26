@@ -35,7 +35,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
-exclude = "test.*"
+exclude = "test*"
 strict = true
 ignore_missing_imports  = true
 allow_untyped_decorators = true
