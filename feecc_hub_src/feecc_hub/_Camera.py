@@ -70,7 +70,7 @@ class Recording:
 
         # new video filepath. It is to be saved in a separate directory
         # with a UUID and number in case a unit has more than one video associated with it
-        dir_ = "feecc_hub_src/output/video"
+        dir_ = "output/video"
 
         if not os.path.isdir(dir_):
             os.mkdir(dir_)

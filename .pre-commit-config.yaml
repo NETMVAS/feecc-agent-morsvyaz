@@ -61,7 +61,7 @@ repos:
     hooks:
       - id: black-check
         name: black-check
-        entry: black --line-length 100 --verbose
+        entry: black .
         language: system
         pass_filenames: false
         always_run: true

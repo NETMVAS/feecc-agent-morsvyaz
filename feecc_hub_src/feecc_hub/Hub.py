@@ -83,7 +83,7 @@ class Hub:
         return employees
 
     @staticmethod
-    def _get_config(config_path: str = "feecc_hub_src/config/hub_config.yaml") -> tp.Any:
+    def _get_config(config_path: str = "config/hub_config.yaml") -> tp.Any:
         """
         :return: dictionary containing all the configurations
         :rtype: dict
@@ -139,7 +139,7 @@ class Hub:
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
         workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config(
-            "feecc_hub_src/config/workbench_config.yaml"
+            "config/workbench_config.yaml"
         )
         workbenches = []
 

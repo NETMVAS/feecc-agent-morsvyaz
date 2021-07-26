@@ -30,7 +30,7 @@ class Barcode:
             EAN13 Class
         """
         ean13 = barcode.get("ean13", int_id, writer=ImageWriter())
-        self.filename = f"feecc_hub_src/output/barcode/{ean13.get_fullcode()}_barcode"
+        self.filename = f"output/barcode/{ean13.get_fullcode()}_barcode"
         return ean13
 
     def save_barcode(self, ean_code: barcode.EAN13) -> str:

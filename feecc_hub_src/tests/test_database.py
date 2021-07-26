@@ -1,6 +1,6 @@
 import os
 
-import pytest
+# import pytest
 from feecc_hub_src.feecc_hub.Hub import Hub
 
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
