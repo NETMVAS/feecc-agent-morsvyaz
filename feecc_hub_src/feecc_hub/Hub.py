@@ -25,6 +25,12 @@ class Hub:
         self.database: DbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
+        self._create_dirs()
+
+    @staticmethod
+    def _create_dirs():
+        if not os.path.isdir("output"):
+            os.mkdir("output")
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
@@ -54,6 +60,9 @@ class Hub:
 
     def _get_database(self) -> MongoDbWrapper:
         """establish MongoDB connection and initialize the wrapper"""
+
+        logging.info("Trying to connect to database")
+
         try:
             env_credentials = self._get_credentials_from_env()
 
