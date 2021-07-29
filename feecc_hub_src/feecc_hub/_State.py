@@ -118,7 +118,7 @@ class ProductionStageStarting(State):
             )
             return
 
-        if self._context.latest_video is not None:
+        if self._context.latest_video is not None and self._context.config["print_qr"]["enable"]:
             # generate a video short link (a dummy for now)
             self._context.latest_video.short_url = url_generator.generate_short_url(
                 self._context.config
