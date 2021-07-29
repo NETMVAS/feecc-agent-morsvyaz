@@ -1,7 +1,6 @@
 import atexit
 import logging
 import typing as tp
-from dataclasses import asdict
 
 import uvicorn
 from fastapi import FastAPI
@@ -87,7 +86,7 @@ def create_unit(payload: NewUnitData) -> tp.Dict[str, tp.Any]:
 
 @api.post("/api/unit/{unit_internal_id}/start", response_model=BaseOut)
 def unit_start_record(
-        workbench_details: WorkbenchExtraDetails, unit_internal_id: str
+    workbench_details: WorkbenchExtraDetails, unit_internal_id: str
 ) -> tp.Dict[str, tp.Any]:
     """handle start recording operation on a Unit"""
     global hub
@@ -121,7 +120,7 @@ def unit_start_record(
 
 @api.post("/api/unit/{unit_internal_id}/end", response_model=BaseOut)
 def unit_stop_record(
-        workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str
+    workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str
 ) -> tp.Dict[str, tp.Any]:
     """handle end recording operation on a Unit"""
     global hub
@@ -134,7 +133,7 @@ def unit_stop_record(
     try:
         workbench_no: int = request_payload["workbench_no"]
         additional_info: tp.Optional[tp.Dict[str, tp.Any]] = (
-                request_payload["additional_info"] or None
+            request_payload["additional_info"] or None
         )
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
         workbench.end_operation(unit_internal_id, additional_info)
@@ -277,16 +276,11 @@ def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]
 
     if workbench_status_dict["operation_ongoing"]:
         workbench_status_dict["unit_biography"] = {
-            id: {"stage": stage.name}
-            for id, stage in enumerate(workbench._associated_agent.associated_unit.unit_biography)
+            id_: {"stage": stage.name}
+            for id_, stage in enumerate(workbench.agent.associated_unit.unit_biography)
         }
 
     return workbench_status_dict
-
-
-@api.get("/api/unit/{unit_internal_id}/status")
-def get_concrete_unit_status(unit_internal_id: str):
-    pass
 
 
 if __name__ == "__main__":

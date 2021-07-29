@@ -28,7 +28,7 @@ class Hub:
         self._create_dirs()
 
     @staticmethod
-    def _create_dirs():
+    def _create_dirs() -> None:
         if not os.path.isdir("output"):
             os.mkdir("output")
 

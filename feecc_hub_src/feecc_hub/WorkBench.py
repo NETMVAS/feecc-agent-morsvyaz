@@ -29,7 +29,7 @@ class WorkBench:
         self._associated_hub: Hub = associated_hub
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
-        self._associated_agent: Agent = self._get_agent()
+        self.agent: Agent = self._get_agent()
         logging.info(f"Workbench no. {self.number} initialized")
         logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
 
@@ -43,10 +43,10 @@ class WorkBench:
 
     @property
     def unit_in_operation(self) -> str:
-        if self._associated_agent.associated_unit is None:
+        if self.agent.associated_unit is None:
             return ""
         else:
-            return str(self._associated_agent.associated_unit.internal_id)
+            return str(self.agent.associated_unit.internal_id)
 
     @property
     def is_operation_ongoing(self) -> bool:
@@ -54,11 +54,11 @@ class WorkBench:
 
     @property
     def state_name(self) -> str:
-        return self._associated_agent.state_name
+        return self.agent.state_name
 
     @property
     def state_description(self) -> str:
-        return self._associated_agent.state_description
+        return self.agent.state_description
 
     def _get_camera(self) -> tp.Optional[Camera]:
         camera_config: tp.Optional[tp.Dict[str, tp.Any]] = self._workbench_config["hardware"][
@@ -86,11 +86,11 @@ class WorkBench:
         logging.info(
             f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self.number}"
         )
-        self._associated_agent.execute_state(State.AuthorizedIdling)
+        self.agent.execute_state(State.AuthorizedIdling)
 
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
-        if self._associated_agent.state_name == "ProductionStageOngoing":
+        if self.agent.state_name == "ProductionStageOngoing":
             self.end_operation(self.unit_in_operation)
 
         if self.employee is None:
@@ -101,7 +101,7 @@ class WorkBench:
         else:
             self.employee = None
 
-        self._associated_agent.execute_state(State.AwaitLogin)
+        self.agent.execute_state(State.AwaitLogin)
 
     def start_operation(
         self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
@@ -122,7 +122,7 @@ class WorkBench:
             raise AgentBusyError(message)
 
         # start operation
-        self._associated_agent.execute_state(
+        self.agent.execute_state(
             State.ProductionStageStarting,
             True,
             unit,
@@ -143,7 +143,7 @@ class WorkBench:
         if unit_internal_id == self.unit_in_operation:
             database: DbWrapper = self._associated_hub.database
 
-            self._associated_agent.execute_state(
+            self.agent.execute_state(
                 State.ProductionStageEnding, True, database, additional_info
             )
 
