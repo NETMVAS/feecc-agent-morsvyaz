@@ -65,7 +65,7 @@ class Unit:
         if self.internal_id is None:
             self.internal_id = self.get_internal_id()
 
-        if self._config["print_barcode"]["enable"]:
+        if self._config["print_barcode"]["enable"] and not self.is_in_db:
             self._print_barcode()
 
     def production_stage(self, id_: str) -> ProductionStage:
