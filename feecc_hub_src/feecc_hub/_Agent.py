@@ -11,7 +11,7 @@ from ._external_io_operations import ExternalIoGateway, File
 
 if tp.TYPE_CHECKING:
     from .WorkBench import WorkBench
-    from ._Types import Config
+    from .Types import Config
 
 
 class Agent:

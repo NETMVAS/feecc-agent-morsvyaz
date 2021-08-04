@@ -3,7 +3,7 @@ import typing as tp
 
 import requests
 
-from ._Types import Config
+from .Types import Config
 
 
 def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:

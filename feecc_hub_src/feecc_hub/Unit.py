@@ -10,7 +10,7 @@ from uuid import uuid4
 from .Employee import Employee
 from ._Barcode import Barcode
 from ._Passport import Passport
-from ._Types import Config
+from .Types import Config
 from ._external_io_operations import ExternalIoGateway
 from .exceptions import OperationNotFoundError
 

@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 import ipfshttpclient
 from pinatapy import PinataPy
 
-from ._Types import Config
+from .Types import Config
 from ._short_url_generator import update_short_url
 
 

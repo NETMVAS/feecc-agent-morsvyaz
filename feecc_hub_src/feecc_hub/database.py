@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 from .Employee import Employee
 from .Unit import ProductionStage, Unit
-from ._Types import Collection, Config, Document
+from .Types import Collection, Config, Document
 from .exceptions import UnitNotFoundError
 
 
