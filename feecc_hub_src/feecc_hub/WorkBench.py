@@ -8,7 +8,7 @@ from .Employee import Employee
 from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
-from ._Types import Config
+from .Types import Config
 from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
@@ -35,7 +35,7 @@ class WorkBench:
 
     @property
     def config(self) -> Config:
-        return self._associated_hub.config
+        return self._associated_hub.config  # type: ignore
 
     @property
     def camera(self) -> tp.Optional[Camera]:
@@ -143,9 +143,7 @@ class WorkBench:
         if unit_internal_id == self.unit_in_operation:
             database: DbWrapper = self._associated_hub.database
 
-            self.agent.execute_state(
-                State.ProductionStageEnding, True, database, additional_info
-            )
+            self.agent.execute_state(State.ProductionStageEnding, True, database, additional_info)
 
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"

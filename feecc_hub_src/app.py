@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from feecc_hub.Hub import Hub
+from feecc_hub.Types import RequestPayload
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.exceptions import (
@@ -61,7 +62,7 @@ def end_session() -> None:
 
 
 @api.post("/api/unit/new", response_model=UnitOut)
-def create_unit(payload: NewUnitData) -> tp.Dict[str, tp.Any]:
+def create_unit(payload: NewUnitData) -> RequestPayload:
     """handle new Unit creation"""
     logging.debug(f"Got request at /api/unit/new with payload: {payload.dict()}")
     global hub
@@ -87,10 +88,10 @@ def create_unit(payload: NewUnitData) -> tp.Dict[str, tp.Any]:
 @api.post("/api/unit/{unit_internal_id}/start", response_model=BaseOut)
 def unit_start_record(
     workbench_details: WorkbenchExtraDetails, unit_internal_id: str
-) -> tp.Dict[str, tp.Any]:
+) -> RequestPayload:
     """handle start recording operation on a Unit"""
     global hub
-    request_payload: tp.Dict[str, tp.Any] = workbench_details.dict()
+    request_payload: RequestPayload = workbench_details.dict()
 
     logging.debug(
         f"Got request at /api/unit/{unit_internal_id}/start with payload:" f" {request_payload}"
@@ -121,7 +122,7 @@ def unit_start_record(
 @api.post("/api/unit/{unit_internal_id}/end", response_model=BaseOut)
 def unit_stop_record(
     workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str
-) -> tp.Dict[str, tp.Any]:
+) -> RequestPayload:
     """handle end recording operation on a Unit"""
     global hub
     request_payload = workbench_data.dict()
@@ -132,9 +133,7 @@ def unit_stop_record(
 
     try:
         workbench_no: int = request_payload["workbench_no"]
-        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = (
-            request_payload["additional_info"] or None
-        )
+        additional_info: tp.Optional[RequestPayload] = request_payload["additional_info"] or None
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
         workbench.end_operation(unit_internal_id, additional_info)
         message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
@@ -146,7 +145,7 @@ def unit_stop_record(
 
 
 @api.post("/api/unit/{unit_internal_id}/upload", response_model=BaseOut)
-def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> tp.Dict[str, tp.Any]:
+def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> RequestPayload:
     """handle Unit lifecycle end"""
     global hub
     request_payload = workbench.dict()
@@ -169,7 +168,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> tp.Di
 
 
 @api.post("/api/employee/log-in", response_model=EmployeeOut)
-def log_in_employee(employee_data: EmployeeDetails) -> tp.Dict[str, tp.Any]:
+def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
     """handle logging in the Employee at a given Workbench"""
     global hub
     request_payload = employee_data.dict()
@@ -214,10 +213,8 @@ def log_in_employee(employee_data: EmployeeDetails) -> tp.Dict[str, tp.Any]:
         return response_data
 
 
-@api.post(
-    "/api/employee/log-out",
-)
-def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
+@api.post("/api/employee/log-out")
+def log_out_employee(employee: WorkbenchData) -> RequestPayload:
     """handle logging out the Employee at a given Workbench"""
     global hub
     request_payload = employee.dict()
@@ -249,7 +246,7 @@ def log_out_employee(employee: WorkbenchData) -> tp.Dict[str, tp.Any]:
 
 
 @api.get("/api/workbench/{workbench_no}/status")
-def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]:
+def get_workbench_status(workbench_no: int) -> RequestPayload:
     """handle providing status of the given Workbench"""
     # find the WorkBench with the provided number
 
@@ -263,7 +260,7 @@ def get_workbench_status(workbench_no: int) -> tp.Dict[str, tp.Union[str, bool]]
     employee: tp.Optional[Employee] = workbench.employee
     employee_data: tp.Optional[tp.Dict[str, str]] = employee.data if employee else None
 
-    workbench_status_dict: tp.Dict[str, tp.Any] = {
+    workbench_status_dict: RequestPayload = {
         "workbench_no": workbench.number,
         "state": workbench.state_name,
         "state_description": workbench.state_description,
