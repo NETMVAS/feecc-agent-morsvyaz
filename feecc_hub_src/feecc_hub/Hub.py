@@ -9,7 +9,7 @@ from .database import DbWrapper, MongoDbWrapper
 from .Employee import Employee
 from .Unit import Unit
 from .WorkBench import WorkBench
-from ._Types import Config
+from .Types import Config
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 

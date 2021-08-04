@@ -35,7 +35,7 @@ class WorkBench:
 
     @property
     def config(self) -> Config:
-        return self._associated_hub.config  # type: ignore
+        return self._associated_hub.config
 
     @property
     def camera(self) -> tp.Optional[Camera]:
