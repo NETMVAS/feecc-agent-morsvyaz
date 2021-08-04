@@ -117,7 +117,7 @@ class IpfsWorker(BaseIoWorker):
     def post(self, file: File) -> None:
         """publish file on IPFS"""
         ipfs_client = ipfshttpclient.connect()
-        result = ipfs_client.add(file.filename)
+        result = ipfs_client.add(file.path)
         ipfs_hash: str = result["Hash"]
         logging.info(f"File {file.filename} published to IPFS, hash: {ipfs_hash}")
         file.ipfs_hash = ipfs_hash
