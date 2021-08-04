@@ -167,6 +167,33 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
     return {"status": False, "comment": error_message}
 
 
+@api.post("/api/employee/{rfid_card_id}/info", response_model=EmployeeOut)
+def get_employee_data(rfid_card_id: str) -> RequestPayload:
+    """return data for an Employee with matching ID card"""
+    logging.debug(f"Got request at /api/employee/{rfid_card_id}/info")
+
+    try:
+        employee: Employee = hub.get_employee_by_card_id(rfid_card_id)
+        response_data = {
+            "status": True,
+            "comment": "Employee retrieved successfully",
+            "employee_data": EmployeeData(**employee.data).dict(),
+        }
+        return response_data
+
+    except EmployeeNotFoundError as E:
+        message = f"Employee not found: {E}"
+        logging.error(message)
+        response_data = {"status": False, "comment": message}
+        return response_data
+
+    except Exception as e:
+        message = f"An unknown error occurred while fetching Employee data: {e}"
+        logging.error(message)
+        response_data = {"status": False, "comment": message}
+        return response_data
+
+
 @api.post("/api/employee/log-in", response_model=EmployeeOut)
 def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
     """handle logging in the Employee at a given Workbench"""

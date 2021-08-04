@@ -134,6 +134,13 @@ class Hub:
         else:
             raise ValueError("Unit internal_id is None")
 
+    def get_employee_by_card_id(self, card_id: str) -> Employee:
+        """find the employee with the provided RFID card id"""
+        if card_id not in self._employees.keys():
+            raise EmployeeNotFoundError(f"No employee with card ID {card_id}")
+
+        return self._employees[card_id]
+
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         try:
