@@ -5,6 +5,7 @@ import os
 import subprocess
 import time
 import typing as tp
+from copy import deepcopy
 
 from ._external_io_operations import File
 
@@ -31,13 +32,13 @@ class Camera:
 
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
-        recording = self._ongoing_record
+        recording = deepcopy(self._ongoing_record)
+        self._ongoing_record = None
         logging.debug(f"Trying to stop record for {recording}")
         if recording is None:
             logging.error("Could not stop record for unit: no ongoing record found")
             return None
         file = recording.stop()
-        self._ongoing_record = None
         logging.info("Stopped record for unit")
         return file
 
