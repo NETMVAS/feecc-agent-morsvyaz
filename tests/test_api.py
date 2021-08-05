@@ -18,7 +18,7 @@ def test_employee_login() -> None:
     """Test to check if employee could be logged in system"""
     resp = client.post(
         TEST_SERVER + "/api/employee/log-in",
-        json={"workbench_no": 1, "employee_rfid_card_no": "0008368511"},
+        json={"workbench_no": 1, "employee_rfid_card_no": "1111111111"},
     )
 
     assert resp.ok, f"{resp.json()}"
@@ -173,7 +173,7 @@ def test_api_integrate() -> None:
 
     login_resp = client.post(
         TEST_SERVER + "/api/employee/log-in",
-        json={"workbench_no": 2, "employee_rfid_card_no": "0008368511"},
+        json={"workbench_no": 2, "employee_rfid_card_no": "1111111111"},
     )
 
     assert login_resp.json()["status"], f"Got error while logging in: {login_resp.json()}"
