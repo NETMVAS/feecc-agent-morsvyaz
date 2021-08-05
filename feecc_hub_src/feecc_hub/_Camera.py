@@ -22,22 +22,22 @@ class Camera:
         self.login: str = config["login"]  # camera login to obtain access to the stream
         self.password: str = config["password"]  # camera password to obtain access to the stream
         # List of Recording objects each corresponding to an ongoing recording process
-        self._ongoing_records: tp.List[Recording] = []
+        self._ongoing_record: tp.Optional[Recording] = None
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
         recording = Recording(self, unit_uuid)
-        self._ongoing_records.append(recording)
+        self._ongoing_record = recording
 
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
-        recording = self._ongoing_records.pop(-1) if self._ongoing_records else None
+        recording = self._ongoing_record
         logging.debug(f"Trying to stop record for {recording}")
-        if not recording:
+        if recording is None:
             logging.error("Could not stop record for unit: no ongoing record found")
             return None
-
         file = recording.stop()
+        self._ongoing_record = None
         logging.info("Stopped record for unit")
         return file
 
