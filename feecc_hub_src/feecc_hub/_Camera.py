@@ -98,7 +98,7 @@ class Recording:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
             logging.info(f"Finished recording video for unit {self.unit_uuid}")
             self._toggle_record_flag()
-            time.sleep(1)  # some time to finish the process
+            # time.sleep(1)  # some time to finish the process
 
         return self.file
 
