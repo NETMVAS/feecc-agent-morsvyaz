@@ -28,6 +28,10 @@ class Camera:
         """start recording video"""
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
+        o_r = self._ongoing_records
+        logging.debug(
+            f"current ongoing records list ({len(o_r)} items) is {[r.file.filename for r in o_r]}"
+        )
 
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
@@ -51,7 +55,7 @@ class Recording:
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
         logging.debug(f"New Recording object initialized at {self}")
-        self._file: File = File(self._start_record())
+        self.file: File = File(self._start_record())
 
     def _toggle_record_flag(self) -> None:
         self.recording_ongoing = not self.recording_ongoing
@@ -96,7 +100,7 @@ class Recording:
             self._toggle_record_flag()
             time.sleep(1)  # some time to finish the process
 
-        return self._file
+        return self.file
 
     def _execute_ffmpeg(self, filename: str) -> None:
         """Execute ffmpeg command"""
