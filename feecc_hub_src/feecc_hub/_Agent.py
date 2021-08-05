@@ -37,9 +37,11 @@ class Agent:
     @_state_thread.setter
     def _state_thread(self, state_thread: threading.Thread) -> None:
         self._state_thread_list.append(state_thread)
+        thread_list = self._state_thread_list
         logging.debug(
-            f"Attribute _state_thread_list of Agent is now of len {len(self._state_thread_list)}:\n"
-            f"{[t.name for t in self._state_thread_list]}"
+            f"Attribute _state_thread_list of Agent is now of len {len(thread_list)}:\n"
+            f"{[repr(t) for t in thread_list]}\n"
+            f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
         )
 
     @property
