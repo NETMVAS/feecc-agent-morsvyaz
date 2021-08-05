@@ -37,6 +37,10 @@ class Agent:
     @_state_thread.setter
     def _state_thread(self, state_thread: threading.Thread) -> None:
         self._state_thread_list.append(state_thread)
+        logging.debug(
+            f"Attribute _state_thread_list of Agent is now of len {len(self._state_thread_list)}:\n"
+            f"{[t.name for t in self._state_thread_list]}"
+        )
 
     @property
     def state_name(self) -> str:

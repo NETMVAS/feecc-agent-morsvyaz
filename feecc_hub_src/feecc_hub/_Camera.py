@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
-import time
 import typing as tp
 
 from ._external_io_operations import File
@@ -98,7 +97,6 @@ class Recording:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
             logging.info(f"Finished recording video for unit {self.unit_uuid}")
             self._toggle_record_flag()
-            # time.sleep(1)  # some time to finish the process
 
         return self.file
 
