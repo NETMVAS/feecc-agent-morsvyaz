@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 import typing as tp
+from random import randint
 
 from .Unit import Unit
 from ._Camera import Camera
@@ -75,7 +76,10 @@ class Agent:
         if background:
             # execute state in the background
             logging.debug(f"Trying to execute state: {state}")
-            self._state_thread = threading.Thread(target=self._state.run, args=args, kwargs=kwargs)
+            thread_name: str = f"{self._state.name}-{randint(1, 999)}"
+            self._state_thread = threading.Thread(
+                target=self._state.run, args=args, kwargs=kwargs, daemon=False, name=thread_name
+            )
             self._state_thread.start()
         else:
             self._state.run(*args, **kwargs)
