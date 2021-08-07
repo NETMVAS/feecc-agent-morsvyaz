@@ -16,6 +16,8 @@
 
 > Предполагаем, что вы уже установили Ubuntu (или другой Debian-based дистрибутив Linux) и Python вместе с Poetry.
 
+### Установить Feecc Hub Backend
+
 Установим зависимости, необходимые для сборки некоторых используемых модулей:
 
 `sudo apt update && sudo apt install -y zlib1g libjpeg-dev python3-distutils`
@@ -25,6 +27,22 @@
 `poetry install && poetry shell`
 
 Поменяем конфигурацию Hub, файлы которой находятся в `config/hub_config.yaml` и `config/workbench_config.yaml`
+
+### Установить Robonomics binary
+
+Для работы с сетью "Робономика" бекенду необходим исполняемый файл Робономики.
+[Как зарегистрировать аккаунт в сети "Робономика"](https://wiki.robonomics.network/docs/en/create-account-in-dapp/)
+
+#### Установка
+
+1. Перейти на [страницу релизов](https://github.com/airalab/robonomics/releases) и выбрать последнюю подходящую версию
+
+2. Скачать архив: `wget https://github.com/airalab/robonomics/releases/download/v1.1.
+   0/robonomics-1.1.0-x86_64-unknown-linux-gnu.tar.gz -P ~/`
+   
+3. Распаковать исполняемый файл в директорию `/bin`: 
+   
+   `sudo tar -xvf robonomics-1.1.0-x86_64-unknown-linux-gnu.tar.gz -C /bin/`
 
 ### Установить Go-IPFS
 
@@ -67,12 +85,8 @@ Hub использует библиотеку ["ipfshttpclient"](https://pypi.or
    sudo systemctl start ipfs.service
    ```
 
+### Запуск сервера
+
 Теперь Hub готов к работе, запустим его:
 
 `python app.py`
-
-<h2 align="center">Тестирование приложения</h2>
-
-Для запуска тестов выполните:
-
-`pytest .`
