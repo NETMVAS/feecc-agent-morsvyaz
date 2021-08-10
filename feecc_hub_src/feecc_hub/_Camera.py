@@ -71,25 +71,24 @@ class Recording:
 
         :returns: saved video relative path
         """
+        logging.debug("Reached target 3a")
         unit_uuid: str = self.unit_uuid
         logging.info(f"Recording started for the unit with UUID {unit_uuid}")
-
-        # new video filepath. It is to be saved in a separate directory
-        # with a UUID and number in case a unit has more than one video associated with it
         dir_ = "output/video"
-
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
-
         filename = f"{dir_}/unit_{unit_uuid}_assembly_video_1.mp4"
 
+        logging.debug("Reached target 3b")
         # determine a valid video name not to override an existing video
         cnt = 1
         while os.path.exists(filename):
             filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
 
+        logging.debug("Reached target 3c")
         self._execute_ffmpeg(filename)
+        logging.debug("Reached target 3d")
         self._toggle_record_flag()
 
         logging.debug("Reached target 4")
