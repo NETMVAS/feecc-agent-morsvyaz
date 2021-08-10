@@ -83,7 +83,7 @@ class Recording:
         # determine a valid video name not to override an existing video
         cnt = 1
         while os.path.exists(filename):
-            filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
+            filename = filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
 
         logging.debug("Reached target 3c")
