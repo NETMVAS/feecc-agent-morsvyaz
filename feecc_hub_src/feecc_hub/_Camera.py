@@ -25,7 +25,6 @@ class Camera:
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
-        logging.debug("Reached target 2")
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
         o_r = self._ongoing_records
@@ -55,9 +54,7 @@ class Recording:
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
         logging.debug(f"New Recording object initialized at {self}")
-        logging.debug("Reached target 3")
         self.file: File = File(self._start_record())
-        logging.debug("Reached target 5")
 
     def _toggle_record_flag(self) -> None:
         self.recording_ongoing = not self.recording_ongoing
@@ -71,7 +68,6 @@ class Recording:
 
         :returns: saved video relative path
         """
-        logging.debug("Reached target 3a")
         unit_uuid: str = self.unit_uuid
         logging.info(f"Recording started for the unit with UUID {unit_uuid}")
         dir_ = "output/video"
@@ -79,19 +75,15 @@ class Recording:
             os.mkdir(dir_)
         filename = f"{dir_}/unit_{unit_uuid}_assembly_video_1.mp4"
 
-        logging.debug("Reached target 3b")
         # determine a valid video name not to override an existing video
         cnt = 1
         while os.path.exists(filename):
             filename = filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
 
-        logging.debug("Reached target 3c")
         self._execute_ffmpeg(filename)
-        logging.debug("Reached target 3d")
         self._toggle_record_flag()
 
-        logging.debug("Reached target 4")
         return filename
 
     def stop(self) -> File:
