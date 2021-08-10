@@ -20,3 +20,11 @@ class AgentBusyError(Exception):
 
 class EmployeeNotFoundError(Exception):
     pass
+
+
+class SubstrateError(Exception):
+    pass
+
+
+class DatalogError(Exception):
+    pass

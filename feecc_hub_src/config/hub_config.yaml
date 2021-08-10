@@ -10,10 +10,10 @@ mongo_db: # MongoDB credentials
 
 # EXTERNAL IO SECTION
 robonomics_network:
-  path_to_robonomics_binary: "robonomics" # where lies the binary file, ends with a binary filename
-  remote: '--remote wss://earth.rpc.robonomics.network' # e.g. ws://127.0.0.1:9944
-  key: '' # secret key in robonomics network
   enable_datalog: false # Whether to write certain data to Robonomics datalog or not
+  account_address: "" # public address of the account in the Robonomics network
+  account_seed: "" # seed of the account in the Robonomics network
+  substrate_node_url: "" # A url of the substrate node to be used
 
 pinata:
   enable: false # Enable pinning of files published to IPFS to Pinata

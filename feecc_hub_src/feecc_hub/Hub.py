@@ -97,7 +97,7 @@ class Hub:
         :return: dictionary containing all the configurations
         :rtype: dict
 
-        Reading config, containing all the required data, such as filepath, robonomics parameters (remote wss, seed),
+        Reading config, containing all the required data
         camera parameters (ip, login, password, port), etc
         """
         logging.debug(f"Looking for config in {config_path}")

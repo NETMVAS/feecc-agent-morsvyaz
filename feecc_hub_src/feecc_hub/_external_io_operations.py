@@ -1,13 +1,14 @@
 import logging
 import os
-import subprocess
 import threading
 import typing as tp
 from abc import ABC, abstractmethod
 
 import ipfshttpclient
 from pinatapy import PinataPy
+from substrateinterface import Keypair, SubstrateInterface
 
+from exceptions import DatalogError, SubstrateError
 from .Types import Config
 from ._short_url_generator import update_short_url
 
@@ -34,6 +35,11 @@ class File:
             return None
         else:
             return self.short_url.split("/")[-1]
+
+    def __str__(self) -> str:
+        """convert self into a string"""
+        with open(self.path, "r") as f:
+            return "\n".join(f.readlines())
 
     def delete(self) -> None:
         """deletes the file"""
@@ -133,21 +139,121 @@ class RobonomicsWorker(BaseIoWorker):
         super().__init__(context, target="Robonomics Network")
         self.config: tp.Dict[str, tp.Any] = config["robonomics_network"]
 
-    def post(self, data: str) -> None:
+    def _get_substrate_connection(self) -> SubstrateInterface:
+        """establish connection to a specified substrate node"""
+        try:
+            substrate_node_url: str = self.config["substrate_node_url"]
+            logging.info("Establishing connection to substrate node")
+            substrate = SubstrateInterface(
+                url=substrate_node_url,
+                ss58_format=32,
+                type_registry_preset="substrate-node-template",
+                type_registry={
+                    "types": {
+                        "Record": "Vec<u8>",
+                        "<T as frame_system::Config>::AccountId": "AccountId",
+                        "RingBufferItem": {
+                            "type": "struct",
+                            "type_mapping": [
+                                ["timestamp", "Compact<u64>"],
+                                ["payload", "Vec<u8>"],
+                            ],
+                        },
+                        "RingBufferIndex": {
+                            "type": "struct",
+                            "type_mapping": [
+                                ["start", "Compact<u64>"],
+                                ["end", "Compact<u64>"],
+                            ],
+                        },
+                    }
+                },
+            )
+            logging.info("Successfully established connection to substrate node")
+            return substrate
+
+        except Exception as e:
+            message: str = f"Substrate connection failed: {e}"
+            logging.error(message)
+            raise SubstrateError(message)
+
+    def _get_latest_datalog(self, account_address: str) -> str:
+        """
+        Fetch latest datalog record of a provided account
+        Parameters
+        ----------
+        account_address: ss58 address of an account which datalog is to be fetched for
+        Returns
+        -------
+        String, the latest record of specified account
+        """
+        try:
+            substrate: SubstrateInterface = self._get_substrate_connection()
+            datalog_total_number: int = (
+                substrate.query("Datalog", "DatalogIndex", [account_address]).value["end"] - 1
+            )
+            datalog: str = substrate.query(
+                "Datalog", "DatalogItem", [[account_address, datalog_total_number]]
+            ).value["payload"]
+            return datalog
+
+        except Exception as e:
+            message: str = f"Error fetching latest datalog: {e}"
+            logging.error(message)
+            raise DatalogError(message)
+
+    def _write_datalog(self, data: str) -> tp.Optional[str]:
+        """
+        Write any string to datalog
+        Parameters
+        ----------
+        data : data to be written as datalog
+        Returns
+        -------
+        Hash of the datalog transaction
+        """
+        substrate: SubstrateInterface = self._get_substrate_connection()
+        seed: str = self.config["account_seed"]
+        # create keypair
+        try:
+            keypair = Keypair.create_from_mnemonic(seed, ss58_format=32)
+        except Exception as e:
+            logging.error(f"Failed to create keypair: \n{e}")
+            return None
+
+        try:
+            logging.info("Creating substrate call")
+            call = substrate.compose_call(
+                call_module="Datalog", call_function="record", call_params={"record": data}
+            )
+            logging.info(f"Successfully created a call:\n{call}")
+            logging.info("Creating extrinsic")
+            extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
+        except Exception as e:
+            logging.error(f"Failed to create an extrinsic: {e}")
+            return None
+
+        try:
+            logging.info("Submitting extrinsic")
+            receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+            logging.info(
+                f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}"
+            )
+            return str(receipt.extrinsic_hash)
+        except Exception as e:
+            logging.error(f"Failed to submit extrinsic: {e}")
+            return None
+
+    def post(self, data: tp.Union[File, str]) -> None:
         """write provided string to Robonomics datalog"""
-        robonomics_bin: str = self.config["path_to_robonomics_binary"]
-        remote: str = self.config["remote"]
-        signature: str = self.config["key"]
-        command: str = f'echo "{data}" | {robonomics_bin} io write datalog {remote} -s {signature}'
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        data_: str = str(data)
+        transaction_hash: tp.Optional[str] = self._write_datalog(data_)
+        logging.info(f"Data added to Robonomics datalog. Transaction hash: {transaction_hash}")
 
-        if process.stdout is not None:
-            output = process.stdout.readline()
-            transaction_hash: str = output.strip().decode("utf8")
-            logging.info(f"Data added to Robonomics datalog. Transaction hash: {transaction_hash}")
-
-    def get(self) -> None:
-        raise NotImplementedError
+    def get(self) -> str:
+        """get latest datalog post for the account"""
+        account_address: str = self.config["account_address"]
+        return self._get_latest_datalog(account_address)
 
 
 class PinataWorker(BaseIoWorker):
