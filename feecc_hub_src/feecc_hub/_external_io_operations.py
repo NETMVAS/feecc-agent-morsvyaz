@@ -8,7 +8,7 @@ import ipfshttpclient
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from exceptions import DatalogError, SubstrateError
+from .exceptions import DatalogError, SubstrateError
 from .Types import Config
 from ._short_url_generator import update_short_url
 
