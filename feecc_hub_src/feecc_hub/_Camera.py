@@ -25,6 +25,7 @@ class Camera:
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
+        logging.debug("Reached target 2")
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
         o_r = self._ongoing_records
@@ -54,7 +55,9 @@ class Recording:
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
         logging.debug(f"New Recording object initialized at {self}")
+        logging.debug("Reached target 3")
         self.file: File = File(self._start_record())
+        logging.debug("Reached target 5")
 
     def _toggle_record_flag(self) -> None:
         self.recording_ongoing = not self.recording_ongoing
@@ -89,6 +92,7 @@ class Recording:
         self._execute_ffmpeg(filename)
         self._toggle_record_flag()
 
+        logging.debug("Reached target 4")
         return filename
 
     def stop(self) -> File:

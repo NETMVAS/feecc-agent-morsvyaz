@@ -143,7 +143,9 @@ class ProductionStageStarting(State):
 
         # start recording a video
         if self._context.associated_camera is not None:
+            logging.debug("Reached target 1")
             self._context.associated_camera.start_record(passport_id)
+            logging.debug("Reached target 6")
         else:
             logging.error("Cannot start recording: associated camera is None")
 
