@@ -119,12 +119,15 @@ class ProductionStageStarting(State):
             return
 
         if self._context.latest_video is not None and self._context.config["print_qr"]["enable"]:
+            logging.info("Generating QR code")
             # generate a video short link (a dummy for now)
-            self._context.latest_video.short_url = url_generator.generate_short_url(
-                self._context.config
-            )[1]
+            logging.debug("Generating short url")
+            self._context.latest_video.short_url = (
+                url_generator.generate_short_url(self._context.config)
+            )
 
             # generate a QR code with the short link
+            logging.debug("Generating QR code image file")
             if self._context.latest_video.short_url is not None:
                 self._context.latest_video.qrcode = image_generation.create_qr(
                     link=self._context.latest_video.short_url, config=self._context.config
@@ -132,12 +135,14 @@ class ProductionStageStarting(State):
 
                 # print the QR code onto a sticker if set to do so in the config
                 if self._context.config["print_qr"]["enable"]:
+                    logging.debug("Printing QR code image")
                     Printer.Task(
                         picname=self._context.latest_video.qrcode, config=self._context.config
                     )
 
         # print the seal tag onto a sticker if set to do so in the config
         if self._context.config["print_security_tag"]["enable"]:
+            logging.info("Printing seal tag")
             seal_file_path = image_generation.create_seal_tag(self._context.config)
             Printer.Task(picname=seal_file_path, config=self._context.config)
 

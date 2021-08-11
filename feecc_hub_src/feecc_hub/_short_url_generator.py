@@ -1,12 +1,11 @@
 import logging
-import typing as tp
 
 import requests
 
 from .Types import Config
 
 
-def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
+def generate_short_url(config: Config) -> str:
     """
     :param config: dictionary containing all the configurations
     :type config: dict
@@ -33,10 +32,10 @@ def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
         logging.info("Generating short url")
         logging.debug(response.json())
-        return keyword, link
+        return link
     except Exception as e:
         logging.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
-        return "55", "url.today/55"
+        return "url.today/55"
         # time to time creating url fails. To go on just set a dummy url and keyword
 
 
