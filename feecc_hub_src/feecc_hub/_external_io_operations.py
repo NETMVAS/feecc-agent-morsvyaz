@@ -31,10 +31,7 @@ class File:
 
     @property
     def keyword(self) -> tp.Optional[str]:
-        if self.short_url is None:
-            return None
-        else:
-            return self.short_url.split("/")[-1]
+        return self.short_url.split("/")[-1] if self.short_url else None
 
     def __str__(self) -> str:
         """convert self into a string"""
@@ -63,6 +60,7 @@ class ExternalIoGateway:
             ipfs_worker = IpfsWorker(self, self.config)
             ipfs_worker.post(file)
 
+            logging.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}")
             if file.keyword and file.ipfs_hash:
                 logging.info(f"Updating URL {file.short_url}")
                 update_short_url(file.keyword, file.ipfs_hash, self.config)

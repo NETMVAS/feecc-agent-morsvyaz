@@ -67,4 +67,4 @@ def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
         # no need to read the response. Just wait till the process finishes
         logging.debug(f"Trying to update short url link: {response.json()}")
     except Exception as e:
-        logging.warning("Failed to update URL: ", e)
+        logging.error("Failed to update URL: ", e)
