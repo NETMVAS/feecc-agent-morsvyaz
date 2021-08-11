@@ -158,8 +158,7 @@ class Unit:
         database.update_unit(self)
 
     def upload(self) -> None:
-
-        # upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics
+        """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         if self._associated_passport is not None:
             self._associated_passport.save()
             gateway = ExternalIoGateway(self._config)

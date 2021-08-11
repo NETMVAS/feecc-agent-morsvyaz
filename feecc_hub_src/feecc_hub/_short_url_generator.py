@@ -41,7 +41,7 @@ def generate_short_url(config: Config) -> str:
 
 def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
     """
-    :param keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
+    :param keyword: short url keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str
     :param ipfs_hash: IPFS hash of a recorded video
     :type ipfs_hash: str

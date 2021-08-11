@@ -30,10 +30,7 @@ class Agent:
 
     @property
     def _state_thread(self) -> tp.Optional[threading.Thread]:
-        if self._state_thread_list:
-            return self._state_thread_list[-1]
-        else:
-            return None
+        return self._state_thread_list[-1] if self._state_thread_list else None
 
     @_state_thread.setter
     def _state_thread(self, state_thread: threading.Thread) -> None:
@@ -46,18 +43,12 @@ class Agent:
         )
 
     @property
-    def state_name(self) -> str:
-        if self._state is None:
-            return ""
-        else:
-            return self._state.name
+    def state_name(self) -> tp.Optional[str]:
+        return self._state.name if self._state else None
 
     @property
-    def state_description(self) -> str:
-        if self._state is not None:
-            return str(self._state.description)
-        else:
-            return ""
+    def state_description(self) -> tp.Optional[str]:
+        return str(self._state.description) if self._state else None
 
     @property
     def config(self) -> Config:

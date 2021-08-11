@@ -149,37 +149,38 @@ class ProductionStageOngoing(State):
 
 
 class ProductionStageEnding(State):
-    """
-    State when production stage is being ended
-    """
+    """A state to run when a production stage is being ended"""
 
     def run(self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
-        # make a copy of unit to work with securely in another thread
-        if self._context.associated_unit is None:
-            raise ValueError("No context associated unit found")
-        else:
-            unit: Unit = deepcopy(self._context.associated_unit)
-            self._context.associated_unit = None
+        unit: Unit = self._get_unit_copy()
+        self._stop_recording()
+        ipfs_hashes: tp.List[str] = self._publish_record()
+        unit.end_session(database, ipfs_hashes, additional_info)
+        self._context.execute_state(AuthorizedIdling, background=False)
 
-        # stop recording and save the file
-        if self._context.associated_camera is not None:
-            self._context.latest_video = self._context.associated_camera.stop_record()
-
-        # publish video into IPFS and pin to Pinata
-        # update the short link to point to an actual recording
+    def _publish_record(self) -> tp.List[str]:
+        """publish video into IPFS and pin to Pinata. Then update the short link
+        to point to an actual recording"""
         ipfs_hashes: tp.List[str] = []
         file = self._context.latest_video
         if file is not None:
             self._context.io_gateway.send(file)
-
             if file.ipfs_hash is not None:
                 ipfs_hashes.append(file.ipfs_hash)
+        return ipfs_hashes
 
-        # add video IPFS hash to the passport
-        unit.end_session(database, ipfs_hashes, additional_info)
+    def _get_unit_copy(self) -> Unit:
+        """make a copy of unit to work with securely in another thread"""
+        if self._context.associated_unit is None:
+            raise ValueError("No context associated unit found")
+        unit: Unit = deepcopy(self._context.associated_unit)
+        self._context.associated_unit = None
+        return unit
 
-        # reset own state
-        self._context.execute_state(AuthorizedIdling, background=False)
+    def _stop_recording(self) -> None:
+        """stop recording and save the file"""
+        if self._context.associated_camera is not None:
+            self._context.latest_video = self._context.associated_camera.stop_record()
 
 
 class UnitWrapUp(State):

@@ -53,11 +53,11 @@ class WorkBench:
         return bool(self.unit_in_operation)
 
     @property
-    def state_name(self) -> str:
+    def state_name(self) -> tp.Optional[str]:
         return self.agent.state_name
 
     @property
-    def state_description(self) -> str:
+    def state_description(self) -> tp.Optional[str]:
         return self.agent.state_description
 
     def _get_camera(self) -> tp.Optional[Camera]:
