@@ -34,6 +34,7 @@ class Camera:
 
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
+        logging.debug(f"Method toggled")
         recording = self._ongoing_records.pop(0) if self._ongoing_records else None
         logging.debug(f"Trying to stop record for {recording}")
         if not recording:
