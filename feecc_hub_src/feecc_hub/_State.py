@@ -10,6 +10,7 @@ from . import (
     _image_generation as image_generation,
     _short_url_generator as url_generator,
 )
+from .Types import Config
 
 if tp.TYPE_CHECKING:
     from ._Agent import Agent
@@ -33,6 +34,10 @@ class State(ABC):
     def description(self) -> tp.Optional[str]:
         """returns own docstring which describes the state"""
         return self.__doc__
+
+    @property
+    def _config(self) -> Config:
+        return self._context.config
 
     @abstractmethod
     @tp.no_type_check
@@ -80,9 +85,7 @@ class UnitInitialization(State):
 
 
 class ProductionStageStarting(State):
-    """
-    State when production stage being started
-    """
+    """A state to run when a production stage is being started"""
 
     def run(
         self,
@@ -91,68 +94,49 @@ class ProductionStageStarting(State):
         production_stage_name: str,
         additional_info: tp.Dict[str, tp.Any],
     ) -> None:
-        # assign unit
         self._context.associated_unit = unit
+        unit.employee = employee
+        unit.start_session(production_stage_name, employee.passport_code, additional_info)
 
-        # assign employee to unit
-        self._context.associated_unit.employee = employee
+        if self._context.latest_video is not None and self._config["print_qr"]["enable"]:
+            qrcode: str = self._generate_qr_code()
+            self._print_qr_code(qrcode)
 
-        # start operation at the unit
-        self._context.associated_unit.start_session(
-            production_stage_name, employee.passport_code, additional_info
-        )
+        if self._config["print_security_tag"]["enable"]:
+            self._print_seal_tag()
 
-        # start the recording in the background and send the path to the video
-        try:
-            unit = self._context.associated_unit
-
-            if unit is None:
-                raise ValueError("No associated unit found")
-
-            passport_id = unit.uuid
-
-        except AttributeError as E:
-            logging.error(
-                f"Failed to start video recording: error retrieving associated passport ID.\n\
-                        self._context.associated_passport = {self._context.associated_unit} {E}"
-            )
-            return
-
-        if self._context.latest_video is not None and self._context.config["print_qr"]["enable"]:
-            logging.info("Generating QR code")
-            # generate a video short link (a dummy for now)
-            logging.debug("Generating short url")
-            self._context.latest_video.short_url = (
-                url_generator.generate_short_url(self._context.config)
-            )
-
-            # generate a QR code with the short link
-            logging.debug("Generating QR code image file")
-            if self._context.latest_video.short_url is not None:
-                self._context.latest_video.qrcode = image_generation.create_qr(
-                    link=self._context.latest_video.short_url, config=self._context.config
-                )
-
-                # print the QR code onto a sticker if set to do so in the config
-                if self._context.config["print_qr"]["enable"]:
-                    logging.debug("Printing QR code image")
-                    Printer.Task(
-                        picname=self._context.latest_video.qrcode, config=self._context.config
-                    )
-
-        # print the seal tag onto a sticker if set to do so in the config
-        if self._context.config["print_security_tag"]["enable"]:
-            logging.info("Printing seal tag")
-            seal_file_path = image_generation.create_seal_tag(self._context.config)
-            Printer.Task(picname=seal_file_path, config=self._context.config)
-
-        # start recording a video
-        if self._context.associated_camera is not None:
-            self._context.associated_camera.start_record(passport_id)
-        else:
-            logging.error("Cannot start recording: associated camera is None")
-
+        self._start_recording(unit)
         self._context.execute_state(ProductionStageOngoing, background=False)
+
+    def _print_qr_code(self, pic_name: str) -> None:
+        """print the QR code onto a sticker"""
+        logging.debug("Printing QR code image")
+        Printer.Task(pic_name, self._config)
+
+    def _generate_qr_code(self) -> str:
+        """generate a QR code with the short link"""
+        if self._context.latest_video is None:
+            raise FileNotFoundError("There is no video associated with the Agent")
+        logging.debug("Generating short url (a dummy for now)")
+        short_url: str = url_generator.generate_short_url(self._config)
+        self._context.latest_video.short_url = short_url  # todo bug
+        logging.debug("Generating QR code image file")
+        qr_code_image: str = image_generation.create_qr(short_url, self._config)
+        self._context.latest_video.qrcode = qr_code_image
+        return qr_code_image
+
+    def _print_seal_tag(self) -> None:
+        """generate and print a seal tag"""
+        logging.info("Printing seal tag")
+        seal_tag_img: str = image_generation.create_seal_tag(self._config)
+        Printer.Task(seal_tag_img, self._config)
+
+    def _start_recording(self, unit: Unit) -> None:
+        """start recording a video"""
+        if self._context.associated_camera is None:
+            logging.error("Cannot start recording: associated camera is None")
+        else:
+            self._context.associated_camera.start_record(unit.uuid)
 
 
 class ProductionStageOngoing(State):

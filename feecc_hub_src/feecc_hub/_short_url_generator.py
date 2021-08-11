@@ -28,7 +28,7 @@ def generate_short_url(config: Config) -> str:
     try:
         response = requests.get(url, data=payload, params=querystring)
         logging.debug(response.text)
-        keyword = response.json()["url"]["keyword"]
+        keyword: str = response.json()["url"]["keyword"]
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
         logging.info("Generating short url")
         logging.debug(response.json())
