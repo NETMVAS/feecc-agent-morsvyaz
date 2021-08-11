@@ -111,7 +111,7 @@ class ProductionStageStarting(State):
     def _print_qr_code(self, pic_name: str) -> None:
         """print the QR code onto a sticker"""
         logging.debug("Printing QR code image")
-        Printer.Task(pic_name, self._config)
+        Printer.PrinterTask(pic_name, self._config)
 
     def _generate_qr_code(self) -> str:
         """generate a QR code with the short link"""
@@ -129,7 +129,7 @@ class ProductionStageStarting(State):
         """generate and print a seal tag"""
         logging.info("Printing seal tag")
         seal_tag_img: str = image_generation.create_seal_tag(self._config)
-        Printer.Task(seal_tag_img, self._config)
+        Printer.PrinterTask(seal_tag_img, self._config)
 
     def _start_recording(self, unit: Unit) -> None:
         """start recording a video"""

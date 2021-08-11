@@ -5,7 +5,7 @@ import typing as tp
 import barcode
 from barcode.writer import ImageWriter
 
-from ._Printer import Task
+from ._Printer import PrinterTask
 
 
 class Barcode:
@@ -60,6 +60,6 @@ class Barcode:
 
     def print_barcode(self, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
         try:
-            Task(f"{self.filename}.png", config)
+            PrinterTask(f"{self.filename}.png", config)
         except Exception as E:
             logging.error(f"Failed to print barcode: {E}")

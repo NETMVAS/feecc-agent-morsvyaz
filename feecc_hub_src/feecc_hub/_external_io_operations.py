@@ -8,9 +8,9 @@ import ipfshttpclient
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from .exceptions import DatalogError, SubstrateError
-from .Types import Config
+from .Types import Config, ConfigSection
 from ._short_url_generator import update_short_url
+from .exceptions import DatalogError, SubstrateError
 
 
 class File:
@@ -135,7 +135,7 @@ class RobonomicsWorker(BaseIoWorker):
 
     def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Robonomics Network")
-        self.config: tp.Dict[str, tp.Any] = config["robonomics_network"]
+        self.config: ConfigSection = config["robonomics_network"]
 
     def _get_substrate_connection(self) -> SubstrateInterface:
         """establish connection to a specified substrate node"""
@@ -259,7 +259,7 @@ class PinataWorker(BaseIoWorker):
 
     def __init__(self, context: ExternalIoGateway, config: Config) -> None:
         super().__init__(context, target="Pinata cloud")
-        self.config: tp.Dict[str, tp.Any] = config["pinata"]
+        self.config: ConfigSection = config["pinata"]
 
     def post(self, file: File) -> None:
         logging.info("Pinning file to Pinata in the background")
