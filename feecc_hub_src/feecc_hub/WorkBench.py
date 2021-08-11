@@ -5,10 +5,10 @@ import typing as tp
 
 from . import _State as State
 from .Employee import Employee
+from .Types import AdditionalInfo, Config, ConfigSection
 from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
-from .Types import Config
 from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
@@ -61,15 +61,8 @@ class WorkBench:
         return self.agent.state_description
 
     def _get_camera(self) -> tp.Optional[Camera]:
-        camera_config: tp.Optional[tp.Dict[str, tp.Any]] = self._workbench_config["hardware"][
-            "camera"
-        ]
-
-        if camera_config is None:
-            return None
-        else:
-            camera = Camera(camera_config)
-            return camera
+        camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
+        return Camera(camera_config) if camera_config else None
 
     def _get_agent(self) -> Agent:
         agent = Agent(self)
@@ -104,7 +97,7 @@ class WorkBench:
         self.agent.execute_state(State.AwaitLogin)
 
     def start_operation(
-        self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
+        self, unit: Unit, production_stage_name: str, additional_info: AdditionalInfo
     ) -> None:
         """begin work on the provided unit"""
         logging.info(
@@ -136,7 +129,7 @@ class WorkBench:
         )
 
     def end_operation(
-        self, unit_internal_id: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+        self, unit_internal_id: str, additional_info: tp.Optional[AdditionalInfo] = None
     ) -> None:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench

@@ -10,7 +10,7 @@ from . import (
     _image_generation as image_generation,
     _short_url_generator as url_generator,
 )
-from .Types import Config
+from .Types import AdditionalInfo, Config
 
 if tp.TYPE_CHECKING:
     from ._Agent import Agent
@@ -92,7 +92,7 @@ class ProductionStageStarting(State):
         unit: Unit,
         employee: Employee,
         production_stage_name: str,
-        additional_info: tp.Dict[str, tp.Any],
+        additional_info: AdditionalInfo,
     ) -> None:
         self._context.associated_unit = unit
         unit.employee = employee
@@ -153,9 +153,7 @@ class ProductionStageEnding(State):
     State when production stage is being ended
     """
 
-    def run(
-        self, database: DbWrapper, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
-    ) -> None:
+    def run(self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         # make a copy of unit to work with securely in another thread
         if self._context.associated_unit is None:
             raise ValueError("No context associated unit found")

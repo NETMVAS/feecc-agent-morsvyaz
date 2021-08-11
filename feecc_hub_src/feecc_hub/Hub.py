@@ -105,9 +105,7 @@ class Hub:
         try:
             with open(config_path) as f:
                 content = f.read()
-                config_f: tp.Dict[str, tp.Dict[str, tp.Any]] = yaml.load(
-                    content, Loader=yaml.FullLoader
-                )
+                config_f: Config = yaml.load(content, Loader=yaml.FullLoader)
                 return config_f
 
         except Exception as E:

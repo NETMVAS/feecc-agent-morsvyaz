@@ -10,7 +10,7 @@ from uuid import uuid4
 from .Employee import Employee
 from ._Barcode import Barcode
 from ._Passport import Passport
-from .Types import Config
+from .Types import AdditionalInfo, Config
 from ._external_io_operations import ExternalIoGateway
 from .exceptions import OperationNotFoundError
 
@@ -26,7 +26,7 @@ class ProductionStage:
     session_start_time: str
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
-    additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+    additional_info: tp.Optional[AdditionalInfo] = None
     id: str = field(default_factory=lambda: uuid4().hex)
     is_in_db: bool = False
 
@@ -104,7 +104,7 @@ class Unit:
         self,
         production_stage_name: str,
         employee_code_name: str,
-        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
         logging.info(
@@ -127,7 +127,7 @@ class Unit:
         self,
         database: DbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
-        additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data
