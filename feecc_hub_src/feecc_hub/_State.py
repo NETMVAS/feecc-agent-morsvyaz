@@ -119,7 +119,9 @@ class ProductionStageStarting(State):
             raise FileNotFoundError("There is no video associated with the Agent")
         logging.debug("Generating short url (a dummy for now)")
         short_url: str = url_generator.generate_short_url(self._config)
+        logging.debug(f"Target 1: {self._context.latest_video.short_url}")
         self._context.latest_video.short_url = short_url  # todo bug
+        logging.debug(f"Target 2: {self._context.latest_video.short_url}")
         logging.debug("Generating QR code image file")
         qr_code_image: str = image_generation.create_qr(short_url, self._config)
         self._context.latest_video.qrcode = qr_code_image

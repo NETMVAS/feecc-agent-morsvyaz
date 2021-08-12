@@ -76,9 +76,7 @@ class ExternalIoGateway:
             except Exception as e:
                 logging.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
 
-            return file.ipfs_hash
-
-        return None
+        return file.ipfs_hash
 
 
 class BaseIoWorker(ABC):

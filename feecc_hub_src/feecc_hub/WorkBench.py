@@ -42,11 +42,8 @@ class WorkBench:
         return self._associated_camera
 
     @property
-    def unit_in_operation(self) -> str:
-        if self.agent.associated_unit is None:
-            return ""
-        else:
-            return str(self.agent.associated_unit.internal_id)
+    def unit_in_operation(self) -> tp.Optional[str]:
+        return str(self.agent.associated_unit.internal_id) if self.agent.associated_unit else None
 
     @property
     def is_operation_ongoing(self) -> bool:
@@ -83,7 +80,7 @@ class WorkBench:
 
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
-        if self.agent.state_name == "ProductionStageOngoing":
+        if self.agent.state_name == "ProductionStageOngoing" and self.unit_in_operation:
             self.end_operation(self.unit_in_operation)
 
         if self.employee is None:
