@@ -1,12 +1,12 @@
-import logging
 import os
 import typing as tp
 
 import barcode
 from barcode.writer import ImageWriter
+from loguru import logger
 
-from .Types import Config
 from ._Printer import PrinterTask
+from .Types import Config
 
 
 class Barcode:
@@ -18,7 +18,7 @@ class Barcode:
             self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
             self.save_barcode(self.barcode)
         except Exception as E:
-            logging.error(f"Barcode error: {E}")
+            logger.error(f"Barcode error: {E}")
 
     def generate_barcode(self, int_id: str) -> barcode.EAN13:
         """
@@ -63,4 +63,4 @@ class Barcode:
         try:
             PrinterTask(f"{self.filename}.png", config)
         except Exception as E:
-            logging.error(f"Failed to print barcode: {E}")
+            logger.error(f"Failed to print barcode: {E}")

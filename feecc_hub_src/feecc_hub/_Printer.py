@@ -1,8 +1,7 @@
-import logging
-
-from PIL import Image
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send
+from loguru import logger
+from PIL import Image
 
 from .Types import Config, ConfigSection
 
@@ -20,14 +19,14 @@ class PrinterTask:
         if self._config["enable"]:
             self._print_task()
         else:
-            logging.info("Printer disabled in config. Task dropped.")
+            logger.info("Printer disabled in config. Task dropped.")
 
     def _print_task(self) -> None:
         """execute the task"""
-        logging.info(f"Printing task created for image {self._image_path}")
+        logger.info(f"Printing task created for image {self._image_path}")
         image: Image = self._get_image(self._image_path)
         self._print_image(image)
-        logging.info("Printing task done")
+        logger.info("Printing task done")
 
     def _get_image(self, image_path: str) -> Image:
         """prepare and resize the image before printing"""
@@ -40,7 +39,7 @@ class PrinterTask:
 
     def _print_image(self, image: Image) -> None:
         """print provided image"""
-        logging.info(f"Printing image of size {image.size}")
+        logger.info(f"Printing image of size {image.size}")
         qlr: BrotherQLRaster = BrotherQLRaster(self._model)
         red: bool = self._paper_width == "62"
         conversion.convert(qlr, [image], self._paper_width, red=red)

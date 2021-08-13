@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-import logging
 import typing as tp
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from . import (
-    _Printer as Printer,
-    _image_generation as image_generation,
-    _short_url_generator as url_generator,
-)
+from loguru import logger
+
+from . import _image_generation as image_generation
+from . import _Printer as Printer
+from . import _short_url_generator as url_generator
 from .Types import AdditionalInfo, Config
 
 if tp.TYPE_CHECKING:
     from ._Agent import Agent
+    from .database import DbWrapper
     from .Employee import Employee
     from .Unit import Unit
-    from .database import DbWrapper
 
 
 class State(ABC):
@@ -110,33 +109,33 @@ class ProductionStageStarting(State):
 
     def _print_qr_code(self, pic_name: str) -> None:
         """print the QR code onto a sticker"""
-        logging.debug("Printing QR code image")
+        logger.debug("Printing QR code image")
         Printer.PrinterTask(pic_name, self._config)
 
     def _generate_qr_code(self) -> str:
         """generate a QR code with the short link"""
         if self._context.latest_video is None:
             raise FileNotFoundError("There is no video associated with the Agent")
-        logging.debug("Generating short url (a dummy for now)")
+        logger.debug("Generating short url (a dummy for now)")
         short_url: str = url_generator.generate_short_url(self._config)
-        logging.debug(f"Target 1: {self._context.latest_video.short_url}")
+        logger.debug(f"Target 1: {self._context.latest_video.short_url}")
         self._context.latest_video.short_url = short_url  # todo bug
-        logging.debug(f"Target 2: {self._context.latest_video.short_url}")
-        logging.debug("Generating QR code image file")
+        logger.debug(f"Target 2: {self._context.latest_video.short_url}")
+        logger.debug("Generating QR code image file")
         qr_code_image: str = image_generation.create_qr(short_url, self._config)
         self._context.latest_video.qrcode = qr_code_image
         return qr_code_image
 
     def _print_seal_tag(self) -> None:
         """generate and print a seal tag"""
-        logging.info("Printing seal tag")
+        logger.info("Printing seal tag")
         seal_tag_img: str = image_generation.create_seal_tag(self._config)
         Printer.PrinterTask(seal_tag_img, self._config)
 
     def _start_recording(self, unit: Unit) -> None:
         """start recording a video"""
         if self._context.associated_camera is None:
-            logging.error("Cannot start recording: associated camera is None")
+            logger.error("Cannot start recording: associated camera is None")
         else:
             self._context.associated_camera.start_record(unit.uuid)
 

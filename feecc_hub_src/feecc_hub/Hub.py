@@ -1,16 +1,16 @@
-import logging
 import os
 import sys
 import typing as tp
 
 import yaml
+from loguru import logger
 
 from .database import DbWrapper, MongoDbWrapper
 from .Employee import Employee
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
+from .Types import Config
 from .Unit import Unit
 from .WorkBench import WorkBench
-from .Types import Config
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
 class Hub:
@@ -20,7 +20,7 @@ class Hub:
     """
 
     def __init__(self) -> None:
-        logging.info(f"Initialized an instance of hub {self}")
+        logger.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
         self.database: DbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
@@ -52,7 +52,7 @@ class Hub:
                 return username, password
 
         except KeyError:
-            logging.info(
+            logger.info(
                 "Failed to get credentials from environment variables. Trying to get from config"
             )
 
@@ -61,7 +61,7 @@ class Hub:
     def _get_database(self) -> MongoDbWrapper:
         """establish MongoDB connection and initialize the wrapper"""
 
-        logging.info("Trying to connect to database")
+        logger.info("Trying to connect to database")
 
         try:
             env_credentials = self._get_credentials_from_env()
@@ -77,7 +77,7 @@ class Hub:
 
         except Exception as e:
             message: str = f"Failed to establish database connection: {e}. Exiting."
-            logging.critical(message)
+            logger.critical(message)
             sys.exit()
 
     def _get_employees(self) -> tp.Dict[str, Employee]:
@@ -88,7 +88,7 @@ class Hub:
         for employee in employee_list:
             employees[employee.rfid_card_id] = employee
 
-        logging.info(f"Initialized {len(employees.keys())} employees")
+        logger.info(f"Initialized {len(employees.keys())} employees")
         return employees
 
     @staticmethod
@@ -100,7 +100,7 @@ class Hub:
         Reading config, containing all the required data
         camera parameters (ip, login, password, port), etc
         """
-        logging.debug(f"Looking for config in {config_path}")
+        logger.debug(f"Looking for config in {config_path}")
 
         try:
             with open(config_path) as f:
@@ -109,7 +109,7 @@ class Hub:
                 return config_f
 
         except Exception as E:
-            logging.error(f"Error parsing configuration file {config_path}: {E}")
+            logger.error(f"Error parsing configuration file {config_path}: {E}")
             sys.exit(1)
 
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
@@ -119,7 +119,7 @@ class Hub:
                 return workbench
 
         message: str = f"Could not find the workbench with number {workbench_no}. Does it exist?"
-        logging.error(message)
+        logger.error(message)
         raise WorkbenchNotFoundError(message)
 
     def create_new_unit(self, unit_type: str) -> str:
@@ -146,7 +146,7 @@ class Hub:
             return unit
 
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
 
@@ -162,7 +162,7 @@ class Hub:
             workbenches.append(workbench_object)
 
         if not workbenches:
-            logging.critical(
+            logger.critical(
                 "No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting."
             )
             sys.exit(1)

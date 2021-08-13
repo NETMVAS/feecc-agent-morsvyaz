@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import logging
 import typing as tp
 
+from loguru import logger
+
 from . import _State as State
-from .Employee import Employee
-from .Types import AdditionalInfo, Config, ConfigSection
-from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
+from .Employee import Employee
 from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
+from .Types import AdditionalInfo, Config, ConfigSection
+from .Unit import Unit
 
 if tp.TYPE_CHECKING:
-    from .Hub import Hub
     from .database import DbWrapper
+    from .Hub import Hub
 
 
 class WorkBench:
@@ -30,8 +31,8 @@ class WorkBench:
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
         self.agent: Agent = self._get_agent()
-        logging.info(f"Workbench no. {self.number} initialized")
-        logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
+        logger.info(f"Workbench no. {self.number} initialized")
+        logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
 
     @property
     def config(self) -> Config:
@@ -73,7 +74,7 @@ class WorkBench:
             raise AgentBusyError(message)
 
         self.employee = employee
-        logging.info(
+        logger.info(
             f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self.number}"
         )
         self.agent.execute_state(State.AuthorizedIdling)
@@ -97,7 +98,7 @@ class WorkBench:
         self, unit: Unit, production_stage_name: str, additional_info: AdditionalInfo
     ) -> None:
         """begin work on the provided unit"""
-        logging.info(
+        logger.info(
             f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
 
@@ -121,7 +122,7 @@ class WorkBench:
             additional_info,
         )
 
-        logging.info(
+        logger.info(
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
 
@@ -137,6 +138,6 @@ class WorkBench:
 
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"
-            logging.error(message)
-            logging.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
+            logger.error(message)
+            logger.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
             raise UnitNotFoundError(message)

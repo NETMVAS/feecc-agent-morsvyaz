@@ -1,7 +1,8 @@
 import hashlib
-import logging
 import typing as tp
 from dataclasses import dataclass
+
+from loguru import logger
 
 
 @dataclass(frozen=True)
@@ -11,7 +12,7 @@ class Employee:
     position: str
 
     def __post_init__(self) -> None:
-        logging.info(f"Initialized Employee with id {self.rfid_card_id}, data: {self.data}")
+        logger.info(f"Initialized Employee with id {self.rfid_card_id}, data: {self.data}")
 
     @property
     def data(self) -> tp.Dict[str, str]:

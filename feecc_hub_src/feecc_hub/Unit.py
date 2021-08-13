@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-import logging
 import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime as dt
 from uuid import uuid4
 
-from .Employee import Employee
+from loguru import logger
+
 from ._Barcode import Barcode
-from ._Passport import Passport
-from .Types import AdditionalInfo, Config
 from ._external_io_operations import ExternalIoGateway
+from ._Passport import Passport
+from .Employee import Employee
 from .exceptions import OperationNotFoundError
+from .Types import AdditionalInfo, Config
 
 if tp.TYPE_CHECKING:
     from .database import DbWrapper
@@ -41,7 +42,7 @@ class ProductionStage:
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                logging.error(
+                logger.error(
                     f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}"
                 )
 
@@ -107,7 +108,7 @@ class Unit:
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
-        logging.info(
+        logger.info(
             f"Starting production stage {production_stage_name} for unit with int. id "
             f"{self.internal_id}, additional info {additional_info}"
         )
@@ -120,7 +121,7 @@ class Unit:
             additional_info=additional_info,
         )
 
-        logging.debug(str(operation))
+        logger.debug(str(operation))
         self.current_operation = operation
 
     def end_session(
@@ -136,7 +137,7 @@ class Unit:
         if self.current_operation is None:
             raise ValueError("No ongoing operations found")
 
-        logging.info(f"Ending production stage {self.current_operation.name}")
+        logger.info(f"Ending production stage {self.current_operation.name}")
         operation = deepcopy(self.current_operation)
         operation.session_end_time = ProductionStage.timestamp()
 
@@ -153,7 +154,7 @@ class Unit:
                 operation.additional_info = additional_info
 
         self.unit_biography[-1] = operation
-        logging.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
+        logger.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
         self.employee = None
         database.update_unit(self)
 

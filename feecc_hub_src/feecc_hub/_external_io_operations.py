@@ -1,16 +1,16 @@
-import logging
 import os
 import threading
 import typing as tp
 from abc import ABC, abstractmethod
 
 import ipfshttpclient
+from loguru import logger
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from .Types import Config, ConfigSection
 from ._short_url_generator import update_short_url
 from .exceptions import DatalogError, SubstrateError
+from .Types import Config, ConfigSection
 
 
 class File:
@@ -19,7 +19,7 @@ class File:
     def __init__(self, path: str, check_presence: bool = False) -> None:
         if check_presence and not os.path.exists(path):
             message = f"Path {path} doesn't point to an actual file"
-            logging.error(message)
+            logger.error(message)
             raise FileNotFoundError(message)
 
         self.path: str = path
@@ -60,9 +60,9 @@ class ExternalIoGateway:
             ipfs_worker = IpfsWorker(self, self.config)
             ipfs_worker.post(file)
 
-            logging.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}")
+            logger.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}")
             if file.keyword and file.ipfs_hash:
-                logging.info(f"Updating URL {file.short_url}")
+                logger.info(f"Updating URL {file.short_url}")
                 update_short_url(file.keyword, file.ipfs_hash, self.config)
 
             if self.config["pinata"]["enable"]:
@@ -74,7 +74,7 @@ class ExternalIoGateway:
                 robonomics_worker = RobonomicsWorker(self, self.config)
                 robonomics_worker.post(file.ipfs_hash)
             except Exception as e:
-                logging.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
+                logger.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
 
         return file.ipfs_hash
 
@@ -88,7 +88,7 @@ class BaseIoWorker(ABC):
         """
         :param context of type IoGateway which makes use of the class methods
         """
-        logging.debug(f"An instance of {self.name} initialized at {self}")
+        logger.debug(f"An instance of {self.name} initialized at {self}")
         self.target: str = target
         self._context: ExternalIoGateway = context
 
@@ -121,7 +121,7 @@ class IpfsWorker(BaseIoWorker):
         ipfs_client = ipfshttpclient.connect()
         result = ipfs_client.add(file.path)
         ipfs_hash: str = result["Hash"]
-        logging.info(f"File {file.filename} published to IPFS, hash: {ipfs_hash}")
+        logger.info(f"File {file.filename} published to IPFS, hash: {ipfs_hash}")
         file.ipfs_hash = ipfs_hash
 
     def get(self) -> None:
@@ -139,7 +139,7 @@ class RobonomicsWorker(BaseIoWorker):
         """establish connection to a specified substrate node"""
         try:
             substrate_node_url: str = self.config["substrate_node_url"]
-            logging.info("Establishing connection to substrate node")
+            logger.info("Establishing connection to substrate node")
             substrate = SubstrateInterface(
                 url=substrate_node_url,
                 ss58_format=32,
@@ -165,12 +165,12 @@ class RobonomicsWorker(BaseIoWorker):
                     }
                 },
             )
-            logging.info("Successfully established connection to substrate node")
+            logger.info("Successfully established connection to substrate node")
             return substrate
 
         except Exception as e:
             message: str = f"Substrate connection failed: {e}"
-            logging.error(message)
+            logger.error(message)
             raise SubstrateError(message)
 
     def _get_latest_datalog(self, account_address: str) -> str:
@@ -195,7 +195,7 @@ class RobonomicsWorker(BaseIoWorker):
 
         except Exception as e:
             message: str = f"Error fetching latest datalog: {e}"
-            logging.error(message)
+            logger.error(message)
             raise DatalogError(message)
 
     def _write_datalog(self, data: str) -> tp.Optional[str]:
@@ -214,37 +214,37 @@ class RobonomicsWorker(BaseIoWorker):
         try:
             keypair = Keypair.create_from_mnemonic(seed, ss58_format=32)
         except Exception as e:
-            logging.error(f"Failed to create keypair: \n{e}")
+            logger.error(f"Failed to create keypair: \n{e}")
             return None
 
         try:
-            logging.info("Creating substrate call")
+            logger.info("Creating substrate call")
             call = substrate.compose_call(
                 call_module="Datalog", call_function="record", call_params={"record": data}
             )
-            logging.info(f"Successfully created a call:\n{call}")
-            logging.info("Creating extrinsic")
+            logger.info(f"Successfully created a call:\n{call}")
+            logger.info("Creating extrinsic")
             extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
         except Exception as e:
-            logging.error(f"Failed to create an extrinsic: {e}")
+            logger.error(f"Failed to create an extrinsic: {e}")
             return None
 
         try:
-            logging.info("Submitting extrinsic")
+            logger.info("Submitting extrinsic")
             receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-            logging.info(
+            logger.info(
                 f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}"
             )
             return str(receipt.extrinsic_hash)
         except Exception as e:
-            logging.error(f"Failed to submit extrinsic: {e}")
+            logger.error(f"Failed to submit extrinsic: {e}")
             return None
 
     def post(self, data: tp.Union[File, str]) -> None:
         """write provided string to Robonomics datalog"""
         data_: str = str(data)
         transaction_hash: tp.Optional[str] = self._write_datalog(data_)
-        logging.info(f"Data added to Robonomics datalog. Transaction hash: {transaction_hash}")
+        logger.info(f"Data added to Robonomics datalog. Transaction hash: {transaction_hash}")
 
     def get(self) -> str:
         """get latest datalog post for the account"""
@@ -260,19 +260,19 @@ class PinataWorker(BaseIoWorker):
         self.config: ConfigSection = config["pinata"]
 
     def post(self, file: File) -> None:
-        logging.info("Pinning file to Pinata in the background")
+        logger.info("Pinning file to Pinata in the background")
         pinata_thread = threading.Thread(target=self._pin_to_pinata, args=(file,))
         pinata_thread.start()
-        logging.info(f"Pinning process started. Thread name: {pinata_thread.name}")
+        logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
 
     def _pin_to_pinata(self, file: File) -> None:
         """pin files in Pinata Cloud to secure their copies in IPFS"""
         api_key = self.config["pinata_api"]
         api_token = self.config["pinata_secret_api"]
         pinata = PinataPy(api_key, api_token)
-        logging.info(f"Starting publishing file {file.filename} to Pinata")
+        logger.info(f"Starting publishing file {file.filename} to Pinata")
         pinata.pin_file_to_ipfs(file.path)
-        logging.info(f"File {file.filename} published to Pinata")
+        logger.info(f"File {file.filename} published to Pinata")
 
     def get(self) -> None:
         raise NotImplementedError

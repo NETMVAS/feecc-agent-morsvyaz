@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import logging
 import os
 import typing as tp
-from ._external_io_operations import File
+
 import yaml
+from loguru import logger
+
+from ._external_io_operations import File
 
 if tp.TYPE_CHECKING:
-    from .Unit import Unit, ProductionStage
+    from .Unit import ProductionStage, Unit
 
 
 class Passport:
@@ -17,7 +19,7 @@ class Passport:
         self._unit: Unit = unit
         path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
         self.file: File = File(path)
-        logging.info(
+        logger.info(
             f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
         )
 
@@ -55,7 +57,7 @@ class Passport:
             "Этапы производства": biography,
         }
 
-        logging.debug(
+        logger.debug(
             f"Constructed passport dict for unit with id {self._unit.internal_id}:\n{passport_dict}"
         )
         return passport_dict
@@ -71,4 +73,4 @@ class Passport:
         with open(self.file.path, "w") as passport_file:
             yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
 
-        logging.info(f"Unit passport with UUID {self._unit.uuid} has been dumped successfully")
+        logger.info(f"Unit passport with UUID {self._unit.uuid} has been dumped successfully")

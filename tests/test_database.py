@@ -1,9 +1,9 @@
 import os
 
+from feecc_hub_src.feecc_hub.database import MongoDbWrapper
+
 # import pytest
 from feecc_hub_src.feecc_hub.Hub import Hub
-
-from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
 
 def credentials():
