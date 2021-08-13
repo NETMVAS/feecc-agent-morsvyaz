@@ -26,21 +26,13 @@ from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from loguru import logger
 
+from ._logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
+
 if tp.TYPE_CHECKING:
     from feecc_hub.Employee import Employee
 
-# set up logging
-GLOBAL_LOGGING_CONFIG = {
-    "sink": "hub.log",
-    "level": "DEBUG",
-    "colorize": True,
-    "backtrace": True,
-    "diagnose": True,
-    "catch": True,
-    "rotation": "10 MB",
-    "compression": "zip",
-}
-logger.configure(handlers=[GLOBAL_LOGGING_CONFIG])
+# apply logging configuration
+logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
 
 # global variables
 hub = Hub()
