@@ -274,8 +274,6 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
     """handle providing status of the given Workbench"""
     # find the WorkBench with the provided number
 
-    logger.debug(f"Got request at /api/workbench/{workbench_no}/status")
-
     try:
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
     except Exception as E:
