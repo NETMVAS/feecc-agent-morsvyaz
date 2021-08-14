@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import time
 import typing as tp
 
 from loguru import logger
@@ -95,6 +96,8 @@ class Recording:
         """stop recording a video"""
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
+            time.sleep(0.5)  # wait until everything will be recorded
+
             logger.info(f"Finished recording video for unit {self.unit_uuid}")
             self._toggle_record_flag()
 
