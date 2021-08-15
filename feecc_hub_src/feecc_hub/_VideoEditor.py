@@ -35,14 +35,7 @@ class VideoEditor:
         concat_filename = f"{filename}_concatenated.{extension}"
         concat_command = f"ffmpeg -f concat -safe 0 -i output/vidlist.txt -c copy {concat_filename}"
         # looks like: ffmpeg -f concat -safe 0 -i vidlist.txt -c copy output.mp4. More on ffmpeg.org
-
-        concat_process = subprocess.Popen(
-            "exec " + concat_command,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-        )  # subprocess to execute ffmpeg utility command in shell and obtain all the flows
+        concat_process = subprocess.Popen(concat_command, shell=True, stdout=subprocess.PIPE)
 
         if concat_process.stdout is None:
             raise ValueError("Popen operation error")
