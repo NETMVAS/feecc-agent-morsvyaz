@@ -12,7 +12,7 @@ class PrinterTask:
     def __init__(self, image_path: str, config: Config) -> None:
         self._config: ConfigSection = config["printer"]
         self._address: str = str(self._config["address"])
-        self._paper_width = str(self._config["paper_width"])
+        self._paper_width: str = str(self._config["paper_width"])
         self._model: str = str(self._config["printer_model"])
         self._image_path: str = image_path
 

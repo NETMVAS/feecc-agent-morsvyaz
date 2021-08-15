@@ -1,4 +1,3 @@
-import atexit
 import typing as tp
 
 import uvicorn
@@ -45,15 +44,6 @@ api.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@atexit.register
-def end_session() -> None:
-    """a function to execute when daemon exits"""
-    logger.info("Sigterm registered. Handling.")
-    pass
-    logger.info("Sigterm handling success")
-
 
 # REST API request handlers
 

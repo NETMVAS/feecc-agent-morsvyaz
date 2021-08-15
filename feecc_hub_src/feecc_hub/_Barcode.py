@@ -17,8 +17,8 @@ class Barcode:
         try:
             self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
             self.save_barcode(self.barcode)
-        except Exception as E:
-            logger.error(f"Barcode error: {E}")
+        except FileNotFoundError as E:
+            logger.error(E)
 
     def generate_barcode(self, int_id: str) -> barcode.EAN13:
         """
@@ -49,7 +49,7 @@ class Barcode:
         dir_ = os.path.dirname(self.filename)
 
         if dir_ is None:
-            raise FileNotFoundError("Directory filename is None")
+            raise FileNotFoundError("Directory is None")
 
         if not os.path.isdir(dir_):
             os.mkdir(dir_)

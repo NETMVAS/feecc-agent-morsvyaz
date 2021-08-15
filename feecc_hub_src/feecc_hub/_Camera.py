@@ -31,8 +31,9 @@ class Camera:
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
         self._debug_ongoing_records(method="stop_record")
-        recording = self._ongoing_records.pop(0) if self._ongoing_records else None
+        recording = self._ongoing_records.popleft() if self._ongoing_records else None
         logger.debug(f"Trying to stop record for {recording}")
+
         if not recording:
             logger.error("Could not stop record for unit: no ongoing record found")
             return None
@@ -65,13 +66,13 @@ class Recording:
         """start a record and return future video filename"""
         unit_uuid: str = self._unit_uuid
         logger.info(f"Recording started for the unit with UUID {unit_uuid}")
-        dir_ = "output/video"
+        dir_: str = "output/video"
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
         filename = f"{dir_}/unit_{unit_uuid}_assembly_video_1.mp4"
 
         # determine a valid video name not to override an existing video
-        cnt = 1
+        cnt: int = 1
         while os.path.exists(filename):
             filename = filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
