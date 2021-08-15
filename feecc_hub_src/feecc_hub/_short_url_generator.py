@@ -49,18 +49,19 @@ def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
     Update redirecting service so that now the short url points to the  gateway to a video in external_io
     """
     url = f"https://{config['yourls']['server']}/yourls-api.php"
-    querystring = {
+    new_file_url: str = f"{config['ipfs']['gateway_address']}{ipfs_hash}"
+    params = {
         "username": config["yourls"]["username"],
         "password": config["yourls"]["password"],
         "action": "update",
         "format": "json",
-        "url": str(config["external_io"]["gateway_address"]) + ipfs_hash,
+        "url": new_file_url,
         "shorturl": keyword,
     }
     payload = ""  # api call with no payload just to update the link. More on yourls.org. Call created with insomnia
 
     try:
-        response = requests.get(url, data=payload, params=querystring)
+        response = requests.get(url, data=payload, params=params)
         # no need to read the response. Just wait till the process finishes
         logger.debug(f"Trying to update short url link: {response.json()}")
     except Exception as e:
