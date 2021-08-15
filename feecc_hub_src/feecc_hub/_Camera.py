@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import logging
 import os
 import subprocess
+import time
 import typing as tp
+
+from loguru import logger
 
 from ._external_io_operations import File
 
@@ -27,22 +29,26 @@ class Camera:
         """start recording video"""
         recording = Recording(self, unit_uuid)
         self._ongoing_records.append(recording)
-        o_r = self._ongoing_records
-        logging.debug(
-            f"current ongoing records list ({len(o_r)} items) is {[r.file.filename for r in o_r]}"
-        )
+        self._debug_ongoing_records(method="start_record")
 
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
+        self._debug_ongoing_records(method="stop_record")
         recording = self._ongoing_records.pop(0) if self._ongoing_records else None
-        logging.debug(f"Trying to stop record for {recording}")
+        logger.debug(f"Trying to stop record for {recording}")
         if not recording:
-            logging.error("Could not stop record for unit: no ongoing record found")
+            logger.error("Could not stop record for unit: no ongoing record found")
             return None
 
         file = recording.stop()
-        logging.info("Stopped record for unit")
+        logger.info("Stopped record for unit")
         return file
+
+    def _debug_ongoing_records(self, method: str) -> None:
+        o_r = self._ongoing_records
+        logger.debug(
+            f"Operation: {method}. Current ongoing records list ({len(o_r)} items) is {[r.file.filename for r in o_r]}"
+        )
 
 
 class Recording:
@@ -53,7 +59,7 @@ class Recording:
         self.unit_uuid: str = unit_uuid
         self.recording_ongoing: bool = False  # current status
         self.process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
-        logging.debug(f"New Recording object initialized at {self}")
+        logger.debug(f"New Recording object initialized at {self}")
         self.file: File = File(self._start_record())
 
     def _toggle_record_flag(self) -> None:
@@ -69,7 +75,7 @@ class Recording:
         :returns: saved video relative path
         """
         unit_uuid: str = self.unit_uuid
-        logging.info(f"Recording started for the unit with UUID {unit_uuid}")
+        logger.info(f"Recording started for the unit with UUID {unit_uuid}")
         dir_ = "output/video"
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
@@ -90,7 +96,9 @@ class Recording:
         """stop recording a video"""
         if self.process_ffmpeg and self.recording_ongoing:
             self.process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
-            logging.info(f"Finished recording video for unit {self.unit_uuid}")
+            time.sleep(0.5)  # wait until everything will be recorded
+
+            logger.info(f"Finished recording video for unit {self.unit_uuid}")
             self._toggle_record_flag()
 
         return self.file
@@ -110,4 +118,4 @@ class Recording:
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,  # to get access to all the flows
         )
-        logging.info(f"Started recording video '{filename}' using ffmpeg")
+        logger.info(f"Started recording video '{filename}' using ffmpeg")

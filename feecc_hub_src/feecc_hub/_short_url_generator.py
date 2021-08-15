@@ -1,12 +1,10 @@
-import logging
-import typing as tp
-
 import requests
+from loguru import logger
 
 from .Types import Config
 
 
-def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
+def generate_short_url(config: Config) -> str:
     """
     :param config: dictionary containing all the configurations
     :type config: dict
@@ -28,21 +26,21 @@ def generate_short_url(config: Config) -> tp.Tuple[tp.Any, tp.Any]:
 
     try:
         response = requests.get(url, data=payload, params=querystring)
-        logging.debug(response.text)
-        keyword = response.json()["url"]["keyword"]
+        logger.debug(response.text)
+        keyword: str = response.json()["url"]["keyword"]
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
-        logging.info("Generating short url")
-        logging.debug(response.json())
-        return keyword, link
+        logger.info("Generating short url")
+        logger.debug(response.json())
+        return link
     except Exception as e:
-        logging.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
-        return "55", "url.today/55"
+        logger.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
+        return "url.today/55"
         # time to time creating url fails. To go on just set a dummy url and keyword
 
 
 def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
     """
-    :param keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
+    :param keyword: short url keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str
     :param ipfs_hash: IPFS hash of a recorded video
     :type ipfs_hash: str
@@ -65,6 +63,6 @@ def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
     try:
         response = requests.get(url, data=payload, params=querystring)
         # no need to read the response. Just wait till the process finishes
-        logging.debug(f"Trying to update short url link: {response.json()}")
+        logger.debug(f"Trying to update short url link: {response.json()}")
     except Exception as e:
-        logging.warning("Failed to update URL: ", e)
+        logger.error("Failed to update URL: ", e)

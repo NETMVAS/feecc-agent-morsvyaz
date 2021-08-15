@@ -1,6 +1,7 @@
-import logging
 import os
 import subprocess
+
+from loguru import logger
 
 
 class VideoEditor:
@@ -14,11 +15,11 @@ class VideoEditor:
         concatenating two videos (intro with the main video) if needed.
         Intro is to be placed in media folder.
         """
-        logging.info(f"Concatenating video {video_path} with intro {intro_path}")
+        logger.info(f"Concatenating video {video_path} with intro {intro_path}")
 
         for path in [video_path, intro_path]:
             if not os.path.exists(intro_path):
-                logging.error(f"File {path} not found. Cannot concatenate.")
+                logger.error(f"File {path} not found. Cannot concatenate.")
                 return ""
 
         concat_string = "file '" + intro_path + "/media/intro.mp4'\nfile '" + video_path + "'"

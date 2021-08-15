@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import logging
 import typing as tp
 
+from loguru import logger
+
 from . import _State as State
-from .Employee import Employee
-from .Unit import Unit
 from ._Agent import Agent
 from ._Camera import Camera
-from .Types import Config
+from .Employee import Employee
 from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
+from .Types import AdditionalInfo, Config, ConfigSection
+from .Unit import Unit
 
 if tp.TYPE_CHECKING:
-    from .Hub import Hub
     from .database import DbWrapper
+    from .Hub import Hub
 
 
 class WorkBench:
@@ -30,8 +31,8 @@ class WorkBench:
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
         self.agent: Agent = self._get_agent()
-        logging.info(f"Workbench no. {self.number} initialized")
-        logging.debug(f"Raw workbench configuration:\n{self._workbench_config}")
+        logger.info(f"Workbench no. {self.number} initialized")
+        logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
 
     @property
     def config(self) -> Config:
@@ -42,34 +43,24 @@ class WorkBench:
         return self._associated_camera
 
     @property
-    def unit_in_operation(self) -> str:
-        if self.agent.associated_unit is None:
-            return ""
-        else:
-            return str(self.agent.associated_unit.internal_id)
+    def unit_in_operation(self) -> tp.Optional[str]:
+        return str(self.agent.associated_unit.internal_id) if self.agent.associated_unit else None
 
     @property
     def is_operation_ongoing(self) -> bool:
         return bool(self.unit_in_operation)
 
     @property
-    def state_name(self) -> str:
+    def state_name(self) -> tp.Optional[str]:
         return self.agent.state_name
 
     @property
-    def state_description(self) -> str:
+    def state_description(self) -> tp.Optional[str]:
         return self.agent.state_description
 
     def _get_camera(self) -> tp.Optional[Camera]:
-        camera_config: tp.Optional[tp.Dict[str, tp.Any]] = self._workbench_config["hardware"][
-            "camera"
-        ]
-
-        if camera_config is None:
-            return None
-        else:
-            camera = Camera(camera_config)
-            return camera
+        camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
+        return Camera(camera_config) if camera_config else None
 
     def _get_agent(self) -> Agent:
         agent = Agent(self)
@@ -83,14 +74,14 @@ class WorkBench:
             raise AgentBusyError(message)
 
         self.employee = employee
-        logging.info(
+        logger.info(
             f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self.number}"
         )
         self.agent.execute_state(State.AuthorizedIdling)
 
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
-        if self.agent.state_name == "ProductionStageOngoing":
+        if self.agent.state_name == "ProductionStageOngoing" and self.unit_in_operation:
             self.end_operation(self.unit_in_operation)
 
         if self.employee is None:
@@ -104,10 +95,10 @@ class WorkBench:
         self.agent.execute_state(State.AwaitLogin)
 
     def start_operation(
-        self, unit: Unit, production_stage_name: str, additional_info: tp.Dict[str, tp.Any]
+        self, unit: Unit, production_stage_name: str, additional_info: AdditionalInfo
     ) -> None:
         """begin work on the provided unit"""
-        logging.info(
+        logger.info(
             f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
 
@@ -131,12 +122,12 @@ class WorkBench:
             additional_info,
         )
 
-        logging.info(
+        logger.info(
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
         )
 
     def end_operation(
-        self, unit_internal_id: str, additional_info: tp.Optional[tp.Dict[str, tp.Any]] = None
+        self, unit_internal_id: str, additional_info: tp.Optional[AdditionalInfo] = None
     ) -> None:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
@@ -147,6 +138,6 @@ class WorkBench:
 
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"
-            logging.error(message)
-            logging.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
+            logger.error(message)
+            logger.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
             raise UnitNotFoundError(message)

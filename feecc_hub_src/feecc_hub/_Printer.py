@@ -1,44 +1,46 @@
-import logging
-import typing as tp
-
-from PIL import Image
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send
+from loguru import logger
+from PIL import Image
+
+from .Types import Config, ConfigSection
 
 
-class Task:
-    """a printing task for the label printer"""
+class PrinterTask:
+    """a printing task for the label printer. executed at init"""
 
-    def __init__(self, picname: str, config: tp.Dict[str, tp.Dict[str, tp.Any]]) -> None:
-        """
-        :param picname: path to a picture to be printed
-        :type picname: str
+    def __init__(self, image_path: str, config: Config) -> None:
+        self._config: ConfigSection = config["printer"]
+        self._address: str = str(self._config["address"])
+        self._paper_width = str(self._config["paper_width"])
+        self._model: str = str(self._config["printer_model"])
+        self._image_path: str = image_path
 
-        When creating an instance of the class, it creates a task for a brother QL-800 printer to print a label with a
-        qr-code passed as an argument. picname != qrpic, it contains side fields and logos (optionally)
-        """
-        logging.info("Initializing printer")
-        logging.debug(f"picname: {picname}, config for printer: {config['printer']}")
+        if self._config["enable"]:
+            self._print_task()
+        else:
+            logger.info("Printer disabled in config. Task dropped.")
 
-        image = Image.open(picname)
+    def _print_task(self) -> None:
+        """execute the task"""
+        logger.info(f"Printing task created for image {self._image_path}")
+        image: Image = self._get_image(self._image_path)
+        self._print_image(image)
+        logger.info("Printing task done")
 
-        printer_config: tp.Dict[str, tp.Any] = config["printer"]
-        printer: str = printer_config["address"]  # link to device
-        label_name = str(printer_config["paper_width"])  # that depends on paper used for printing
-
-        # resize the image before printing
+    def _get_image(self, image_path: str) -> Image:
+        """prepare and resize the image before printing"""
+        image = Image.open(image_path)
         w, h = image.size
-        target_w = 696 if label_name == "62" else 554
+        target_w = 696 if self._paper_width == "62" else 554
         target_h = int(h * (target_w / w))
         image = image.resize((target_w, target_h))
-        logging.info(f"Printing image of size {image.size}")
+        return image
 
-        qlr = BrotherQLRaster(printer_config["printer_model"])
-        red: bool = label_name == "62"
-        logging.debug("Attempting image conversion")
-        conversion.convert(qlr, [image], label_name, red=red)
-        logging.debug("Sending task to printer")
-        send(qlr.data, printer)
-        # this is some standard code for printing with brother label printer with python,
-        # red = True means that black and red printing will be done. Only for 62 label paper
-        logging.info("Printed")
+    def _print_image(self, image: Image) -> None:
+        """print provided image"""
+        logger.info(f"Printing image of size {image.size}")
+        qlr: BrotherQLRaster = BrotherQLRaster(self._model)
+        red: bool = self._paper_width == "62"
+        conversion.convert(qlr, [image], self._paper_width, red=red)
+        send(qlr.data, self._address)

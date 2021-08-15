@@ -1,41 +1,38 @@
 import atexit
-import logging
 import typing as tp
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from feecc_hub.exceptions import (
+    EmployeeNotFoundError,
+    EmployeeUnauthorizedError,
+    WorkbenchNotFoundError,
+)
 from feecc_hub.Hub import Hub
+from feecc_hub.models import (
+    BaseOut,
+    EmployeeData,
+    EmployeeDetails,
+    EmployeeOut,
+    NewUnitData,
+    UnitOut,
+    WorkbenchData,
+    WorkbenchExtraDetails,
+    WorkbenchExtraDetailsWithoutStage,
+)
 from feecc_hub.Types import RequestPayload
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
-from feecc_hub.exceptions import (
-    WorkbenchNotFoundError,
-    EmployeeNotFoundError,
-    EmployeeUnauthorizedError,
-)
-from feecc_hub.models import (
-    NewUnitData,
-    WorkbenchData,
-    WorkbenchExtraDetailsWithoutStage,
-    WorkbenchExtraDetails,
-    EmployeeDetails,
-    EmployeeData,
-    BaseOut,
-    UnitOut,
-    EmployeeOut,
-)
+from loguru import logger
+
+from ._logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 
 if tp.TYPE_CHECKING:
     from feecc_hub.Employee import Employee
 
-# set up logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(levelname)s (%(asctime)s) [%(module)s:%(funcName)s]: %(message)s",
-    filename="hub.log",
-)
+# apply logging configuration
+logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
 
 # global variables
 hub = Hub()
@@ -53,9 +50,9 @@ api.add_middleware(
 @atexit.register
 def end_session() -> None:
     """a function to execute when daemon exits"""
-    logging.info("Sigterm registered. Handling.")
+    logger.info("Sigterm registered. Handling.")
     pass
-    logging.info("Sigterm handling success")
+    logger.info("Sigterm handling success")
 
 
 # REST API request handlers
@@ -64,7 +61,7 @@ def end_session() -> None:
 @api.post("/api/unit/new", response_model=UnitOut)
 def create_unit(payload: NewUnitData) -> RequestPayload:
     """handle new Unit creation"""
-    logging.debug(f"Got request at /api/unit/new with payload: {payload.dict()}")
+    logger.debug(f"Got request at /api/unit/new with payload: {payload.dict()}")
     global hub
 
     try:
@@ -74,11 +71,11 @@ def create_unit(payload: NewUnitData) -> RequestPayload:
             comment="New unit created successfully",
             unit_internal_id=new_unit_internal_id,
         )
-        logging.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
+        logger.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
         return dict(response.dict())
 
     except Exception as E:
-        logging.error(f"Exception occurred while creating new Unit: {E}")
+        logger.error(f"Exception occurred while creating new Unit: {E}")
         response = UnitOut(
             status=False, comment=f"Could not create a new Unit. Internal error occurred: {E}"
         )
@@ -93,7 +90,7 @@ def unit_start_record(
     global hub
     request_payload: RequestPayload = workbench_details.dict()
 
-    logging.debug(
+    logger.debug(
         f"Got request at /api/unit/{unit_internal_id}/start with payload:" f" {request_payload}"
     )
 
@@ -108,13 +105,13 @@ def unit_start_record(
             f"Workbench no. {request_payload['workbench_no']} "
         )
         response_data = {"status": True, "comment": message}
-        logging.info(message)
+        logger.info(message)
         return response_data
 
     except Exception as E:
         message = f"Couldn't handle request. An error occurred: {E}"
-        logging.error(message)
-        logging.debug(request_payload)
+        logger.error(message)
+        logger.debug(request_payload)
         response_data = {"status": False, "comment": message}
         return response_data
 
@@ -127,7 +124,7 @@ def unit_stop_record(
     global hub
     request_payload = workbench_data.dict()
 
-    logging.debug(
+    logger.debug(
         f"Got request at /api/unit/{unit_internal_id}/end with payload:" f" {request_payload}"
     )
 
@@ -140,7 +137,7 @@ def unit_stop_record(
         return {"status": True, "comment": message}
 
     except Exception as e:
-        logging.error(f"Couldn't handle end record request. An error occurred: {e}")
+        logger.error(f"Couldn't handle end record request. An error occurred: {e}")
         return {"status": False, "comment": "Couldn't handle end record request."}
 
 
@@ -150,7 +147,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
     global hub
     request_payload = workbench.dict()
 
-    logging.debug(
+    logger.debug(
         f"Got request at /api/unit/{unit_internal_id}/upload with payload:" f" {request_payload}"
     )
 
@@ -162,7 +159,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
 
     except Exception as e:
         error_message = f"Can't handle unit upload. An error occurred: {e}"
-        logging.error(error_message)
+        logger.error(error_message)
 
     return {"status": False, "comment": error_message}
 
@@ -170,7 +167,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
 @api.post("/api/employee/{rfid_card_id}/info", response_model=EmployeeOut)
 def get_employee_data(rfid_card_id: str) -> RequestPayload:
     """return data for an Employee with matching ID card"""
-    logging.debug(f"Got request at /api/employee/{rfid_card_id}/info")
+    logger.debug(f"Got request at /api/employee/{rfid_card_id}/info")
 
     try:
         employee: Employee = hub.get_employee_by_card_id(rfid_card_id)
@@ -183,13 +180,13 @@ def get_employee_data(rfid_card_id: str) -> RequestPayload:
 
     except EmployeeNotFoundError as E:
         message = f"Employee not found: {E}"
-        logging.error(message)
+        logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
 
     except Exception as e:
         message = f"An unknown error occurred while fetching Employee data: {e}"
-        logging.error(message)
+        logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
 
@@ -200,7 +197,7 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
     global hub
     request_payload = employee_data.dict()
 
-    logging.debug(f"Got request at /api/employee/log-in with payload:" f" {request_payload}")
+    logger.debug(f"Got request at /api/employee/log-in with payload:" f" {request_payload}")
 
     try:
         workbench_no: int = int(request_payload["workbench_no"])
@@ -223,19 +220,19 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
 
     except WorkbenchNotFoundError as E:
         message = f"Could not log in the Employee. Workbench not found: {E}"
-        logging.error(message)
+        logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
 
     except EmployeeNotFoundError as E:
         message = f"Could not log in the Employee. Employee not found: {E}"
-        logging.error(message)
+        logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
 
     except Exception as e:
         message = f"An error occurred while logging in the Employee: {e}"
-        logging.error(message)
+        logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
 
@@ -246,7 +243,7 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
     global hub
     request_payload = employee.dict()
 
-    logging.debug(f"Got request at /api/employee/log-out with payload:" f" {request_payload}")
+    logger.debug(f"Got request at /api/employee/log-out with payload:" f" {request_payload}")
 
     try:
         workbench: WorkBench = hub.get_workbench_by_number(int(request_payload["workbench_no"]))
@@ -265,7 +262,7 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
 
     except Exception as e:
         message = f"An error occurred while logging out the Employee: {e}"
-        logging.error(message)
+        logger.error(message)
 
         response_data = {"status": False, "comment": message}
 

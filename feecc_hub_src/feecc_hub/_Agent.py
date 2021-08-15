@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-import logging
 import threading
 import typing as tp
 from random import randint
 
-from .Unit import Unit
+from loguru import logger
+
 from ._Camera import Camera
-from ._State import State
 from ._external_io_operations import ExternalIoGateway, File
+from ._State import State
+from .Unit import Unit
 
 if tp.TYPE_CHECKING:
-    from .WorkBench import WorkBench
     from .Types import Config
+    from .WorkBench import WorkBench
 
 
 class Agent:
@@ -30,34 +31,25 @@ class Agent:
 
     @property
     def _state_thread(self) -> tp.Optional[threading.Thread]:
-        if self._state_thread_list:
-            return self._state_thread_list[-1]
-        else:
-            return None
+        return self._state_thread_list[-1] if self._state_thread_list else None
 
     @_state_thread.setter
     def _state_thread(self, state_thread: threading.Thread) -> None:
         self._state_thread_list.append(state_thread)
         thread_list = self._state_thread_list
-        logging.debug(
+        logger.debug(
             f"Attribute _state_thread_list of Agent is now of len {len(thread_list)}:\n"
             f"{[repr(t) for t in thread_list]}\n"
             f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
         )
 
     @property
-    def state_name(self) -> str:
-        if self._state is None:
-            return ""
-        else:
-            return self._state.name
+    def state_name(self) -> tp.Optional[str]:
+        return self._state.name if self._state else None
 
     @property
-    def state_description(self) -> str:
-        if self._state is not None:
-            return str(self._state.description)
-        else:
-            return ""
+    def state_description(self) -> tp.Optional[str]:
+        return str(self._state.description) if self._state else None
 
     @property
     def config(self) -> Config:
@@ -71,11 +63,11 @@ class Agent:
         if self._state is None:
             raise ValueError("Current state undefined")
 
-        logging.info(f"Agent state is now {self._state.name}")
+        logger.info(f"Agent state is now {self._state.name}")
 
         if background:
             # execute state in the background
-            logging.debug(f"Trying to execute state: {state}")
+            logger.debug(f"Trying to execute state: {state}")
             thread_name: str = f"{self._state.name}-{randint(1, 999)}"
             self._state_thread = threading.Thread(
                 target=self._state.run, args=args, kwargs=kwargs, daemon=False, name=thread_name
