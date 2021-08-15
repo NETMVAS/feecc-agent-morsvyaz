@@ -26,11 +26,10 @@ def generate_short_url(config: Config) -> str:
 
     try:
         response = requests.get(url, data=payload, params=querystring)
-        logger.debug(response.text)
+        logger.debug(f"{config['yourls']['server']} returned: {response.text}")
         keyword: str = response.json()["url"]["keyword"]
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
-        logger.info("Generating short url")
-        logger.debug(response.json())
+        logger.debug(f"Generating short url: {response.json()}")
         return link
     except Exception as e:
         logger.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
