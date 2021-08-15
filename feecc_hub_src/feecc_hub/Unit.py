@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as tp
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime as dt
 from uuid import uuid4

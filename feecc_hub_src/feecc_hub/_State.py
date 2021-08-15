@@ -153,7 +153,7 @@ class ProductionStageEnding(State):
     """A state to run when a production stage is being ended"""
 
     def run(self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
-        # unit: Unit = self._get_unit_copy()
+        unit: Unit = self._get_unit_copy()
         self._stop_recording()
         ipfs_hashes: tp.List[str] = self._publish_record()
         unit.end_session(database, ipfs_hashes, additional_info)
