@@ -20,18 +20,18 @@ class Camera:
         self.login: str = config["login"]  # camera login to obtain access to the stream
         self.password: str = config["password"]  # camera password to obtain access to the stream
         # List of Recording objects each corresponding to an ongoing recording process
-        self._ongoing_records: tp.Deque[Recording] = deque()
+        self.ongoing_records: tp.Deque[Recording] = deque()
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
         recording = Recording(self, unit_uuid)
-        self._ongoing_records.append(recording)
+        self.ongoing_records.append(recording)
         self._debug_ongoing_records(method="start_record")
 
     def stop_record(self) -> tp.Optional[File]:
         """stop recording a video for the requested unit"""
         self._debug_ongoing_records(method="stop_record")
-        recording = self._ongoing_records.popleft() if self._ongoing_records else None
+        recording = self.ongoing_records.popleft() if self.ongoing_records else None
         logger.debug(f"Trying to stop record for {recording}")
 
         if not recording:
@@ -43,7 +43,7 @@ class Camera:
         return video_record
 
     def _debug_ongoing_records(self, method: str) -> None:
-        o_r = self._ongoing_records
+        o_r = self.ongoing_records
         logger.debug(
             f"Operation: {method}. Current ongoing records list ({len(o_r)} items) is {[r.file.filename for r in o_r]}"
         )
