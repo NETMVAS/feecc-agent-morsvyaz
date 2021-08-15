@@ -100,6 +100,63 @@ class Unit:
     def current_operation(self, current_operation: ProductionStage) -> None:
         self.unit_biography.append(current_operation)
 
+    def start_session(
+        self,
+        production_stage_name: str,
+        employee_code_name: str,
+        additional_info: tp.Optional[AdditionalInfo] = None,
+    ) -> None:
+        """begin the provided operation and save data about it"""
+        logger.info(
+            f"Starting production stage {production_stage_name} for unit with int. id "
+            f"{self.internal_id}, additional info {additional_info}"
+        )
+
+        operation = ProductionStage(
+            name=production_stage_name,
+            employee_name=employee_code_name,
+            parent_unit_uuid=self.uuid,
+            session_start_time=ProductionStage.timestamp(),
+            additional_info=additional_info,
+        )
+
+        logger.debug(str(operation))
+        self.current_operation = operation
+
+    def end_session(
+        self,
+        database: DbWrapper,
+        video_hashes: tp.Optional[tp.List[str]] = None,
+        additional_info: tp.Optional[AdditionalInfo] = None,
+    ) -> None:
+        """
+        wrap up the session when video recording stops and save video data
+        as well as session end timestamp
+        """
+        if self.current_operation is None:
+            raise ValueError("No ongoing operations found")
+
+        logger.info(f"Ending production stage {self.current_operation.name}")
+        operation = deepcopy(self.current_operation)
+        operation.session_end_time = ProductionStage.timestamp()
+
+        if video_hashes:
+            operation.video_hashes = video_hashes
+
+        if additional_info:
+            if operation.additional_info is not None:
+                operation.additional_info = {
+                    **operation.additional_info,
+                    **additional_info,
+                }
+            else:
+                operation.additional_info = additional_info
+
+        self.unit_biography[-1] = operation
+        logger.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
+        self.employee = None
+        database.update_unit(self)
+
     def upload(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         if self._associated_passport is not None:
