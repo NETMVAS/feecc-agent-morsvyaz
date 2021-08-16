@@ -118,9 +118,10 @@ def unit_stop_record(
         f"Got request at /api/unit/{unit_internal_id}/end with payload:" f" {request_payload}"
     )
 
+    workbench_no: int = request_payload["workbench_no"]
+    additional_info: tp.Optional[RequestPayload] = request_payload["additional_info"] or None
+
     try:
-        workbench_no: int = request_payload["workbench_no"]
-        additional_info: tp.Optional[RequestPayload] = request_payload["additional_info"] or None
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
         workbench.state.end_operation(unit_internal_id, additional_info)
         message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
@@ -189,16 +190,17 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
 
     logger.debug(f"Got request at /api/employee/log-in with payload:" f" {request_payload}")
 
+    workbench_no: int = int(request_payload["workbench_no"])
+    employee_rfid_card_no: str = request_payload["employee_rfid_card_no"]
+
     try:
-        workbench_no: int = int(request_payload["workbench_no"])
-        employee_rfid_card_no: str = request_payload["employee_rfid_card_no"]
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
 
         hub.authorize_employee(employee_rfid_card_no, workbench_no)
         employee: tp.Optional[Employee] = workbench.employee
 
         if employee is None:
-            raise EmployeeUnauthorizedError
+            raise EmployeeUnauthorizedError(f"Couldn't login employee {employee_rfid_card_no}")
 
         response_data = {
             "status": True,

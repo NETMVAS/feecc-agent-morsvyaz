@@ -5,9 +5,14 @@ import typing as tp
 import yaml
 from loguru import logger
 
-from .database import DbWrapper, MongoDbWrapper
+from .database import MongoDbWrapper
 from .Employee import Employee
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
+from .exceptions import (
+    EmployeeNotFoundError,
+    StateForbiddenError,
+    UnitNotFoundError,
+    WorkbenchNotFoundError,
+)
 from .Types import Config
 from .Unit import Unit
 from .WorkBench import WorkBench
@@ -22,7 +27,7 @@ class Hub:
     def __init__(self) -> None:
         logger.info(f"Initialized an instance of hub {self}")
         self.config: Config = self._get_config()
-        self.database: DbWrapper = self._get_database()
+        self.database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
         self._create_dirs()
@@ -40,6 +45,12 @@ class Hub:
             raise EmployeeNotFoundError(f"Rfid card ID {employee_card_id} unknown")
 
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
+
+        if workbench.state is None:
+            message = "Current state is None"
+            logger.error(message)
+            raise StateForbiddenError(message)
+
         workbench.state.start_shift(employee)
 
     @staticmethod

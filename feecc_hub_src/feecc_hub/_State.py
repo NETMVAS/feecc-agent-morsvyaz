@@ -196,7 +196,7 @@ class AuthorizedIdling(State):
         if self._context.camera is None:
             raise CameraNotFoundError("No associated camera")
         if self._context.camera.record is not None:
-            self._context.camera.record = self._context.camera.stop_record()
+            self._context.camera.stop_record()
 
     def start_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         raise StateForbiddenError
@@ -219,6 +219,9 @@ class ProductionStageOngoing(State):
         unit.employee = employee
         unit.start_session(production_stage_name, employee.passport_code, additional_info)
 
+        if self._context.camera is None:
+            raise CameraNotFoundError("No associated camera found")
+
         if self._context.camera.record is not None and self._config["print_qr"]["enable"]:
             qrcode: str = self._generate_qr_code()
             self._print_qr_code(qrcode)
@@ -235,6 +238,8 @@ class ProductionStageOngoing(State):
 
     def _generate_qr_code(self) -> str:
         """generate a QR code with the short link"""
+        if self._context.camera is None:
+            raise CameraNotFoundError("No associated camera found")
         if self._context.camera.record is None:
             raise FileNotFoundError("There is no video associated with the Agent")
         logger.debug("Generating short url (a dummy for now)")
@@ -243,7 +248,7 @@ class ProductionStageOngoing(State):
             raise Exception("No associated camera found")
         if self._context.camera.record is None:
             raise Exception("No record found for associated camera")
-        self._context.camera.record.file.short_url = short_url
+        self._context.camera.record.short_url = short_url
         logger.debug("Generating QR code image file")
         qr_code_image: str = image_generation.create_qr(short_url, self._config)
         self._context.camera.record.qrcode = qr_code_image

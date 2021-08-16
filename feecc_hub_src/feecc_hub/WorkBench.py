@@ -11,7 +11,6 @@ from .Employee import Employee
 from .Types import ConfigSection
 from .Unit import Unit
 from ._Camera import Camera
-from ._State import State
 from ._external_io_operations import ExternalIoGateway
 
 if tp.TYPE_CHECKING:

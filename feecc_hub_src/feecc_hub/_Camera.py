@@ -39,14 +39,15 @@ class Camera:
         return recording
 
 
-class Recording:
+class Recording(File):
     """a recording object represents one ongoing recording process"""
 
     def __init__(self, camera: Camera, unit_uuid: str) -> None:
         self._camera: Camera = camera
         self._unit_uuid: str = unit_uuid
         self._process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
-        self.file: File = File(self._start_record())
+        super().__init__(self._get_filename(unit_uuid))
+        self._start_record()
 
     @property
     def is_ongoing(self) -> bool:
