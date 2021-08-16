@@ -28,7 +28,7 @@ class Camera:
     def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
         logger.warning("target 5 reached")
-        recording = self.record
+        recording = self.record  # todo gets stuck here
         logger.debug(f"Trying to stop record for {recording}")
 
         if not recording:
@@ -83,5 +83,11 @@ class Recording(File):
         # ffmpeg -rtsp_transport tcp -i "rtsp://login:password@ip:port/Streaming/Channels/101" -c copy -map 0 vid.mp4
         cam: Camera = self._camera
         command: str = f'ffmpeg -rtsp_transport tcp -i "rtsp://{cam.login}:{cam.password}@{cam.ip}:{cam.port}/Streaming/Channels/101" -r 25 -c copy -map 0 {filename}'
-        self._process_ffmpeg = subprocess.Popen(command, shell=True)
+        self._process_ffmpeg = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+        )
         logger.info(f"Started recording video '{filename}' using ffmpeg")
