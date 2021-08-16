@@ -147,7 +147,7 @@ class AuthorizedIdling(State):
         """publish video into IPFS and pin to Pinata. Then update the short link
         to point to an actual recording"""
         ipfs_hashes: tp.List[str] = []
-        file = self._context.camera.record
+        file = self._context.camera.record if self._context.camera else None
         if file is not None:
             self._io_gateway.send(file)
             if file.ipfs_hash is not None:
@@ -193,14 +193,11 @@ class ProductionStageOngoing(State):
         self._context.associated_unit = unit
         unit.employee = employee
         unit.start_session(production_stage_name, employee.passport_code, additional_info)
-        if (
-            self._context.camera
-            and self._context.camera.record
-            and self._config["print_qr"]["enable"]
-        ):
+        if self._context.camera:
+            self._start_recording(unit)
+        if self._config["print_qr"]["enable"]:
             qrcode: str = self._generate_qr_code()
             self._print_qr_code(qrcode)
-            self._start_recording(unit)
         if self._config["print_security_tag"]["enable"]:
             self._print_seal_tag()
 
