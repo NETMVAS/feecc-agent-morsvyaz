@@ -147,10 +147,6 @@ class AuthorizedIdling(State):
         """publish video into IPFS and pin to Pinata. Then update the short link
         to point to an actual recording"""
         ipfs_hashes: tp.List[str] = []
-        if self._context.camera is None:
-            raise CameraNotFoundError("No associated camera")
-        if self._context.camera.record is None:
-            raise CameraNotFoundError("No record found")
         file = self._context.camera.record
         if file is not None:
             self._io_gateway.send(file)
