@@ -25,7 +25,7 @@ class Camera:
         """start recording video"""
         self.record = Recording(self, unit_uuid)
 
-    def stop_record(self) -> tp.Optional[File]:
+    def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
         recording = self.record or None
         logger.debug(f"Trying to stop record for {recording}")
@@ -34,9 +34,9 @@ class Camera:
             logger.error("Could not stop record for unit: no ongoing record found")
             return None
 
-        video_record: File = recording.stop()
-        logger.info(f"Stopped recording video {video_record.filename}")
-        return video_record
+        recording.stop()
+        logger.info(f"Stopped recording video {recording.filename}")
+        return recording
 
 
 class Recording:
@@ -52,31 +52,28 @@ class Recording:
     def is_ongoing(self) -> bool:
         return self._process_ffmpeg is not None and self._process_ffmpeg.poll() is None
 
-    def _start_record(self) -> str:
+    def _start_record(self) -> None:
         """start a record and return future video filename"""
-        unit_uuid: str = self._unit_uuid
-        logger.info(f"Recording started for the unit with UUID {unit_uuid}")
-        dir_: str = "output/video"
+        logger.info(f"Recording started for the unit with UUID {self._unit_uuid}")
+        self._execute_ffmpeg(self.path)
+
+    @staticmethod
+    def _get_filename(unit_uuid: str, dir_: str = "output/video") -> str:
+        """determine a valid video name not to override an existing video"""
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
         filename = f"{dir_}/unit_{unit_uuid}_assembly_video_1.mp4"
-
-        # determine a valid video name not to override an existing video
         cnt: int = 1
         while os.path.exists(filename):
             filename = filename.replace(f"video_{cnt}", f"video_{cnt + 1}")
             cnt += 1
-
-        self._execute_ffmpeg(filename)
         return filename
 
-    def stop(self) -> File:
+    def stop(self) -> None:
         """stop recording a video"""
         if self.is_ongoing and self._process_ffmpeg is not None:
             self._process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
             logger.info(f"Finished recording video for unit {self._unit_uuid}")
-
-        return self.file
 
     def _execute_ffmpeg(self, filename: str) -> None:
         """Execute ffmpeg command"""

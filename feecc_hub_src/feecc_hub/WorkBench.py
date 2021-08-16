@@ -6,7 +6,7 @@ from random import randint
 
 from loguru import logger
 
-from . import _State as State
+from ._State import State, AwaitLogin
 from .Employee import Employee
 from .Types import ConfigSection
 from .Unit import Unit
@@ -29,7 +29,7 @@ class WorkBench:
     def __init__(self, associated_hub: Hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
         self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
         self.number: int = self._workbench_config["workbench number"]
-        self._associated_hub: Hub = associated_hub
+        self.associated_hub: Hub = associated_hub
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
         self.associated_unit: tp.Optional[Unit] = None
@@ -37,7 +37,9 @@ class WorkBench:
         logger.info(f"Workbench no. {self.number} initialized")
         logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
         self.state: tp.Optional[State] = None
+        self.previous_state: tp.Optional[tp.Type[State]] = None
         self._state_thread_list: tp.List[threading.Thread] = []
+        self.execute_state(AwaitLogin)
 
     @property
     def _state_thread(self) -> tp.Optional[threading.Thread]:
@@ -55,15 +57,11 @@ class WorkBench:
 
     @property
     def config(self) -> Config:
-        return self._associated_hub.config
+        return self.associated_hub.config
 
     @property
     def camera(self) -> tp.Optional[Camera]:
         return self._associated_camera
-
-    @property
-    def associated_hub(self) -> Hub:
-        return self._associated_hub
 
     @property
     def unit_in_operation(self) -> tp.Optional[str]:
@@ -85,31 +83,23 @@ class WorkBench:
         camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
         return Camera(camera_config) if camera_config else None
 
-    def execute_state(
-        self,
-        state: tp.Type[State],
-        background: bool = True,
-        *args: tp.Any,
-        **kwargs: tp.Any,
-    ) -> None:
+    def execute_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
         """execute provided state in the background"""
+        self.previous_state = self.state.__class__ if self.state else None
         self.state = state(self)
         if self.state is None:
             raise ValueError("Current state undefined")
 
         logger.info(f"Agent state is now {self.state.name}")
 
-        if background:
-            # execute state in the background
-            logger.debug(f"Trying to execute state: {state}")
-            thread_name: str = f"{self.state.name}-{randint(1, 999)}"
-            self._state_thread = threading.Thread(
-                target=self.state.perform_on_apply,
-                args=args,
-                kwargs=kwargs,
-                daemon=False,
-                name=thread_name,
-            )
-            self._state_thread.start()
-        else:
-            self.state.perform_on_apply(*args, **kwargs)
+        # execute state in the background
+        logger.debug(f"Trying to execute state: {state}")
+        thread_name: str = f"{self.state.name}-{randint(1, 999)}"
+        self._state_thread = threading.Thread(
+            target=self.state.perform_on_apply,
+            args=args,
+            kwargs=kwargs,
+            daemon=False,
+            name=thread_name,
+        )
+        self._state_thread.start()

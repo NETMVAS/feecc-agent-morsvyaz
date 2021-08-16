@@ -6,22 +6,24 @@ from copy import deepcopy
 
 from loguru import logger
 
-from . import _image_generation as image_generation
-from . import _Printer as Printer
-from . import _short_url_generator as url_generator
+from . import (
+    _Printer as Printer,
+    _image_generation as image_generation,
+    _short_url_generator as url_generator,
+)
 from .Types import AdditionalInfo, Config
-from .WorkBench import WorkBench
+from ._external_io_operations import ExternalIoGateway
 from .exceptions import (
+    AgentBusyError,
+    CameraNotFoundError,
+    EmployeeUnauthorizedError,
     StateForbiddenError,
     UnitNotFoundError,
-    AgentBusyError,
-    EmployeeUnauthorizedError,
-    CameraNotFoundError,
 )
-from ._external_io_operations import ExternalIoGateway
 
 if tp.TYPE_CHECKING:
     from .database import DbWrapper
+    from .WorkBench import WorkBench
     from .Employee import Employee
     from .Unit import Unit
 
@@ -56,12 +58,21 @@ class State(ABC):
         raise NotImplementedError
 
     @tp.no_type_check
-    def start_shift(self, *args, **kwargs) -> None:
+    def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
-        raise NotImplementedError
+        if self._context.employee is not None:
+            message = f"Employee {employee.rfid_card_id} is already logged in at the workbench no. {self._context.number}"
+            raise AgentBusyError(message)
+
+        self._context.employee = employee
+        logger.info(
+            f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self._context.number}"
+        )
+        database: DbWrapper = self._context.associated_hub.database
+        self._context.execute_state(AuthorizedIdling, database)
 
     @tp.no_type_check
-    def end_shift(self, *args, **kwargs) -> None:
+    def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
         if self._context.state_name == "ProductionStageOngoing" and self._context.unit_in_operation:
             self.end_operation(self._context.unit_in_operation)
@@ -71,6 +82,8 @@ class State(ABC):
             raise EmployeeUnauthorizedError(error_message)
         else:
             self._context.employee = None
+
+        self._context.execute_state(AwaitLogin)
 
     @tp.no_type_check
     def start_operation(
@@ -91,18 +104,16 @@ class State(ABC):
             message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self._context.number}"
             raise AgentBusyError(message)
 
-        # start operation
-        # self.agent.execute_state(
-        #     State.ProductionStageStarting,
-        #     True,
-        #     unit,
-        #     self._context.employee,
-        #     production_stage_name,
-        #     additional_info,
-        # )
-
         logger.info(
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self._context.number}"
+        )
+
+        self._context.execute_state(
+            ProductionStageOngoing,
+            unit=unit,
+            employee=unit.employee,
+            production_stage_name=production_stage_name,
+            additional_info=additional_info,
         )
 
     @tp.no_type_check
@@ -113,6 +124,7 @@ class State(ABC):
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self._context.unit_in_operation:
             database: DbWrapper = self._context.associated_hub.database
+            self._context.execute_state(AuthorizedIdling, database)
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
             logger.error(message)
@@ -164,7 +176,7 @@ class AuthorizedIdling(State):
             raise CameraNotFoundError("No associated camera")
         if self._context.camera.record is None:
             raise CameraNotFoundError("No record found")
-        file = self._context.camera.record.file
+        file = self._context.camera.record
         if file is not None:
             self._io_gateway.send(file)
             if file.ipfs_hash is not None:
