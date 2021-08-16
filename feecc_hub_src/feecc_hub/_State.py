@@ -10,9 +10,17 @@ from . import _image_generation as image_generation
 from . import _Printer as Printer
 from . import _short_url_generator as url_generator
 from .Types import AdditionalInfo, Config
+from .WorkBench import WorkBench
+from .exceptions import (
+    StateForbiddenError,
+    UnitNotFoundError,
+    AgentBusyError,
+    EmployeeUnauthorizedError,
+    CameraNotFoundError,
+)
+from ._external_io_operations import ExternalIoGateway
 
 if tp.TYPE_CHECKING:
-    from ._Agent import Agent
     from .database import DbWrapper
     from .Employee import Employee
     from .Unit import Unit
@@ -21,9 +29,12 @@ if tp.TYPE_CHECKING:
 class State(ABC):
     """abstract State class for states to inherit from"""
 
-    def __init__(self, context: Agent) -> None:
+    def __init__(
+        self, context: WorkBench, io_gateway: tp.Optional[ExternalIoGateway] = None
+    ) -> None:
         """:param context: object of type Agent which executes the provided state"""
-        self._context: Agent = context
+        self._context: WorkBench = context
+        self._io_gateway: ExternalIoGateway = io_gateway or ExternalIoGateway(self._config)
 
     @property
     def name(self) -> str:
@@ -40,134 +51,122 @@ class State(ABC):
 
     @abstractmethod
     @tp.no_type_check
-    def run(self, *args, **kwargs) -> None:
+    def perform_on_apply(self, *args, **kwargs) -> None:
         """state action executor (to be overridden)"""
         raise NotImplementedError
 
+    @tp.no_type_check
+    def start_shift(self, *args, **kwargs) -> None:
+        """authorize employee"""
+        raise NotImplementedError
 
-class AwaitLogin(State):
-    """
-    State when the workbench is empty and waiting for an employee authorization
-    """
+    @tp.no_type_check
+    def end_shift(self, *args, **kwargs) -> None:
+        """log out employee, finish ongoing operations if any"""
+        if self._context.state_name == "ProductionStageOngoing" and self._context.unit_in_operation:
+            self.end_operation(self._context.unit_in_operation)
 
-    def run(self) -> None:
+        if self._context.employee is None:
+            error_message = f"Cannot log out employee at the workbench no. {self._context.number}. No one logged in"
+            raise EmployeeUnauthorizedError(error_message)
+        else:
+            self._context.employee = None
+
+    @tp.no_type_check
+    def start_operation(
+        self, unit: Unit, production_stage_name: str, additional_info: AdditionalInfo
+    ) -> None:
+        """begin work on the provided unit"""
+        logger.info(
+            f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self._context.number}"
+        )
+
+        # check if employee is logged in
+        if self._context.employee is None:
+            message = f"Cannot start an operation: No employee is logged in at the Workbench {self._context.number}"
+            raise EmployeeUnauthorizedError(message)
+
+        # check if there are no ongoing operations
+        if self._context.is_operation_ongoing:
+            message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self._context.number}"
+            raise AgentBusyError(message)
+
+        # start operation
+        # self.agent.execute_state(
+        #     State.ProductionStageStarting,
+        #     True,
+        #     unit,
+        #     self._context.employee,
+        #     production_stage_name,
+        #     additional_info,
+        # )
+
+        logger.info(
+            f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self._context.number}"
+        )
+
+    @tp.no_type_check
+    def end_operation(
+        self, unit_internal_id: str, additional_info: tp.Optional[AdditionalInfo] = None
+    ) -> None:
+        """end work on the provided unit"""
+        # make sure requested unit is associated with this workbench
+        if unit_internal_id == self._context.unit_in_operation:
+            database: DbWrapper = self._context.associated_hub.database
+        else:
+            message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
+            logger.error(message)
+            logger.debug(
+                f"Unit in operation on workbench {self._context.number}: {self._context.unit_in_operation}"
+            )
+            raise UnitNotFoundError(message)
+
+
+class AwaitLogin(State, ABC):
+    """State when the workbench is empty and waiting for an employee authorization"""
+
+    def perform_on_apply(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         pass
+
+    def end_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        raise StateForbiddenError
+
+    def start_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        raise StateForbiddenError
+
+    def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        raise StateForbiddenError
 
 
 class AuthorizedIdling(State):
-    """
-    State when an employee was authorized at the workbench but doing nothing
-    """
+    """State when an employee was authorized at the workbench but doing nothing"""
 
-    def run(self) -> None:
-        pass
-
-
-class UnitDataGathering(State):
-    """
-    State when data is being gathered for creating new unit
-    (optional if workbench isn't creating units)
-    """
-
-    def run(self) -> None:
-        pass
-
-
-class UnitInitialization(State):
-    """
-    State when new unit being created
-    (optional if workbench isn't creating units)
-    """
-
-    def run(self) -> None:
-        pass
-
-
-class ProductionStageStarting(State):
-    """A state to run when a production stage is being started"""
-
-    def run(
-        self,
-        unit: Unit,
-        employee: Employee,
-        production_stage_name: str,
-        additional_info: AdditionalInfo,
+    def perform_on_apply(
+        self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None
     ) -> None:
-        self._context.associated_unit = unit
-        unit.employee = employee
-        unit.start_session(production_stage_name, employee.passport_code, additional_info)
+        if self._context.previous_state == ProductionStageOngoing:  # todo
+            self._end_operation(database, additional_info)
 
-        if self._context.latest_video is not None and self._config["print_qr"]["enable"]:
-            qrcode: str = self._generate_qr_code()
-            self._print_qr_code(qrcode)
-
-        if self._config["print_security_tag"]["enable"]:
-            self._print_seal_tag()
-
-        self._start_recording(unit)
-        self._context.execute_state(ProductionStageOngoing, background=False)
-
-    def _print_qr_code(self, pic_name: str) -> None:
-        """print the QR code onto a sticker"""
-        logger.debug("Printing QR code image")
-        Printer.PrinterTask(pic_name, self._config)
-
-    def _generate_qr_code(self) -> str:
-        """generate a QR code with the short link"""
-        if self._context.latest_video is None:
-            raise FileNotFoundError("There is no video associated with the Agent")
-        logger.debug("Generating short url (a dummy for now)")
-        short_url: str = url_generator.generate_short_url(self._config)
-        if self._context.associated_camera is None:
-            raise Exception("No associated camera found")
-        if self._context.associated_camera.record is None:
-            raise Exception("No record found for associated camera")
-        self._context.associated_camera.record.file.short_url = short_url
-        logger.debug("Generating QR code image file")
-        qr_code_image: str = image_generation.create_qr(short_url, self._config)
-        self._context.latest_video.qrcode = qr_code_image
-        return qr_code_image
-
-    def _print_seal_tag(self) -> None:
-        """generate and print a seal tag"""
-        logger.info("Printing seal tag")
-        seal_tag_img: str = image_generation.create_seal_tag(self._config)
-        Printer.PrinterTask(seal_tag_img, self._config)
-
-    def _start_recording(self, unit: Unit) -> None:
-        """start recording a video"""
-        if self._context.associated_camera is None:
-            logger.error("Cannot start recording: associated camera is None")
-        else:
-            self._context.associated_camera.start_record(unit.uuid)
-
-
-class ProductionStageOngoing(State):
-    """
-    State when job is ongoing
-    """
-
-    def run(self) -> None:
-        pass
-
-
-class ProductionStageEnding(State):
-    """A state to run when a production stage is being ended"""
-
-    def run(self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
+    def _end_operation(
+        self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None
+    ) -> None:
+        """end previous operation"""
         unit: Unit = self._get_unit_copy()
         self._stop_recording()
         ipfs_hashes: tp.List[str] = self._publish_record()
         unit.end_session(database, ipfs_hashes, additional_info)
-        self._context.execute_state(AuthorizedIdling, background=False)
 
     def _publish_record(self) -> tp.List[str]:
         """publish video into IPFS and pin to Pinata. Then update the short link
         to point to an actual recording"""
         ipfs_hashes: tp.List[str] = []
-        file = self._context.latest_video
+        if self._context.camera is None:
+            raise CameraNotFoundError("No associated camera")
+        if self._context.camera.record is None:
+            raise CameraNotFoundError("No record found")
+        file = self._context.camera.record.file
         if file is not None:
-            self._context.io_gateway.send(file)
+            self._io_gateway.send(file)
             if file.ipfs_hash is not None:
                 ipfs_hashes.append(file.ipfs_hash)
         return ipfs_hashes
@@ -182,16 +181,71 @@ class ProductionStageEnding(State):
 
     def _stop_recording(self) -> None:
         """stop recording and save the file"""
-        if self._context.associated_camera is not None:
-            self._context.latest_video = self._context.associated_camera.stop_record()
+        if self._context.camera is None:
+            raise CameraNotFoundError("No associated camera")
+        if self._context.camera.record is not None:
+            self._context.camera.record = self._context.camera.stop_record()
+
+    def start_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        raise StateForbiddenError
+
+    def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        raise StateForbiddenError
 
 
-class UnitWrapUp(State):
-    """
-    State when unit data are being wrapped up
-    Uploaded to IPFS, pinned to Pinata, etc
-    (optional if workbench isn't creating units)
-    """
+class ProductionStageOngoing(State):
+    """State when job is ongoing"""
 
-    def run(self) -> None:
-        pass
+    def perform_on_apply(
+        self,
+        unit: Unit,
+        employee: Employee,
+        production_stage_name: str,
+        additional_info: AdditionalInfo,
+    ) -> None:
+        self._context.associated_unit = unit
+        unit.employee = employee
+        unit.start_session(production_stage_name, employee.passport_code, additional_info)
+
+        if self._context.camera.record is not None and self._config["print_qr"]["enable"]:
+            qrcode: str = self._generate_qr_code()
+            self._print_qr_code(qrcode)
+
+        if self._config["print_security_tag"]["enable"]:
+            self._print_seal_tag()
+
+        self._start_recording(unit)
+
+    def _print_qr_code(self, pic_name: str) -> None:
+        """print the QR code onto a sticker"""
+        logger.debug("Printing QR code image")
+        Printer.PrinterTask(pic_name, self._config)
+
+    def _generate_qr_code(self) -> str:
+        """generate a QR code with the short link"""
+        if self._context.camera.record is None:
+            raise FileNotFoundError("There is no video associated with the Agent")
+        logger.debug("Generating short url (a dummy for now)")
+        short_url: str = url_generator.generate_short_url(self._config)
+        if self._context.camera is None:
+            raise Exception("No associated camera found")
+        if self._context.camera.record is None:
+            raise Exception("No record found for associated camera")
+        self._context.camera.record.file.short_url = short_url
+        logger.debug("Generating QR code image file")
+        qr_code_image: str = image_generation.create_qr(short_url, self._config)
+        self._context.camera.record.qrcode = qr_code_image
+        return qr_code_image
+
+    def _print_seal_tag(self) -> None:
+        """generate and print a seal tag"""
+        logger.info("Printing seal tag")
+        seal_tag_img: str = image_generation.create_seal_tag(self._config)
+        Printer.PrinterTask(seal_tag_img, self._config)
+
+    def _start_recording(self, unit: Unit) -> None:
+        """start recording a video"""
+        if self._context.camera is None:
+            logger.error("Cannot start recording: associated camera is None")
+        else:
+            self._context.camera.start_record(unit.uuid)

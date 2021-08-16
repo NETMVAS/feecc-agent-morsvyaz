@@ -22,6 +22,10 @@ class EmployeeNotFoundError(Exception):
     pass
 
 
+class CameraNotFoundError(Exception):
+    pass
+
+
 class SubstrateError(Exception):
     pass
 

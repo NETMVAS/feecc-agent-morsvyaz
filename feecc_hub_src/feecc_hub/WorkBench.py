@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+import threading
 import typing as tp
+from random import randint
 
 from loguru import logger
 
 from . import _State as State
-from ._Agent import Agent
-from ._Camera import Camera
 from .Employee import Employee
-from .exceptions import AgentBusyError, EmployeeUnauthorizedError, UnitNotFoundError
-from .Types import AdditionalInfo, Config, ConfigSection
+from .Types import ConfigSection
 from .Unit import Unit
+from ._Camera import Camera
+from ._State import State
+from ._external_io_operations import ExternalIoGateway
 
 if tp.TYPE_CHECKING:
-    from .database import DbWrapper
+    from .Types import Config
     from .Hub import Hub
 
 
@@ -30,9 +32,26 @@ class WorkBench:
         self._associated_hub: Hub = associated_hub
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
-        self.agent: Agent = self._get_agent()
+        self.associated_unit: tp.Optional[Unit] = None
+        self.io_gateway: ExternalIoGateway = ExternalIoGateway(self.config)
         logger.info(f"Workbench no. {self.number} initialized")
         logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
+        self.state: tp.Optional[State] = None
+        self._state_thread_list: tp.List[threading.Thread] = []
+
+    @property
+    def _state_thread(self) -> tp.Optional[threading.Thread]:
+        return self._state_thread_list[-1] if self._state_thread_list else None
+
+    @_state_thread.setter
+    def _state_thread(self, state_thread: threading.Thread) -> None:
+        self._state_thread_list.append(state_thread)
+        thread_list = self._state_thread_list
+        logger.debug(
+            f"Attribute _state_thread_list of Agent is now of len {len(thread_list)}:\n"
+            f"{[repr(t) for t in thread_list]}\n"
+            f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
+        )
 
     @property
     def config(self) -> Config:
@@ -43,8 +62,12 @@ class WorkBench:
         return self._associated_camera
 
     @property
+    def associated_hub(self) -> Hub:
+        return self._associated_hub
+
+    @property
     def unit_in_operation(self) -> tp.Optional[str]:
-        return str(self.agent.associated_unit.internal_id) if self.agent.associated_unit else None
+        return str(self.associated_unit.internal_id) if self.associated_unit else None
 
     @property
     def is_operation_ongoing(self) -> bool:
@@ -52,11 +75,11 @@ class WorkBench:
 
     @property
     def state_name(self) -> tp.Optional[str]:
-        return self.agent.state_name
+        return self.state.name if self.state else None
 
     @property
     def state_description(self) -> tp.Optional[str]:
-        return self.agent.state_description
+        return str(self.state.description) if self.state else None
 
     def _get_camera(self) -> tp.Optional[Camera]:
         camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
@@ -79,65 +102,31 @@ class WorkBench:
         )
         self.agent.execute_state(State.AuthorizedIdling)
 
-    def end_shift(self) -> None:
-        """log out employee, finish ongoing operations if any"""
-        if self.agent.state_name == "ProductionStageOngoing" and self.unit_in_operation:
-            self.end_operation(self.unit_in_operation)
+    def execute_state(
+        self,
+        state: tp.Type[State],
+        background: bool = True,
+        *args: tp.Any,
+        **kwargs: tp.Any,
+    ) -> None:
+        """execute provided state in the background"""
+        self.state = state(self)
+        if self.state is None:
+            raise ValueError("Current state undefined")
 
-        if self.employee is None:
-            error_message = (
-                f"Cannot log out employee at the workbench no. {self.number}. No one logged in"
+        logger.info(f"Agent state is now {self.state.name}")
+
+        if background:
+            # execute state in the background
+            logger.debug(f"Trying to execute state: {state}")
+            thread_name: str = f"{self.state.name}-{randint(1, 999)}"
+            self._state_thread = threading.Thread(
+                target=self.state.perform_on_apply,
+                args=args,
+                kwargs=kwargs,
+                daemon=False,
+                name=thread_name,
             )
-            raise EmployeeUnauthorizedError(error_message)
+            self._state_thread.start()
         else:
-            self.employee = None
-
-        self.agent.execute_state(State.AwaitLogin)
-
-    def start_operation(
-        self, unit: Unit, production_stage_name: str, additional_info: AdditionalInfo
-    ) -> None:
-        """begin work on the provided unit"""
-        logger.info(
-            f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
-        )
-
-        # check if employee is logged in
-        if self.employee is None:
-            message = f"Cannot start an operation: No employee is logged in at the Workbench {self.number}"
-            raise EmployeeUnauthorizedError(message)
-
-        # check if there are no ongoing operations
-        if self.is_operation_ongoing:
-            message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self.number}"
-            raise AgentBusyError(message)
-
-        # start operation
-        self.agent.execute_state(
-            State.ProductionStageStarting,
-            True,
-            unit,
-            self.employee,
-            production_stage_name,
-            additional_info,
-        )
-
-        logger.info(
-            f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self.number}"
-        )
-
-    def end_operation(
-        self, unit_internal_id: str, additional_info: tp.Optional[AdditionalInfo] = None
-    ) -> None:
-        """end work on the provided unit"""
-        # make sure requested unit is associated with this workbench
-        if unit_internal_id == self.unit_in_operation:
-            database: DbWrapper = self._associated_hub.database
-
-            self.agent.execute_state(State.ProductionStageEnding, True, database, additional_info)
-
-        else:
-            message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self.number}"
-            logger.error(message)
-            logger.debug(f"Unit in operation on workbench {self.number}: {self.unit_in_operation}")
-            raise UnitNotFoundError(message)
+            self.state.perform_on_apply(*args, **kwargs)
