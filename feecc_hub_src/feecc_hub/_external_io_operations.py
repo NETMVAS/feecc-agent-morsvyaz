@@ -33,10 +33,18 @@ class File:
     def keyword(self) -> tp.Optional[str]:
         return self.short_url.split("/")[-1] if self.short_url else None
 
+    @property
+    def extension(self) -> str:
+        sections = self.filename.split(".")
+        return sections[-1] if sections else ""
+
     def __str__(self) -> str:
         """convert self into a string"""
-        with open(self.path, "r") as f:
-            return "\n".join(f.readlines())
+        if self.extension in ["yaml", "json", "txt", "log"]:
+            with open(self.path, "r") as f:
+                return "\n".join(f.readlines())
+        else:
+            return self.filename
 
     def delete(self) -> None:
         """deletes the file"""
