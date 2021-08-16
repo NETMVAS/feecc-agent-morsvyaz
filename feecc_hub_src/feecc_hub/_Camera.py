@@ -28,7 +28,7 @@ class Camera:
     def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
         logger.warning("target 5 reached")
-        recording = self.record or None
+        recording = self.record
         logger.debug(f"Trying to stop record for {recording}")
 
         if not recording:
