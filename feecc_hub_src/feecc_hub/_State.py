@@ -215,10 +215,8 @@ class ProductionStageOngoing(State):
 
     def _generate_qr_code(self) -> str:
         """generate a QR code with the short link"""
-        if self._context.camera is None:
-            raise CameraNotFoundError("No associated camera found")
-        if self._context.camera.record is None:
-            raise FileNotFoundError("There is no video associated with the Agent")
+        if not (self._context.camera and self._context.camera.record):
+            return ""
         logger.debug("Generating short url (a dummy for now)")
         short_url: str = url_generator.generate_short_url(self._config)
         self._context.camera.record.short_url = short_url
