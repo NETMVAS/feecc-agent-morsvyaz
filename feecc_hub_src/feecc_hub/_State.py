@@ -63,8 +63,7 @@ class State(ABC):
 
     @tp.no_type_check
     def end_shift(self) -> None:
-        """log out employee, finish ongoing operations if any"""
-        self.end_operation(self._context.unit_in_operation)
+        """log out the employee"""
         self._context.employee = None
         self._context.apply_state(AwaitLogin)
 
@@ -129,7 +128,8 @@ class AuthorizedIdling(State):
     def perform_on_apply(
         self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None
     ) -> None:
-        if self._context.previous_state == ProductionStageOngoing:  # todo
+        if self._context.previous_state == ProductionStageOngoing:
+            logger.info("Ending operation")
             self._end_operation(database, additional_info)
 
     def _end_operation(
