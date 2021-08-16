@@ -28,17 +28,14 @@ class Camera:
     def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
         logger.warning("target 5 reached")
-        recording = self.record  # todo gets stuck here
-        logger.debug(f"Trying to stop record for {recording}")
-
-        if not recording:
+        logger.debug(f"Trying to stop record for {self.record}")
+        if not self.record:
             logger.error("Could not stop record for unit: no ongoing record found")
             return None
-
-        recording.stop()
+        self.record.stop()
         logger.warning("target 6 reached")
-        logger.info(f"Stopped recording video {recording.filename}")
-        return recording
+        logger.info(f"Stopped recording video {self.record.filename}")
+        return self.record
 
 
 class Recording(File):
