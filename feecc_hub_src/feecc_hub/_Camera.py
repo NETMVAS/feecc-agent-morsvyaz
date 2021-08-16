@@ -18,8 +18,7 @@ class Camera:
         self.port: str = config["port"]  # port where the camera streams, required for rtsp
         self.login: str = config["login"]  # camera login to obtain access to the stream
         self.password: str = config["password"]  # camera password to obtain access to the stream
-        # List of Recording objects each corresponding to an ongoing recording process
-        self.record: tp.Optional[Recording] = None
+        self.record: tp.Optional[Recording] = None  # current ongoing record
 
     def start_record(self, unit_uuid: str) -> None:
         """start recording video"""
@@ -28,7 +27,7 @@ class Camera:
     def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
         logger.warning("target 5 reached")
-        logger.debug(f"Trying to stop record for {self.record}")
+        logger.debug(f"Trying to stop record for {self.record.filename}")
         if not self.record:
             logger.error("Could not stop record for unit: no ongoing record found")
             return None
