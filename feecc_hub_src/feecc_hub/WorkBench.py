@@ -35,10 +35,9 @@ class WorkBench:
         self.io_gateway: ExternalIoGateway = ExternalIoGateway(self.config)
         logger.info(f"Workbench no. {self.number} initialized")
         logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
-        self.state: tp.Optional[State] = None
+        self.state: State = AwaitLogin(self)
         self.previous_state: tp.Optional[tp.Type[State]] = None
         self._state_thread_list: tp.List[threading.Thread] = []
-        self.execute_state(AwaitLogin)
 
     @property
     def _state_thread(self) -> tp.Optional[threading.Thread]:
@@ -71,12 +70,12 @@ class WorkBench:
         return bool(self.unit_in_operation)
 
     @property
-    def state_name(self) -> tp.Optional[str]:
-        return self.state.name if self.state else None
+    def state_name(self) -> str:
+        return self.state.name
 
     @property
-    def state_description(self) -> tp.Optional[str]:
-        return str(self.state.description) if self.state else None
+    def state_description(self) -> str:
+        return str(self.state.description)
 
     def _get_camera(self) -> tp.Optional[Camera]:
         camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
@@ -84,11 +83,8 @@ class WorkBench:
 
     def execute_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
         """execute provided state in the background"""
-        self.previous_state = self.state.__class__ if self.state else None
+        self.previous_state = self.state.__class__
         self.state = state(self)
-        if self.state is None:
-            raise ValueError("Current state undefined")
-
         logger.info(f"Agent state is now {self.state.name}")
 
         # execute state in the background

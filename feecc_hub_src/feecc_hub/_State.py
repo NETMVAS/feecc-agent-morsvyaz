@@ -43,9 +43,9 @@ class State(ABC):
         return self.__class__.__name__
 
     @property
-    def description(self) -> tp.Optional[str]:
+    def description(self) -> str:
         """returns own docstring which describes the state"""
-        return self.__doc__
+        return self.__doc__ or ""
 
     @property
     def _config(self) -> Config:

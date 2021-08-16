@@ -45,12 +45,6 @@ class Hub:
             raise EmployeeNotFoundError(f"Rfid card ID {employee_card_id} unknown")
 
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
-
-        if workbench.state is None:
-            message = "Current state is None"
-            logger.error(message)
-            raise StateForbiddenError(message)
-
         workbench.state.start_shift(employee)
 
     @staticmethod

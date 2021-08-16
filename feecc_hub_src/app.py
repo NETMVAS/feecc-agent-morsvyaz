@@ -52,7 +52,6 @@ api.add_middleware(
 def create_unit(payload: NewUnitData) -> RequestPayload:
     """handle new Unit creation"""
     logger.debug(f"Got request at /api/unit/new with payload: {payload.dict()}")
-    global hub
 
     try:
         new_unit_internal_id: str = hub.create_new_unit(payload.unit_type)
@@ -77,7 +76,6 @@ def unit_start_record(
     workbench_details: WorkbenchExtraDetails, unit_internal_id: str
 ) -> RequestPayload:
     """handle start recording operation on a Unit"""
-    global hub
     request_payload: RequestPayload = workbench_details.dict()
 
     logger.debug(
@@ -111,7 +109,6 @@ def unit_stop_record(
     workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str
 ) -> RequestPayload:
     """handle end recording operation on a Unit"""
-    global hub
     request_payload = workbench_data.dict()
 
     logger.debug(
@@ -135,7 +132,6 @@ def unit_stop_record(
 @api.post("/api/unit/{unit_internal_id}/upload", response_model=BaseOut)
 def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> RequestPayload:
     """handle Unit lifecycle end"""
-    global hub
     request_payload = workbench.dict()
 
     logger.debug(
@@ -185,11 +181,8 @@ def get_employee_data(rfid_card_id: str) -> RequestPayload:
 @api.post("/api/employee/log-in", response_model=EmployeeOut)
 def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
     """handle logging in the Employee at a given Workbench"""
-    global hub
     request_payload = employee_data.dict()
-
     logger.debug(f"Got request at /api/employee/log-in with payload:" f" {request_payload}")
-
     workbench_no: int = int(request_payload["workbench_no"])
     employee_rfid_card_no: str = request_payload["employee_rfid_card_no"]
 
@@ -232,9 +225,7 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
 @api.post("/api/employee/log-out")
 def log_out_employee(employee: WorkbenchData) -> RequestPayload:
     """handle logging out the Employee at a given Workbench"""
-    global hub
     request_payload = employee.dict()
-
     logger.debug(f"Got request at /api/employee/log-out with payload:" f" {request_payload}")
 
     try:
