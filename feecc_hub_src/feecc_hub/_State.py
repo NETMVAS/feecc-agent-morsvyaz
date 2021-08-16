@@ -136,12 +136,17 @@ class AuthorizedIdling(State):
         self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None
     ) -> None:
         """end previous operation"""
+        logger.warning("target 1 reached")
         unit: Unit = self._get_unit_copy()
         ipfs_hashes: tp.List[str] = []
         if self._context.camera is not None:
+            logger.warning("target 2 reached")
             self._stop_recording()
+            logger.warning("target 7 reached")
             ipfs_hashes = self._publish_record()
+        logger.warning("target 8 reached")
         unit.end_session(database, ipfs_hashes, additional_info)
+        logger.warning("target 9 reached")
 
     def _publish_record(self) -> tp.List[str]:
         """publish video into IPFS and pin to Pinata. Then update the short link
@@ -165,8 +170,10 @@ class AuthorizedIdling(State):
     def _stop_recording(self) -> None:
         """stop recording and save the file"""
         if self._context.camera is None:
+            logger.warning("target 3 reached")
             raise CameraNotFoundError("No associated camera")
         if self._context.camera.record is not None:
+            logger.warning("target 4 reached")
             self._context.camera.stop_record()
 
     def start_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
