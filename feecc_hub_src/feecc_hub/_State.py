@@ -13,13 +13,7 @@ from . import (
 )
 from .Types import AdditionalInfo, Config
 from ._external_io_operations import ExternalIoGateway
-from .exceptions import (
-    AgentBusyError,
-    CameraNotFoundError,
-    EmployeeUnauthorizedError,
-    StateForbiddenError,
-    UnitNotFoundError,
-)
+from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
     from .database import DbWrapper
@@ -60,30 +54,19 @@ class State(ABC):
     @tp.no_type_check
     def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
-        if self._context.employee is not None:
-            message = f"Employee {employee.rfid_card_id} is already logged in at the workbench no. {self._context.number}"
-            raise AgentBusyError(message)
-
         self._context.employee = employee
         logger.info(
             f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self._context.number}"
         )
         database: DbWrapper = self._context.associated_hub.database
-        self._context.execute_state(AuthorizedIdling, database)
+        self._context.apply_state(AuthorizedIdling, database)
 
     @tp.no_type_check
     def end_shift(self) -> None:
         """log out employee, finish ongoing operations if any"""
-        if self._context.state_name == "ProductionStageOngoing" and self._context.unit_in_operation:
-            self.end_operation(self._context.unit_in_operation)
-
-        if self._context.employee is None:
-            error_message = f"Cannot log out employee at the workbench no. {self._context.number}. No one logged in"
-            raise EmployeeUnauthorizedError(error_message)
-        else:
-            self._context.employee = None
-
-        self._context.execute_state(AwaitLogin)
+        self.end_operation(self._context.unit_in_operation)
+        self._context.employee = None
+        self._context.apply_state(AwaitLogin)
 
     @tp.no_type_check
     def start_operation(
@@ -91,29 +74,14 @@ class State(ABC):
     ) -> None:
         """begin work on the provided unit"""
         logger.info(
-            f"Starting operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self._context.number}"
-        )
-
-        # check if employee is logged in
-        if self._context.employee is None:
-            message = f"Cannot start an operation: No employee is logged in at the Workbench {self._context.number}"
-            raise EmployeeUnauthorizedError(message)
-
-        # check if there are no ongoing operations
-        if self._context.is_operation_ongoing:
-            message = f"Cannot start an operation: An operation is already ongoing at the Workbench {self._context.number}"
-            raise AgentBusyError(message)
-
-        logger.info(
             f"Started operation {production_stage_name} on the unit {unit.internal_id} at the workbench no. {self._context.number}"
         )
-
-        self._context.execute_state(
+        self._context.apply_state(
             ProductionStageOngoing,
-            unit=unit,
-            employee=unit.employee,
-            production_stage_name=production_stage_name,
-            additional_info=additional_info,
+            unit,
+            self._context.employee,
+            production_stage_name,
+            additional_info,
         )
 
     @tp.no_type_check
@@ -124,13 +92,10 @@ class State(ABC):
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self._context.unit_in_operation:
             database: DbWrapper = self._context.associated_hub.database
-            self._context.execute_state(AuthorizedIdling, database)
+            self._context.apply_state(AuthorizedIdling, database)
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
             logger.error(message)
-            logger.debug(
-                f"Unit in operation on workbench {self._context.number}: {self._context.unit_in_operation}"
-            )
             raise UnitNotFoundError(message)
 
 
@@ -141,13 +106,21 @@ class AwaitLogin(State, ABC):
         pass
 
     def end_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        raise StateForbiddenError
+        msg = f"Cannot log out: no one is logged in at the workbench no. {self._context.number}"
+        logger.error(msg)
+        raise StateForbiddenError(msg)
 
     def start_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        raise StateForbiddenError
+        msg = f"Cannot start operation: no one is logged in at the workbench no. {self._context.number}"
+        logger.error(msg)
+        raise StateForbiddenError(msg)
 
     def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        raise StateForbiddenError
+        msg = (
+            f"Cannot end operation: no one is logged in at the workbench no. {self._context.number}"
+        )
+        logger.error(msg)
+        raise StateForbiddenError(msg)
 
 
 class AuthorizedIdling(State):
@@ -164,8 +137,10 @@ class AuthorizedIdling(State):
     ) -> None:
         """end previous operation"""
         unit: Unit = self._get_unit_copy()
-        self._stop_recording()
-        ipfs_hashes: tp.List[str] = self._publish_record()
+        ipfs_hashes: tp.List[str] = []
+        if self._context.camera is not None:
+            self._stop_recording()
+            ipfs_hashes = self._publish_record()
         unit.end_session(database, ipfs_hashes, additional_info)
 
     def _publish_record(self) -> tp.List[str]:
@@ -199,10 +174,14 @@ class AuthorizedIdling(State):
             self._context.camera.stop_record()
 
     def start_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        raise StateForbiddenError
+        msg = f"Cannot log in: a worker is already logged in at the workbench no. {self._context.number}"
+        logger.error(msg)
+        raise StateForbiddenError(msg)
 
     def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        raise StateForbiddenError
+        msg = f"Cannot end operation: there is no ongoing operation at the workbench no. {self._context.number}"
+        logger.error(msg)
+        raise StateForbiddenError(msg)
 
 
 class ProductionStageOngoing(State):
@@ -218,18 +197,16 @@ class ProductionStageOngoing(State):
         self._context.associated_unit = unit
         unit.employee = employee
         unit.start_session(production_stage_name, employee.passport_code, additional_info)
-
-        if self._context.camera is None:
-            raise CameraNotFoundError("No associated camera found")
-
-        if self._context.camera.record is not None and self._config["print_qr"]["enable"]:
+        if (
+            self._context.camera
+            and self._context.camera.record
+            and self._config["print_qr"]["enable"]
+        ):
             qrcode: str = self._generate_qr_code()
             self._print_qr_code(qrcode)
-
+            self._start_recording(unit)
         if self._config["print_security_tag"]["enable"]:
             self._print_seal_tag()
-
-        self._start_recording(unit)
 
     def _print_qr_code(self, pic_name: str) -> None:
         """print the QR code onto a sticker"""
@@ -244,10 +221,6 @@ class ProductionStageOngoing(State):
             raise FileNotFoundError("There is no video associated with the Agent")
         logger.debug("Generating short url (a dummy for now)")
         short_url: str = url_generator.generate_short_url(self._config)
-        if self._context.camera is None:
-            raise Exception("No associated camera found")
-        if self._context.camera.record is None:
-            raise Exception("No record found for associated camera")
         self._context.camera.record.short_url = short_url
         logger.debug("Generating QR code image file")
         qr_code_image: str = image_generation.create_qr(short_url, self._config)

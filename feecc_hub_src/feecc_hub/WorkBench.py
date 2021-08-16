@@ -81,7 +81,7 @@ class WorkBench:
         camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
         return Camera(camera_config) if camera_config else None
 
-    def execute_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
+    def apply_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
         """execute provided state in the background"""
         self.previous_state = self.state.__class__
         self.state = state(self)
