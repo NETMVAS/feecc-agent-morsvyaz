@@ -85,23 +85,6 @@ class WorkBench:
         camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
         return Camera(camera_config) if camera_config else None
 
-    def _get_agent(self) -> Agent:
-        agent = Agent(self)
-        agent.execute_state(State.AwaitLogin)
-        return agent
-
-    def start_shift(self, employee: Employee) -> None:
-        """authorize employee"""
-        if self.employee is not None:
-            message = f"Employee {employee.rfid_card_id} is already logged in at the workbench no. {self.number}"
-            raise AgentBusyError(message)
-
-        self.employee = employee
-        logger.info(
-            f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self.number}"
-        )
-        self.agent.execute_state(State.AuthorizedIdling)
-
     def execute_state(
         self,
         state: tp.Type[State],

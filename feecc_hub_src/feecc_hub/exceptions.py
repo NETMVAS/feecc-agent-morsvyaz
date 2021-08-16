@@ -32,3 +32,7 @@ class SubstrateError(Exception):
 
 class DatalogError(Exception):
     pass
+
+
+class StateForbiddenError(Exception):
+    pass

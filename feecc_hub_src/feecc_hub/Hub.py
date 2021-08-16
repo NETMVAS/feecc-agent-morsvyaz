@@ -40,7 +40,7 @@ class Hub:
             raise EmployeeNotFoundError(f"Rfid card ID {employee_card_id} unknown")
 
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
-        workbench.start_shift(employee)
+        workbench.state.start_shift(employee)
 
     @staticmethod
     def _get_credentials_from_env() -> tp.Optional[tp.Tuple[str, str]]:

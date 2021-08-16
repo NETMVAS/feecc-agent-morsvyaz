@@ -87,7 +87,7 @@ def unit_start_record(
     try:
         workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
         unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
-        workbench.start_operation(
+        workbench.state.start_operation(
             unit, request_payload["production_stage_name"], request_payload["additional_info"]
         )
         message = (
@@ -122,7 +122,7 @@ def unit_stop_record(
         workbench_no: int = request_payload["workbench_no"]
         additional_info: tp.Optional[RequestPayload] = request_payload["additional_info"] or None
         workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
-        workbench.end_operation(unit_internal_id, additional_info)
+        workbench.state.end_operation(unit_internal_id, additional_info)
         message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
         return {"status": True, "comment": message}
 
@@ -237,7 +237,7 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
 
     try:
         workbench: WorkBench = hub.get_workbench_by_number(int(request_payload["workbench_no"]))
-        workbench.end_shift()
+        workbench.state.end_shift()
 
         if workbench.employee is None:
             response_data = {
@@ -286,7 +286,7 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
     if workbench_status_dict["operation_ongoing"]:
         workbench_status_dict["unit_biography"] = {
             id_: {"stage": stage.name}
-            for id_, stage in enumerate(workbench.agent.associated_unit.unit_biography)
+            for id_, stage in enumerate(workbench.associated_unit.unit_biography)
         }
 
     return workbench_status_dict
