@@ -26,13 +26,11 @@ class Camera:
 
     def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
-        logger.warning("target 5 reached")
         logger.debug(f"Trying to stop record for {self.record.filename}")
         if not self.record:
             logger.error("Could not stop record for unit: no ongoing record found")
             return None
         self.record.stop()
-        logger.warning("target 6 reached")
         logger.info(f"Stopped recording video {self.record.filename}")
         return self.record
 
@@ -71,7 +69,7 @@ class Recording(File):
     def stop(self) -> None:
         """stop recording a video"""
         if self.is_ongoing and self._process_ffmpeg is not None:
-            self._process_ffmpeg.terminate()  # kill the subprocess to liberate system resources
+            self._process_ffmpeg.terminate()
             logger.info(f"Finished recording video for unit {self._unit_uuid}")
 
     def _execute_ffmpeg(self, filename: str) -> None:
