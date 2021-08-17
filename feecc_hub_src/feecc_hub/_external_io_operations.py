@@ -4,8 +4,8 @@ import typing as tp
 from abc import ABC, abstractmethod
 
 import ipfshttpclient
+import requests
 from loguru import logger
-from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
 from .Types import Config, ConfigSection
@@ -287,12 +287,23 @@ class PinataWorker(BaseIoWorker):
     @time_execution
     def _pin_to_pinata(self, file: File) -> None:
         """pin files in Pinata Cloud to secure their copies in IPFS"""
-        api_key = self.config["pinata_api"]
-        api_token = self.config["pinata_secret_api"]
-        pinata = PinataPy(api_key, api_token)
+        if file.ipfs_hash is None:
+            logger.error("Can't pin to Pinata: IPFS hash is None")
+            return
         logger.info(f"Starting publishing file {file.filename} to Pinata")
-        pinata.pin_file_to_ipfs(file.path)
+        self._pin_by_ipfs_hash(file.ipfs_hash)
         logger.info(f"File {file.filename} published to Pinata")
+
+    def _pin_by_ipfs_hash(self, ipfs_hash: str) -> None:
+        """push file to pinata using its hash"""
+        headers: tp.Dict[str, str] = {
+            "pinata_api_key": self.config["pinata_api"],
+            "pinata_secret_api_key": self.config["pinata_secret_api"],
+        }
+        payload: tp.Dict[str, str] = {"hashToPin": ipfs_hash}
+        url: str = "https://api.pinata.cloud/pinning/pinByHash"
+        response: tp.Any = requests.post(url=url, json=payload, headers=headers)
+        logger.debug(f"Pinata API response: {response.json()}")
 
     def get(self) -> None:
         raise NotImplementedError
