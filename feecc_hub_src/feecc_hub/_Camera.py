@@ -26,7 +26,7 @@ class Camera:
 
     def stop_record(self) -> tp.Optional[Recording]:
         """stop recording a video for the requested unit"""
-        logger.debug(f"Trying to stop record for {self.record.filename}")
+        logger.debug(f"Trying to stop record {id(self.record)}")
         if not self.record:
             logger.error("Could not stop record for unit: no ongoing record found")
             return None

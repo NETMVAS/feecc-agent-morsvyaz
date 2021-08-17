@@ -19,9 +19,7 @@ class Passport:
         self._unit: Unit = unit
         path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
         self.file: File = File(path)
-        logger.info(
-            f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}"
-        )
+        logger.info(f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}")
 
     @staticmethod
     def _construct_stage_dict(
@@ -57,9 +55,7 @@ class Passport:
             "Этапы производства": biography,
         }
 
-        logger.debug(
-            f"Constructed passport dict for unit with id {self._unit.internal_id}:\n{passport_dict}"
-        )
+        logger.debug(f"Constructed passport dict for unit with id {self._unit.internal_id}:\n{passport_dict}")
         return passport_dict
 
     def save(self) -> None:

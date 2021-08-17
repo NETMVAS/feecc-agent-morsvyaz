@@ -198,9 +198,7 @@ def test_api_integrate() -> None:
 
     check_multiple_states("ProductionStageStarting", "ProductionStageOngoing")
 
-    assert unit_start_resp.json()[
-        "status"
-    ], f"Got error while starting operation: {unit_start_resp.json()}"
+    assert unit_start_resp.json()["status"], f"Got error while starting operation: {unit_start_resp.json()}"
 
     unit_stop_resp = client.post(
         TEST_SERVER + f"/api/unit/{test_unit_id}/end",
@@ -209,18 +207,14 @@ def test_api_integrate() -> None:
 
     check_multiple_states("ProductionStageEnding", "AuthorizedIdling")
 
-    assert unit_stop_resp.json()[
-        "status"
-    ], f"Got error while stopping operation: {unit_stop_resp.json()}"
+    assert unit_stop_resp.json()["status"], f"Got error while stopping operation: {unit_stop_resp.json()}"
 
     unit_upload_resp = client.post(
         TEST_SERVER + f"/api/unit/{test_unit_id}/upload",
         json={"workbench_no": 2},
     )
 
-    assert unit_stop_resp.json()[
-        "status"
-    ], f"Got error while wrapping up session: {unit_upload_resp.json()}"
+    assert unit_stop_resp.json()["status"], f"Got error while wrapping up session: {unit_upload_resp.json()}"
 
     logout_resp = client.post(TEST_SERVER + "/api/employee/log-out", json={"workbench_no": 2})
 

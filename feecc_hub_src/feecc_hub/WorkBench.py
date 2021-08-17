@@ -6,16 +6,16 @@ from random import randint
 
 from loguru import logger
 
-from ._State import State, AwaitLogin
+from ._Camera import Camera
+from ._external_io_operations import ExternalIoGateway
+from ._State import AwaitLogin, State
 from .Employee import Employee
 from .Types import ConfigSection
 from .Unit import Unit
-from ._Camera import Camera
-from ._external_io_operations import ExternalIoGateway
 
 if tp.TYPE_CHECKING:
-    from .Types import Config
     from .Hub import Hub
+    from .Types import Config
 
 
 class WorkBench:

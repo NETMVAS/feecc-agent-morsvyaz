@@ -115,9 +115,7 @@ class MongoDbWrapper(DbWrapper):
         return result
 
     @staticmethod
-    def _update_document(
-        key: str, value: str, new_document: Document, collection_: Collection
-    ) -> None:
+    def _update_document(key: str, value: str, new_document: Document, collection_: Collection) -> None:
         """
         finds matching document in the specified collection, and replaces it's data
         with what is provided in the new_document argument
@@ -179,23 +177,17 @@ class MongoDbWrapper(DbWrapper):
         self._upload_dataclass(production_stage, self._prod_stage_collection)
 
     def get_all_employees(self) -> tp.List[Employee]:
-        employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(
-            self._employee_collection
-        )
+        employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(self._employee_collection)
 
         employees = [Employee(**data) for data in employee_data]
         return employees
 
     def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
         try:
-            unit_dict: Document = self._find_item(
-                "internal_id", unit_internal_id, self._unit_collection
-            )
+            unit_dict: Document = self._find_item("internal_id", unit_internal_id, self._unit_collection)
 
             # get units biography
-            prod_stage_dicts = self._find_many(
-                "parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection
-            )
+            prod_stage_dicts = self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit_dict["unit_biography"] = prod_stages
             unit: Unit = Unit(config, **unit_dict)

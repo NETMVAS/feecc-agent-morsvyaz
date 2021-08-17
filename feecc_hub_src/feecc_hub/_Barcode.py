@@ -54,9 +54,7 @@ class Barcode:
         if not os.path.isdir(dir_):
             os.mkdir(dir_)
 
-        filename: str = ean_code.save(
-            self.filename, {"module_height": 8, "text_distance": 1, "font_size": 14}
-        )
+        filename: str = ean_code.save(self.filename, {"module_height": 8, "text_distance": 1, "font_size": 14})
         return filename
 
     def print_barcode(self, config: Config) -> None:

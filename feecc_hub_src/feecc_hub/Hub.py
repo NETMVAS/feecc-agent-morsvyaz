@@ -7,12 +7,7 @@ from loguru import logger
 
 from .database import MongoDbWrapper
 from .Employee import Employee
-from .exceptions import (
-    EmployeeNotFoundError,
-    StateForbiddenError,
-    UnitNotFoundError,
-    WorkbenchNotFoundError,
-)
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 from .Types import Config
 from .Unit import Unit
 from .WorkBench import WorkBench
@@ -57,9 +52,7 @@ class Hub:
                 return username, password
 
         except KeyError:
-            logger.info(
-                "Failed to get credentials from environment variables. Trying to get from config"
-            )
+            logger.info("Failed to get credentials from environment variables. Trying to get from config")
 
         return None
 
@@ -157,9 +150,7 @@ class Hub:
 
     def _initialize_workbenches(self) -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
-        workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config(
-            "config/workbench_config.yaml"
-        )
+        workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config("config/workbench_config.yaml")
         workbenches = []
 
         for workbench in workbench_config:
@@ -167,9 +158,7 @@ class Hub:
             workbenches.append(workbench_object)
 
         if not workbenches:
-            logger.critical(
-                "No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting."
-            )
+            logger.critical("No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting.")
             sys.exit(1)
 
         return workbenches

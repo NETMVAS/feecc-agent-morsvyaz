@@ -68,9 +68,7 @@ class ExternalIoGateway:
             ipfs_worker = IpfsWorker(self, self.config)
             ipfs_worker.post(file)
 
-            logger.debug(
-                f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}"
-            )
+            logger.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}")
 
             if file.keyword and file.ipfs_hash:
                 logger.info(f"Updating URL {file.short_url}")
@@ -196,12 +194,10 @@ class RobonomicsWorker(BaseIoWorker):
         """
         try:
             substrate: SubstrateInterface = self._get_substrate_connection()
-            datalog_total_number: int = (
-                substrate.query("Datalog", "DatalogIndex", [account_address]).value["end"] - 1
-            )
-            datalog: str = substrate.query(
-                "Datalog", "DatalogItem", [[account_address, datalog_total_number]]
-            ).value["payload"]
+            datalog_total_number: int = substrate.query("Datalog", "DatalogIndex", [account_address]).value["end"] - 1
+            datalog: str = substrate.query("Datalog", "DatalogItem", [[account_address, datalog_total_number]]).value[
+                "payload"
+            ]
             return datalog
 
         except Exception as e:
@@ -230,9 +226,7 @@ class RobonomicsWorker(BaseIoWorker):
 
         try:
             logger.info("Creating substrate call")
-            call = substrate.compose_call(
-                call_module="Datalog", call_function="record", call_params={"record": data}
-            )
+            call = substrate.compose_call(call_module="Datalog", call_function="record", call_params={"record": data})
             logger.info(f"Successfully created a call:\n{call}")
             logger.info("Creating extrinsic")
             extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
@@ -243,9 +237,7 @@ class RobonomicsWorker(BaseIoWorker):
         try:
             logger.info("Submitting extrinsic")
             receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-            logger.info(
-                f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}"
-            )
+            logger.info(f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}")
             return str(receipt.extrinsic_hash)
         except Exception as e:
             logger.error(f"Failed to submit extrinsic: {e}")

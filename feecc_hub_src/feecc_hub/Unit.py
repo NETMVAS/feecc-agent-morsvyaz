@@ -42,9 +42,7 @@ class ProductionStage:
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                logger.error(
-                    f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}"
-                )
+                logger.error(f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
 
 
 @dataclass

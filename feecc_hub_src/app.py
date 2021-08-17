@@ -3,11 +3,7 @@ import typing as tp
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from feecc_hub.exceptions import (
-    EmployeeNotFoundError,
-    EmployeeUnauthorizedError,
-    WorkbenchNotFoundError,
-)
+from feecc_hub.exceptions import EmployeeNotFoundError, EmployeeUnauthorizedError, WorkbenchNotFoundError
 from feecc_hub.Hub import Hub
 from feecc_hub.models import (
     BaseOut,
@@ -65,22 +61,16 @@ def create_unit(payload: NewUnitData) -> RequestPayload:
 
     except Exception as E:
         logger.error(f"Exception occurred while creating new Unit: {E}")
-        response = UnitOut(
-            status=False, comment=f"Could not create a new Unit. Internal error occurred: {E}"
-        )
+        response = UnitOut(status=False, comment=f"Could not create a new Unit. Internal error occurred: {E}")
         return dict(response.dict())
 
 
 @api.post("/api/unit/{unit_internal_id}/start", response_model=BaseOut)
-def unit_start_record(
-    workbench_details: WorkbenchExtraDetails, unit_internal_id: str
-) -> RequestPayload:
+def unit_start_record(workbench_details: WorkbenchExtraDetails, unit_internal_id: str) -> RequestPayload:
     """handle start recording operation on a Unit"""
     request_payload: RequestPayload = workbench_details.dict()
 
-    logger.debug(
-        f"Got request at /api/unit/{unit_internal_id}/start with payload:" f" {request_payload}"
-    )
+    logger.debug(f"Got request at /api/unit/{unit_internal_id}/start with payload:" f" {request_payload}")
 
     try:
         workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
@@ -105,15 +95,11 @@ def unit_start_record(
 
 
 @api.post("/api/unit/{unit_internal_id}/end", response_model=BaseOut)
-def unit_stop_record(
-    workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str
-) -> RequestPayload:
+def unit_stop_record(workbench_data: WorkbenchExtraDetailsWithoutStage, unit_internal_id: str) -> RequestPayload:
     """handle end recording operation on a Unit"""
     request_payload = workbench_data.dict()
 
-    logger.debug(
-        f"Got request at /api/unit/{unit_internal_id}/end with payload:" f" {request_payload}"
-    )
+    logger.debug(f"Got request at /api/unit/{unit_internal_id}/end with payload:" f" {request_payload}")
 
     workbench_no: int = request_payload["workbench_no"]
     additional_info: tp.Optional[RequestPayload] = request_payload["additional_info"] or None
@@ -134,9 +120,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
     """handle Unit lifecycle end"""
     request_payload = workbench.dict()
 
-    logger.debug(
-        f"Got request at /api/unit/{unit_internal_id}/upload with payload:" f" {request_payload}"
-    )
+    logger.debug(f"Got request at /api/unit/{unit_internal_id}/upload with payload:" f" {request_payload}")
 
     try:
         unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
@@ -278,8 +262,7 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
 
     if workbench_status_dict["operation_ongoing"]:
         workbench_status_dict["unit_biography"] = {
-            id_: {"stage": stage.name}
-            for id_, stage in enumerate(workbench.associated_unit.unit_biography)
+            id_: {"stage": stage.name} for id_, stage in enumerate(workbench.associated_unit.unit_biography)
         }
 
     return workbench_status_dict

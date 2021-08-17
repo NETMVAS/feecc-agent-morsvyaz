@@ -73,9 +73,7 @@ def create_seal_tag(config: Config) -> str:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-    seal_tag_path = (
-        f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
-    )
+    seal_tag_path = f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
 
     # check if seal tag has already been created
     if os.path.exists(seal_tag_path):
