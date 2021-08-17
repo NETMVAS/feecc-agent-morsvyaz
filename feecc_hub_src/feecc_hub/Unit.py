@@ -160,11 +160,11 @@ class Unit:
 
     def upload(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        if self._associated_passport is not None:
-            ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
-            self._associated_passport.save(ipfs_gateway_url)
-            gateway = ExternalIoGateway(self._config)
-            gateway.send(self._associated_passport.file)
+        if self._associated_passport is None:
+            raise FileNotFoundError(f"No passport for unit {self.uuid} found")
+
+        ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
+        self._associated_passport.save(ipfs_gateway_url)
 
         if self._config["print_qr"]["enable"] and self._associated_passport is not None:
             qrcode: str = self._associated_passport.file.generate_qr_code(config=self._config)
@@ -173,3 +173,6 @@ class Unit:
         if self._config["print_security_tag"]["enable"]:
             seal_tag_img: str = create_seal_tag(self._config)
             PrinterTask(seal_tag_img, self._config)
+
+        gateway = ExternalIoGateway(self._config)
+        gateway.send(self._associated_passport.file)

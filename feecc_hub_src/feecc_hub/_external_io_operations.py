@@ -49,8 +49,6 @@ class File:
 
     def generate_qr_code(self, config: Config) -> str:
         """generate a QR code with the short link"""
-        if not self.qrcode:
-            return ""
         logger.debug("Generating short url (a dummy for now)")
         short_url: str = generate_short_url(config)
         self.short_url = short_url
