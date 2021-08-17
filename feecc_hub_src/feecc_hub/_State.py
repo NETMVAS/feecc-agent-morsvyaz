@@ -121,19 +121,19 @@ class AuthorizedIdling(State):
         ipfs_hashes: tp.List[str] = []
         if self._context.camera is not None:
             self._stop_recording()
-            ipfs_hashes = self._publish_record()
+            ipfs_hash: tp.Optional[str] = self._publish_record()
+            if ipfs_hash:
+                ipfs_hashes.append(ipfs_hash)
         unit.end_session(database, ipfs_hashes, additional_info)
 
-    def _publish_record(self) -> tp.List[str]:
+    def _publish_record(self) -> tp.Optional[str]:
         """publish video into IPFS and pin to Pinata. Then update the short link
         to point to an actual recording"""
-        ipfs_hashes: tp.List[str] = []
         file = self._context.camera.record if self._context.camera else None
         if file is not None:
             self._io_gateway.send(file)
-            if file.ipfs_hash is not None:
-                ipfs_hashes.append(file.ipfs_hash)
-        return ipfs_hashes
+            return file.ipfs_hash
+        return None
 
     def _get_unit_copy(self) -> Unit:
         """make a copy of unit to work with securely in another thread"""

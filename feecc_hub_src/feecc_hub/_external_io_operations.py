@@ -8,10 +8,11 @@ from loguru import logger
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from ._image_generation import create_qr
-from ._short_url_generator import update_short_url, generate_short_url
-from .exceptions import DatalogError, SubstrateError
 from .Types import Config, ConfigSection
+from ._image_generation import create_qr
+from ._short_url_generator import generate_short_url, update_short_url
+from .exceptions import DatalogError, SubstrateError
+from .utils import time_execution
 
 
 class File:
@@ -73,6 +74,7 @@ class ExternalIoGateway:
     def __init__(self, config: Config):
         self.config: Config = config
 
+    @time_execution
     def send(self, file: File) -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
         if self.config["ipfs"]["enable"]:
@@ -136,6 +138,7 @@ class IpfsWorker(BaseIoWorker):
         super().__init__(context, target="IPFS")
         self.config: Config = config
 
+    @time_execution
     def post(self, file: File) -> None:
         """publish file on IPFS"""
         ipfs_client = ipfshttpclient.connect()
@@ -254,6 +257,7 @@ class RobonomicsWorker(BaseIoWorker):
             logger.error(f"Failed to submit extrinsic: {e}")
             return None
 
+    @time_execution
     def post(self, data: tp.Union[File, str]) -> None:
         """write provided string to Robonomics datalog"""
         data_: str = str(data)
@@ -273,6 +277,7 @@ class PinataWorker(BaseIoWorker):
         super().__init__(context, target="Pinata cloud")
         self.config: ConfigSection = config["pinata"]
 
+    @time_execution
     def post(self, file: File) -> None:
         logger.info("Pinning file to Pinata in the background")
         pinata_thread = threading.Thread(target=self._pin_to_pinata, args=(file,))
