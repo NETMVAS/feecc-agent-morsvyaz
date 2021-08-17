@@ -44,8 +44,7 @@ class ProductionStage:
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                logger.error(
-                    f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
+                logger.error(f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
 
 
 @dataclass
@@ -103,10 +102,10 @@ class Unit:
         self.unit_biography.append(current_operation)
 
     def start_session(
-            self,
-            production_stage_name: str,
-            employee_code_name: str,
-            additional_info: tp.Optional[AdditionalInfo] = None,
+        self,
+        production_stage_name: str,
+        employee_code_name: str,
+        additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
         logger.info(
@@ -126,10 +125,10 @@ class Unit:
         self.current_operation = operation
 
     def end_session(
-            self,
-            database: DbWrapper,
-            video_hashes: tp.Optional[tp.List[str]] = None,
-            additional_info: tp.Optional[AdditionalInfo] = None,
+        self,
+        database: DbWrapper,
+        video_hashes: tp.Optional[tp.List[str]] = None,
+        additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data
@@ -162,7 +161,8 @@ class Unit:
     def upload(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         if self._associated_passport is not None:
-            self._associated_passport.save()
+            ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
+            self._associated_passport.save(ipfs_gateway_url)
             gateway = ExternalIoGateway(self._config)
             gateway.send(self._associated_passport.file)
 
