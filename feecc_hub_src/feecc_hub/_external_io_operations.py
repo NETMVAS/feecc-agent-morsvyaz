@@ -1,5 +1,4 @@
 import os
-import threading
 import typing as tp
 from abc import ABC, abstractmethod
 
@@ -279,10 +278,7 @@ class PinataWorker(BaseIoWorker):
 
     @time_execution
     def post(self, file: File) -> None:
-        logger.info("Pinning file to Pinata in the background")
-        pinata_thread = threading.Thread(target=self._pin_to_pinata, args=(file,))
-        pinata_thread.start()
-        logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
+        self._pin_to_pinata(file)
 
     @time_execution
     def _pin_to_pinata(self, file: File) -> None:
