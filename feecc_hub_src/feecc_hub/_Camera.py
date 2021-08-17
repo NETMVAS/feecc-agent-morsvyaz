@@ -42,7 +42,8 @@ class Recording(File):
         self._camera: Camera = camera
         self._unit_uuid: str = unit_uuid
         self._process_ffmpeg: tp.Optional[subprocess.Popen] = None  # type: ignore
-        super().__init__(self._get_filename(unit_uuid))
+        recording_filename: str = self._get_filename(unit_uuid)
+        super().__init__(recording_filename)
         self._start_record()
 
     @property
@@ -78,7 +79,7 @@ class Recording(File):
         cam: Camera = self._camera
         command: str = f'ffmpeg -rtsp_transport tcp -i "rtsp://{cam.login}:{cam.password}@{cam.ip}:{cam.port}/Streaming/Channels/101" -r 25 -c copy -map 0 {filename}'
         self._process_ffmpeg = subprocess.Popen(
-            command,
+            f"exec {command}",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
