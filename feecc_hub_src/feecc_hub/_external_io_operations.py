@@ -287,16 +287,16 @@ class PinataWorker(BaseIoWorker):
             logger.error("Can't pin to Pinata: IPFS hash is None")
             return
         logger.info(f"Starting publishing file {file.filename} to Pinata")
-        self._pin_by_ipfs_hash(file.ipfs_hash)
+        self._pin_by_ipfs_hash(file.ipfs_hash, file.filename)
         logger.info(f"File {file.filename} published to Pinata")
 
-    def _pin_by_ipfs_hash(self, ipfs_hash: str) -> None:
+    def _pin_by_ipfs_hash(self, ipfs_hash: str, filename: str) -> None:
         """push file to pinata using its hash"""
         headers: tp.Dict[str, str] = {
             "pinata_api_key": self.config["pinata_api"],
             "pinata_secret_api_key": self.config["pinata_secret_api"],
         }
-        payload: tp.Dict[str, str] = {"hashToPin": ipfs_hash}
+        payload: tp.Dict[str, tp.Any] = {"pinataMetadata": {"name": filename}, "hashToPin": ipfs_hash}
         url: str = "https://api.pinata.cloud/pinning/pinByHash"
         response: tp.Any = requests.post(url=url, json=payload, headers=headers)
         logger.debug(f"Pinata API response: {response.json()}")
