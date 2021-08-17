@@ -6,6 +6,7 @@ from loguru import logger
 
 def time_execution(func: tp.Any) -> tp.Any:
     """This decorator shows the execution time of the function object passed"""
+
     def wrap_func(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
         t1 = time()
         result = func(*args, **kwargs)

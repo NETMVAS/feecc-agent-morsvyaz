@@ -284,6 +284,7 @@ class PinataWorker(BaseIoWorker):
         pinata_thread.start()
         logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
 
+    @time_execution
     def _pin_to_pinata(self, file: File) -> None:
         """pin files in Pinata Cloud to secure their copies in IPFS"""
         api_key = self.config["pinata_api"]
