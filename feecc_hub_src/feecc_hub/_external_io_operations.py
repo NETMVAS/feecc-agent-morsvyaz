@@ -1,10 +1,12 @@
 import os
+import threading
 import typing as tp
 from abc import ABC, abstractmethod
 
 import ipfshttpclient
 import requests
 from loguru import logger
+from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
 from .Types import Config, ConfigSection
@@ -277,18 +279,20 @@ class PinataWorker(BaseIoWorker):
         self.config: ConfigSection = config["pinata"]
 
     @time_execution
-    def post(self, file: File) -> None:
-        self._pin_to_pinata(file)
-
-    @time_execution
-    def _pin_to_pinata(self, file: File) -> None:
+    def post(self, file: File, direct_pin: bool = True) -> None:
         """pin files in Pinata Cloud to secure their copies in IPFS"""
-        if file.ipfs_hash is None:
-            logger.error("Can't pin to Pinata: IPFS hash is None")
-            return
-        logger.info(f"Starting publishing file {file.filename} to Pinata")
-        self._pin_by_ipfs_hash(file.ipfs_hash)
-        logger.info(f"File {file.filename} published to Pinata")
+        if direct_pin:
+            logger.info("Pinning file to Pinata in the background")
+            pinata_thread = threading.Thread(target=self._pin_to_pinata_over_tcp, args=(file,))
+            pinata_thread.start()
+            logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
+        else:
+            if file.ipfs_hash is None:
+                logger.error("Can't pin to Pinata: IPFS hash is None")
+                return
+            logger.info(f"Starting publishing file {file.filename} to Pinata")
+            self._pin_by_ipfs_hash(file.ipfs_hash)
+            logger.info(f"File {file.filename} published to Pinata")
 
     def _pin_by_ipfs_hash(self, ipfs_hash: str) -> None:
         """push file to pinata using its hash"""
@@ -300,6 +304,15 @@ class PinataWorker(BaseIoWorker):
         url: str = "https://api.pinata.cloud/pinning/pinByHash"
         response: tp.Any = requests.post(url=url, json=payload, headers=headers)
         logger.debug(f"Pinata API response: {response.json()}")
+
+    def _pin_to_pinata_over_tcp(self, file: File) -> None:
+        """pin files in Pinata Cloud to secure their copies in IPFS"""
+        api_key = self.config["pinata_api"]
+        api_token = self.config["pinata_secret_api"]
+        pinata = PinataPy(api_key, api_token)
+        logger.info(f"Starting publishing file {file.filename} to Pinata")
+        pinata.pin_file_to_ipfs(file.path)
+        logger.info(f"File {file.filename} published to Pinata")
 
     def get(self) -> None:
         raise NotImplementedError

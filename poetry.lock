@@ -413,6 +413,17 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "pinatapy-vourhey"
+version = "0.1.3"
+description = "Non-official Pinata.cloud library"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+requests = "*"
+
+[[package]]
 name = "platformdirs"
 version = "2.2.0"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
@@ -857,7 +868,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">3.7.0,<3.7.1 || >3.7.1,<4.0"
-content-hash = "e9dfe0505af0087a4fd92f80b3cccaf965a48d2bc29b7f3337468100525128b8"
+content-hash = "aa3abe3f5c512835b7aa030b1cb2635db790193c6afc87b2522ff8397c5b5579"
 
 [metadata.files]
 appdirs = [
@@ -1063,6 +1074,10 @@ pillow = [
     {file = "Pillow-8.3.1-pp37-pypy37_pp73-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:f4ebde71785f8bceb39dcd1e7f06bcc5d5c3cf48b9f69ab52636309387b097c8"},
     {file = "Pillow-8.3.1-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:1c03e24be975e2afe70dfc5da6f187eea0b49a68bb2b69db0f30a61b7031cee4"},
     {file = "Pillow-8.3.1.tar.gz", hash = "sha256:2cac53839bfc5cece8fdbe7f084d5e3ee61e1303cccc86511d351adcb9e2c792"},
+]
+pinatapy-vourhey = [
+    {file = "pinatapy-vourhey-0.1.3.tar.gz", hash = "sha256:976b8d1414e0025c1b8451757ef0192b3a58ce02e54db3be5a3d7d6142ae0f15"},
+    {file = "pinatapy_vourhey-0.1.3-py3-none-any.whl", hash = "sha256:94412544923d3325808d536e270e91045db0c060a4f1e0f68ab8facc49a8306a"},
 ]
 platformdirs = [
     {file = "platformdirs-2.2.0-py3-none-any.whl", hash = "sha256:4666d822218db6a262bdfdc9c39d21f23b4cfdb08af331a81e92751daf6c866c"},
