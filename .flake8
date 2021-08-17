@@ -3,4 +3,4 @@ count = true
 exit_zero = true
 max_line_length = 125
 exclude = .venv, build, tests
-ignore = W605
+ignore = W605, E501

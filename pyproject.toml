@@ -31,7 +31,6 @@ types-PyYAML = "^5.4.3"
 types-requests = "^2.25.0"
 pytest = "^6.2.4"
 vulture = "^2.3"
-isort = "^5.9.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -44,4 +43,4 @@ ignore_missing_imports  = true
 allow_untyped_decorators = true
 
 [tool.black]
-line-length = 100
+line-length = 120
