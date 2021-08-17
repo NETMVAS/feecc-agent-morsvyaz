@@ -8,12 +8,14 @@ from uuid import uuid4
 
 from loguru import logger
 
-from ._Barcode import Barcode
-from ._external_io_operations import ExternalIoGateway
-from ._Passport import Passport
 from .Employee import Employee
-from .exceptions import OperationNotFoundError
 from .Types import AdditionalInfo, Config
+from ._Barcode import Barcode
+from ._Passport import Passport
+from ._Printer import PrinterTask
+from ._external_io_operations import ExternalIoGateway
+from ._image_generation import create_seal_tag
+from .exceptions import OperationNotFoundError
 
 if tp.TYPE_CHECKING:
     from .database import DbWrapper
@@ -42,7 +44,8 @@ class ProductionStage:
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                logger.error(f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
+                logger.error(
+                    f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
 
 
 @dataclass
@@ -100,10 +103,10 @@ class Unit:
         self.unit_biography.append(current_operation)
 
     def start_session(
-        self,
-        production_stage_name: str,
-        employee_code_name: str,
-        additional_info: tp.Optional[AdditionalInfo] = None,
+            self,
+            production_stage_name: str,
+            employee_code_name: str,
+            additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
         logger.info(
@@ -123,10 +126,10 @@ class Unit:
         self.current_operation = operation
 
     def end_session(
-        self,
-        database: DbWrapper,
-        video_hashes: tp.Optional[tp.List[str]] = None,
-        additional_info: tp.Optional[AdditionalInfo] = None,
+            self,
+            database: DbWrapper,
+            video_hashes: tp.Optional[tp.List[str]] = None,
+            additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data
@@ -162,3 +165,11 @@ class Unit:
             self._associated_passport.save()
             gateway = ExternalIoGateway(self._config)
             gateway.send(self._associated_passport.file)
+
+        if self._config["print_qr"]["enable"] and self._associated_passport is not None:
+            qrcode: str = self._associated_passport.file.generate_qr_code(config=self._config)
+            PrinterTask(qrcode, self._config)
+
+        if self._config["print_security_tag"]["enable"]:
+            seal_tag_img: str = create_seal_tag(self._config)
+            PrinterTask(seal_tag_img, self._config)

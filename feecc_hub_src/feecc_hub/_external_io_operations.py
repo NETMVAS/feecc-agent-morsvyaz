@@ -8,7 +8,8 @@ from loguru import logger
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from ._short_url_generator import update_short_url
+from ._image_generation import create_qr
+from ._short_url_generator import update_short_url, generate_short_url
 from .exceptions import DatalogError, SubstrateError
 from .Types import Config, ConfigSection
 
@@ -45,6 +46,18 @@ class File:
                 return "\n".join(f.readlines())
         else:
             return self.filename
+
+    def generate_qr_code(self, config: Config) -> str:
+        """generate a QR code with the short link"""
+        if not self.qrcode:
+            return ""
+        logger.debug("Generating short url (a dummy for now)")
+        short_url: str = generate_short_url(config)
+        self.short_url = short_url
+        logger.debug("Generating QR code image file")
+        qr_code_image: str = create_qr(short_url, config)
+        self.qrcode = qr_code_image
+        return qr_code_image
 
     def delete(self) -> None:
         """deletes the file"""
