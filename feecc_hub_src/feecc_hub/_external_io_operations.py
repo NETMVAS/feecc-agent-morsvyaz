@@ -19,7 +19,7 @@ from .utils import time_execution
 class File:
     """stores data about one file-like entity with related attributes"""
 
-    def __init__(self, path: str, check_presence: bool = False) -> None:
+    def __init__(self, path: str, check_presence: bool = False, short_url: tp.Optional[str] = None) -> None:
         if check_presence and not os.path.exists(path):
             message = f"Path {path} doesn't point to an actual file"
             logger.error(message)
@@ -29,7 +29,7 @@ class File:
         self.filename: str = os.path.basename(self.path)
         self.ipfs_hash: tp.Optional[str] = None
         self.is_pinned: bool = False
-        self.short_url: tp.Optional[str] = None
+        self.short_url: tp.Optional[str] = short_url
         self.qrcode: tp.Optional[str] = None
 
     @property

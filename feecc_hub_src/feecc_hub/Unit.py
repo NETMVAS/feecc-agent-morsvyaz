@@ -58,6 +58,7 @@ class Unit:
     employee: tp.Optional[Employee] = None
     unit_biography: tp.List[ProductionStage] = field(default_factory=list)
     _associated_passport: tp.Optional[Passport] = None
+    passport_short_url: tp.Optional[str] = None
     is_in_db: bool = False
 
     def __post_init__(self) -> None:
@@ -166,7 +167,11 @@ class Unit:
         ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
         self._associated_passport.save(ipfs_gateway_url)
 
-        if self._config["print_qr"]["enable"] and self._associated_passport is not None:
+        if (
+            self._config["print_qr"]["enable"]
+            and self._associated_passport is not None
+            and self._associated_passport.short_url is None
+        ):
             qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
             PrinterTask(qrcode, self._config)
 
