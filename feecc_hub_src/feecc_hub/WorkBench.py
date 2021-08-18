@@ -20,8 +20,7 @@ if tp.TYPE_CHECKING:
 
 class WorkBench:
     """
-    Work bench is a union of an Employee, working at it,
-    Camera attached to it and associated Agent.
+    Work bench is a union of an Employee, working at it and Camera attached.
     It provides highly abstract interface for interaction with them
     """
 
@@ -48,7 +47,7 @@ class WorkBench:
         self._state_thread_list.append(state_thread)
         thread_list = self._state_thread_list
         logger.debug(
-            f"Attribute _state_thread_list of Agent is now of len {len(thread_list)}:\n"
+            f"Attribute _state_thread_list of WorkBench is now of len {len(thread_list)}:\n"
             f"{[repr(t) for t in thread_list]}\n"
             f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
         )
@@ -85,7 +84,7 @@ class WorkBench:
         """execute provided state in the background"""
         self.previous_state = self.state.__class__
         self.state = state(self)
-        logger.info(f"Agent state is now {self.state.name}")
+        logger.info(f"Workbench state is now {self.state.name}")
 
         # execute state in the background
         logger.debug(f"Trying to execute state: {state}")

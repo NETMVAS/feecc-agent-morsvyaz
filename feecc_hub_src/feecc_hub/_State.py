@@ -21,7 +21,7 @@ class State(ABC):
     """abstract State class for states to inherit from"""
 
     def __init__(self, context: WorkBench, io_gateway: tp.Optional[ExternalIoGateway] = None) -> None:
-        """:param context: object of type Agent which executes the provided state"""
+        """:param context: object of type WorkBench which executes the provided state"""
         self._context: WorkBench = context
         self._io_gateway: ExternalIoGateway = io_gateway or ExternalIoGateway(self._config)
 
