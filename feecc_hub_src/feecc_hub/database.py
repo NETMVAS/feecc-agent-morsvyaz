@@ -141,7 +141,7 @@ class MongoDbWrapper(DbWrapper):
                 self.update_production_stage(stage)
 
         base_dict = asdict(unit)
-        for key in ("_associated_passport", "_config", "unit_biography"):
+        for key in ("_associated_passport", "_config", "unit_biography", "employee"):
             del base_dict[key]
 
         self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
@@ -164,7 +164,7 @@ class MongoDbWrapper(DbWrapper):
             self.upload_production_stage(stage)
 
         # removing unnecessary keys
-        for key in ("_associated_passport", "_config", "unit_biography"):
+        for key in ("_associated_passport", "_config", "unit_biography", "employee"):
             del base_dict[key]
 
         self._upload_dict(base_dict, self._unit_collection)

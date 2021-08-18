@@ -175,9 +175,9 @@ class Unit:
             qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
             PrinterTask(qrcode, self._config)
 
-        if self._config["print_security_tag"]["enable"]:
-            seal_tag_img: str = create_seal_tag(self._config)
-            PrinterTask(seal_tag_img, self._config)
+            if self._config["print_security_tag"]["enable"]:
+                seal_tag_img: str = create_seal_tag(self._config)
+                PrinterTask(seal_tag_img, self._config)
 
         gateway = ExternalIoGateway(self._config)
         gateway.send(self._associated_passport)
