@@ -16,9 +16,9 @@ class Passport(File):
     """handles form validation and unit passport issuing"""
 
     def __init__(self, unit: Unit) -> None:
-        self._unit: Unit = unit
-        path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
+        path = f"unit-passports/unit-passport-{unit.uuid}.yaml"
         super().__init__(path, short_url=unit.passport_short_url)
+        self._unit: Unit = unit
         logger.info(f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}")
 
     @staticmethod
