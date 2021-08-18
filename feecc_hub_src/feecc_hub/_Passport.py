@@ -12,13 +12,13 @@ if tp.TYPE_CHECKING:
     from .Unit import ProductionStage, Unit
 
 
-class Passport:
+class Passport(File):
     """handles form validation and unit passport issuing"""
 
     def __init__(self, unit: Unit) -> None:
         self._unit: Unit = unit
         path = f"unit-passports/unit-passport-{self._unit.uuid}.yaml"
-        self.file: File = File(path)
+        super().__init__(path)
         logger.info(f"Passport {self._unit.uuid} initialized for unit with int. ID {self._unit.internal_id}")
 
     @staticmethod
@@ -64,7 +64,7 @@ class Passport:
         if not os.path.isdir("unit-passports"):
             os.mkdir("unit-passports")
 
-        with open(self.file.path, "w") as passport_file:
+        with open(self.path, "w") as passport_file:
             yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
 
         logger.info(f"Unit passport with UUID {self._unit.uuid} has been dumped successfully")
