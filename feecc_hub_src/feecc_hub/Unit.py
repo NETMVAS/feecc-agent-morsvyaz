@@ -169,9 +169,10 @@ class Unit:
         if (
             self._config["print_qr"]["enable"]
             and self._associated_passport is not None
-            and self._associated_passport.short_url is None
+            and self.passport_short_url is None
         ):
             qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
+            self.passport_short_url = self._associated_passport.short_url
             Printer().print_image(qrcode)
 
             if self._config["print_security_tag"]["enable"]:
