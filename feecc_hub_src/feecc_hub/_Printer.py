@@ -32,18 +32,9 @@ class Printer(metaclass=SingletonMeta):
         """prepare and resize the image before printing"""
         image = Image.open(image_path)
         w, h = image.size
-
-        if self._paper_width == "62":
-            target_w = 696
-        elif self._paper_width == "29":
-            image = image.rotate(90)
-            target_w = 302
-        else:
-            target_w = 554
-
+        target_w = 696 if self._paper_width == "62" else 554
         target_h = int(h * (target_w / w))
         image = image.resize((target_w, target_h))
-
         return image
 
     def _print_image(self, image: Image) -> None:
