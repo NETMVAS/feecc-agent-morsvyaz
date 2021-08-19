@@ -1,14 +1,14 @@
-from loguru import logger
 import typing as tp
 from dataclasses import asdict
 
+from loguru import logger
 from pymongo import MongoClient
 
 from .Employee import Employee
-from .Types import Collection, GlobalConfig, Document
+from .Singleton import SingletonMeta
+from .Types import Collection, Document, GlobalConfig
 from .Unit import ProductionStage, Unit
 from .exceptions import UnitNotFoundError
-from .Singleton import SingletonMeta
 
 
 class MongoDbWrapper(metaclass=SingletonMeta):

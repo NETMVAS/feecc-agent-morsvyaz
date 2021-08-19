@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 import typing as tp
@@ -115,7 +114,7 @@ def create_seal_tag(config: GlobalConfig) -> str:
     # save the image in the output folder
     seal_tag_image.save(seal_tag_path)
 
-    logging.debug(f"The seal tag has been generated and saved to {seal_tag_path}")
+    logger.debug(f"The seal tag has been generated and saved to {seal_tag_path}")
 
     # return a relative path to the image
     return seal_tag_path
