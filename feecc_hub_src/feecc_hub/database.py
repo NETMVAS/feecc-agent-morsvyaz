@@ -5,51 +5,17 @@ from dataclasses import asdict
 from pymongo import MongoClient
 
 from .Employee import Employee
-from .Types import Collection, Config, Document
+from .Types import Collection, GlobalConfig, Document
 from .Unit import ProductionStage, Unit
 from .exceptions import UnitNotFoundError
-
-
-class DbWrapper(ABC):
-    """
-    abstract database wrapper base class. implements common interfaces and
-    declares common wrapper functionality
-    """
-
-    @abstractmethod
-    def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def update_unit(self, unit: Unit) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def upload_employee(self, employee: Employee) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def upload_unit(self, unit: Unit) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def upload_production_stage(self, production_stage: ProductionStage) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_all_employees(self) -> tp.List[Employee]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
-        raise NotImplementedError
+from .Singleton import SingletonMeta
 
 
 class MongoDbWrapper(DbWrapper):
     """handles interactions with MongoDB database"""
 
-    def __init__(self, username: str, password: str, url: tp.Optional[str] = None) -> None:
-        self._mongo_client_url: str = url or (
+    def __init__(self, username: str = "", password: str = "") -> None:
+        self._mongo_client_url: str = (
             f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
         )
         self._client: MongoClient = MongoClient(self._mongo_client_url)
@@ -182,7 +148,7 @@ class MongoDbWrapper(DbWrapper):
         employees = [Employee(**data) for data in employee_data]
         return employees
 
-    def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
+    def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
         try:
             unit_dict: Document = self._find_item("internal_id", unit_internal_id, self._unit_collection)
 

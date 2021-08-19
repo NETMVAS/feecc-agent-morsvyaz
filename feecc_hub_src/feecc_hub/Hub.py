@@ -2,14 +2,15 @@ import os
 import sys
 import typing as tp
 
-import yaml
 from loguru import logger
 
 from .Employee import Employee
 from .Singleton import SingletonMeta
-from .Types import Config
+from .Types import GlobalConfig, WorkbenchConfig
 from .Unit import Unit
 from .WorkBench import WorkBench
+from ._Config import Config
+from ._Printer import Printer
 from .database import MongoDbWrapper
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
@@ -22,16 +23,21 @@ class Hub(metaclass=SingletonMeta):
 
     def __init__(self) -> None:
         logger.info(f"Initialized an instance of hub {self}")
-        self.config: Config = self._get_config()
+        self.config: GlobalConfig = Config().global_config
         self.database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
         self._create_dirs()
+        self._init_singletons()
 
     @staticmethod
     def _create_dirs() -> None:
         if not os.path.isdir("output"):
             os.mkdir("output")
+
+    def _init_singletons(self) -> None:
+        """Initialize all singleton classes for future reuse"""
+        Printer(self.config)
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
@@ -149,13 +155,14 @@ class Hub(metaclass=SingletonMeta):
             message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
 
-    def _initialize_workbenches(self) -> tp.List[WorkBench]:
+    @staticmethod
+    def _initialize_workbenches() -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
-        workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config("config/workbench_config.yaml")
+        workbench_config: WorkbenchConfig = Config().workbench_config
         workbenches = []
 
         for workbench in workbench_config:
-            workbench_object = WorkBench(self, workbench)
+            workbench_object = WorkBench(workbench)
             workbenches.append(workbench_object)
 
         if not workbenches:

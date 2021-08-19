@@ -6,7 +6,9 @@ from copy import deepcopy
 
 from loguru import logger
 
-from .Types import AdditionalInfo, Config
+from .database import MongoDbWrapper
+from .Types import AdditionalInfo, GlobalConfig
+from ._Config import Config
 from ._external_io_operations import ExternalIoGateway
 from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
 
@@ -20,10 +22,9 @@ if tp.TYPE_CHECKING:
 class State(ABC):
     """abstract State class for states to inherit from"""
 
-    def __init__(self, context: WorkBench, io_gateway: tp.Optional[ExternalIoGateway] = None) -> None:
+    def __init__(self, context: WorkBench) -> None:
         """:param context: object of type WorkBench which executes the provided state"""
         self._context: WorkBench = context
-        self._io_gateway: ExternalIoGateway = io_gateway or ExternalIoGateway(self._config)
 
     @property
     def name(self) -> str:
@@ -35,8 +36,8 @@ class State(ABC):
         return self.__doc__ or ""
 
     @property
-    def _config(self) -> Config:
-        return self._context.config
+    def _config(self) -> GlobalConfig:
+        return Config().global_config
 
     @abstractmethod
     @tp.no_type_check
@@ -49,7 +50,7 @@ class State(ABC):
         """authorize employee"""
         self._context.employee = employee
         logger.info(f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self._context.number}")
-        database: DbWrapper = self._context.associated_hub.database
+        database: MongoDbWrapper = MongoDbWrapper()
         self._context.apply_state(AuthorizedIdling, database)
 
     @tp.no_type_check
@@ -77,7 +78,7 @@ class State(ABC):
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self._context.unit_in_operation:
-            database: DbWrapper = self._context.associated_hub.database
+            database: MongoDbWrapper = MongoDbWrapper()
             self._context.apply_state(AuthorizedIdling, database)
         else:
             message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
@@ -131,7 +132,7 @@ class AuthorizedIdling(State):
         to point to an actual recording"""
         file = self._context.camera.record if self._context.camera else None
         if file is not None:
-            self._io_gateway.send(file)
+            ExternalIoGateway().send(file)
             return file.ipfs_hash
         return None
 

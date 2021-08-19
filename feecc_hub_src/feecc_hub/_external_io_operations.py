@@ -9,7 +9,9 @@ from loguru import logger
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from .Types import Config, ConfigSection
+from .Singleton import SingletonMeta
+from .Types import GlobalConfig, ConfigSection
+from ._Config import Config
 from ._image_generation import create_qr
 from ._short_url_generator import generate_short_url, update_short_url
 from .exceptions import DatalogError, SubstrateError
@@ -49,7 +51,7 @@ class File:
         else:
             return self.filename
 
-    def generate_qr_code(self, config: Config) -> str:
+    def generate_qr_code(self, config: GlobalConfig) -> str:
         """generate a QR code with the short link"""
         logger.debug("Generating short url (a dummy for now)")
         short_url: str = generate_short_url(config)
@@ -71,15 +73,16 @@ class File:
             pass
 
 
-class ExternalIoGateway:
-    def __init__(self, config: Config):
-        self.config: Config = config
+class ExternalIoGateway(metaclass=SingletonMeta):
+    @property
+    def config(self) -> GlobalConfig:
+        return Config().global_config
 
     @time_execution
     def send(self, file: File) -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
         if self.config["ipfs"]["enable"]:
-            ipfs_worker = IpfsWorker(self, self.config)
+            ipfs_worker = IpfsWorker()
             ipfs_worker.post(file)
 
             logger.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}")
@@ -89,12 +92,12 @@ class ExternalIoGateway:
                 update_short_url(file.keyword, file.ipfs_hash, self.config)
 
             if self.config["pinata"]["enable"]:
-                pinata_worker = PinataWorker(self, self.config)
+                pinata_worker = PinataWorker()
                 pinata_worker.post(file)
 
         if self.config["robonomics_network"]["enable_datalog"] and file.ipfs_hash:
             try:
-                robonomics_worker = RobonomicsWorker(self, self.config)
+                robonomics_worker = RobonomicsWorker()
                 robonomics_worker.post(file.ipfs_hash)
             except Exception as e:
                 logger.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
@@ -103,17 +106,11 @@ class ExternalIoGateway:
 
 
 class BaseIoWorker(ABC):
-    """
-    abstract Io worker class for other worker to inherit from
-    """
+    """abstract Io worker class for other worker to inherit from"""
 
-    def __init__(self, context: ExternalIoGateway, target: str) -> None:
-        """
-        :param context of type IoGateway which makes use of the class methods
-        """
-        logger.debug(f"An instance of {self.name} initialized at {self}")
-        self.target: str = target
-        self._context: ExternalIoGateway = context
+    @property
+    def config(self) -> GlobalConfig:
+        return Config().global_config
 
     @property
     def name(self) -> str:
@@ -135,10 +132,6 @@ class BaseIoWorker(ABC):
 class IpfsWorker(BaseIoWorker):
     """IPFS worker handles interactions with IPFS"""
 
-    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
-        super().__init__(context, target="IPFS")
-        self.config: Config = config
-
     @time_execution
     def post(self, file: File) -> None:
         """publish file on IPFS"""
@@ -155,9 +148,9 @@ class IpfsWorker(BaseIoWorker):
 class RobonomicsWorker(BaseIoWorker):
     """Robonomics worker handles interactions with Robonomics network"""
 
-    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
-        super().__init__(context, target="Robonomics Network")
-        self.config: ConfigSection = config["robonomics_network"]
+    @property
+    def config(self) -> ConfigSection:
+        return Config().global_config["robonomics_network"]
 
     def _get_substrate_connection(self) -> SubstrateInterface:
         """establish connection to a specified substrate node"""
@@ -274,9 +267,9 @@ class RobonomicsWorker(BaseIoWorker):
 class PinataWorker(BaseIoWorker):
     """Pinata worker handles interactions with Pinata"""
 
-    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
-        super().__init__(context, target="Pinata cloud")
-        self.config: ConfigSection = config["pinata"]
+    @property
+    def config(self) -> ConfigSection:
+        return Config().global_config["pinata"]
 
     @time_execution
     def post(self, file: File, direct_pin: bool = True) -> None:

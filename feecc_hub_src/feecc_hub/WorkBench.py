@@ -7,15 +7,10 @@ from random import randint
 from loguru import logger
 
 from ._Camera import Camera
-from ._external_io_operations import ExternalIoGateway
 from ._State import AwaitLogin, State
 from .Employee import Employee
 from .Types import ConfigSection
 from .Unit import Unit
-
-if tp.TYPE_CHECKING:
-    from .Hub import Hub
-    from .Types import Config
 
 
 class WorkBench:
@@ -24,14 +19,12 @@ class WorkBench:
     It provides highly abstract interface for interaction with them
     """
 
-    def __init__(self, associated_hub: Hub, workbench_config: tp.Dict[str, tp.Any]) -> None:
+    def __init__(self, workbench_config: tp.Dict[str, tp.Any]) -> None:
         self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
         self.number: int = self._workbench_config["workbench number"]
-        self.associated_hub: Hub = associated_hub
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
         self.associated_unit: tp.Optional[Unit] = None
-        self.io_gateway: ExternalIoGateway = ExternalIoGateway(self.config)
         logger.info(f"Workbench no. {self.number} initialized")
         logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
         self.state: State = AwaitLogin(self)
@@ -51,10 +44,6 @@ class WorkBench:
             f"{[repr(t) for t in thread_list]}\n"
             f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
         )
-
-    @property
-    def config(self) -> Config:
-        return self.associated_hub.config
 
     @property
     def camera(self) -> tp.Optional[Camera]:

@@ -6,7 +6,7 @@ from datetime import datetime as dt
 import qrcode
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from .Types import Config
+from .Types import GlobalConfig
 
 # color values
 color = tp.Tuple[int, int, int]
@@ -14,7 +14,7 @@ WHITE: color = (255, 255, 255)
 BLACK: color = (0, 0, 0)
 
 
-def create_qr(link: str, config: Config) -> str:
+def create_qr(link: str, config: GlobalConfig) -> str:
     """
     :param link: full yourls url. E.g. url.today/6b
     :type link: str
@@ -64,7 +64,7 @@ def create_qr(link: str, config: Config) -> str:
     return path_to_qr
 
 
-def create_seal_tag(config: Config) -> str:
+def create_seal_tag(config: GlobalConfig) -> str:
     """generate a custom seal tag with required parameters"""
     timestamp_enabled: bool = config["print_security_tag"]["enable_timestamp"]
     tag_timestamp: str = dt.now().strftime("%d.%m.%Y")

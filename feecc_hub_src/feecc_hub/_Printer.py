@@ -1,31 +1,30 @@
+import typing as tp
+
 from PIL import Image
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send
 from loguru import logger
 
 from .Singleton import SingletonMeta
-from .Types import Config, ConfigSection
+from .Types import GlobalConfig, ConfigSection
 
 
-class PrinterTask(metaclass=SingletonMeta):
+class Printer(metaclass=SingletonMeta):
     """a printing task for the label printer. executed at init"""
 
-    def __init__(self, image_path: str, config: Config) -> None:
-        self._config: ConfigSection = config["printer"]
+    def __init__(self, config: tp.Optional[GlobalConfig] = None) -> None:
+        self._config: ConfigSection = config["printer"] if config else {}
         self._address: str = str(self._config["address"])
         self._paper_width: str = str(self._config["paper_width"])
         self._model: str = str(self._config["printer_model"])
-        self._image_path: str = image_path
 
-        if self._config["enable"]:
-            self._print_task()
-        else:
-            logger.info("Printer disabled in config. Task dropped.")
-
-    def _print_task(self) -> None:
+    def print_image(self, image_path: str) -> None:
         """execute the task"""
-        logger.info(f"Printing task created for image {self._image_path}")
-        image: Image = self._get_image(self._image_path)
+        if not self._config["enable"]:
+            logger.info("Printer disabled in config. Task dropped.")
+            return
+        logger.info(f"Printing task created for image {image_path}")
+        image: Image = self._get_image(image_path)
         self._print_image(image)
         logger.info("Printing task done")
 

@@ -1,10 +1,10 @@
 import requests
 from loguru import logger
 
-from .Types import Config
+from .Types import GlobalConfig
 
 
-def generate_short_url(config: Config) -> str:
+def generate_short_url(config: GlobalConfig) -> str:
     """
     :param config: dictionary containing all the configurations
     :type config: dict
@@ -37,7 +37,7 @@ def generate_short_url(config: Config) -> str:
         # time to time creating url fails. To go on just set a dummy url and keyword
 
 
-def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
+def update_short_url(keyword: str, ipfs_hash: str, config: GlobalConfig) -> None:
     """
     :param keyword: short url keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str

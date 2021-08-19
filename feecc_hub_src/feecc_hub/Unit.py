@@ -9,10 +9,10 @@ from uuid import uuid4
 from loguru import logger
 
 from .Employee import Employee
-from .Types import AdditionalInfo, Config
+from .Types import AdditionalInfo, GlobalConfig
 from ._Barcode import Barcode
 from ._Passport import Passport
-from ._Printer import PrinterTask
+from ._Printer import Printer
 from ._external_io_operations import ExternalIoGateway
 from ._image_generation import create_seal_tag
 from .exceptions import OperationNotFoundError
@@ -51,7 +51,7 @@ class ProductionStage:
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    _config: Config
+    _config: GlobalConfig
     model: str
     uuid: str = field(default_factory=lambda: uuid4().hex)
     internal_id: tp.Optional[str] = None
@@ -80,7 +80,7 @@ class Unit:
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
-        self.associated_barcode.print_barcode(self._config)
+        self.associated_barcode.print_barcode()
 
     def get_internal_id(self) -> str:
         """get own internal id using own uuid"""
@@ -173,11 +173,10 @@ class Unit:
             and self._associated_passport.short_url is None
         ):
             qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
-            PrinterTask(qrcode, self._config)
+            Printer().print_image(qrcode)
 
             if self._config["print_security_tag"]["enable"]:
                 seal_tag_img: str = create_seal_tag(self._config)
-                PrinterTask(seal_tag_img, self._config)
+                Printer().print_image(seal_tag_img)
 
-        gateway = ExternalIoGateway(self._config)
-        gateway.send(self._associated_passport)
+        ExternalIoGateway().send(self._associated_passport)
