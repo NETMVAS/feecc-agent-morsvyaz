@@ -1,16 +1,14 @@
 import os
 
+from feecc_hub_src.feecc_hub._Config import Config
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
-
-# import pytest
-from feecc_hub_src.feecc_hub.Hub import Hub
 
 
 def credentials():
     try:
         return os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
     except KeyError:
-        db_cfg = Hub._get_config()["mongo_db"]
+        db_cfg = Config().global_config["mongo_db"]
         return db_cfg["username"], db_cfg["password"]
 
 
@@ -22,8 +20,7 @@ def test_check_credentials() -> None:
     assert test_password is not None
 
 
-test_db_url = f"mongodb+srv://{test_login}:{test_password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority&ssl=true&tlsAllowInvalidCertificates=true"
-wrapper = MongoDbWrapper(test_login, test_password, test_db_url)
+wrapper = MongoDbWrapper(test_login, test_password)
 
 
 def test_connection() -> None:

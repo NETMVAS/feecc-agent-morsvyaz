@@ -5,8 +5,7 @@ import barcode
 from barcode.writer import ImageWriter
 from loguru import logger
 
-from ._Printer import PrinterTask
-from .Types import Config
+from ._Printer import Printer
 
 
 class Barcode:

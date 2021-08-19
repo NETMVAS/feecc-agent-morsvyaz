@@ -96,27 +96,6 @@ class Hub(metaclass=SingletonMeta):
         logger.info(f"Initialized {len(employees.keys())} employees")
         return employees
 
-    @staticmethod
-    def _get_config(config_path: str = "config/hub_config.yaml") -> tp.Any:
-        """
-        :return: dictionary containing all the configurations
-        :rtype: dict
-
-        Reading config, containing all the required data
-        camera parameters (ip, login, password, port), etc
-        """
-        logger.debug(f"Looking for config in {config_path}")
-
-        try:
-            with open(config_path) as f:
-                content = f.read()
-                config_f: Config = yaml.load(content, Loader=yaml.FullLoader)
-                return config_f
-
-        except Exception as E:
-            logger.error(f"Error parsing configuration file {config_path}: {E}")
-            sys.exit(1)
-
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
         for workbench in self._workbenches:

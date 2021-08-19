@@ -1,5 +1,4 @@
 import typing as tp
-from abc import ABC, abstractmethod
 from dataclasses import asdict
 
 from pymongo import MongoClient
@@ -11,7 +10,7 @@ from .exceptions import UnitNotFoundError
 from .Singleton import SingletonMeta
 
 
-class MongoDbWrapper(DbWrapper):
+class MongoDbWrapper(metaclass=SingletonMeta):
     """handles interactions with MongoDB database"""
 
     def __init__(self, username: str = "", password: str = "") -> None:

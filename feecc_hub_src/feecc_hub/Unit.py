@@ -18,7 +18,7 @@ from ._image_generation import create_seal_tag
 from .exceptions import OperationNotFoundError
 
 if tp.TYPE_CHECKING:
-    from .database import DbWrapper
+    from .database import MongoDbWrapper
 
 
 @dataclass
@@ -127,7 +127,7 @@ class Unit:
 
     def end_session(
         self,
-        database: DbWrapper,
+        database: MongoDbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:

@@ -13,7 +13,6 @@ from ._external_io_operations import ExternalIoGateway
 from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
-    from .database import DbWrapper
     from .Employee import Employee
     from .Unit import Unit
     from .WorkBench import WorkBench
@@ -111,12 +110,12 @@ class AwaitLogin(State, ABC):
 class AuthorizedIdling(State):
     """State when an employee was authorized at the workbench but doing nothing"""
 
-    def perform_on_apply(self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
+    def perform_on_apply(self, database: MongoDbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         if self._context.previous_state == ProductionStageOngoing:
             logger.info("Ending operation")
             self._end_operation(database, additional_info)
 
-    def _end_operation(self, database: DbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
+    def _end_operation(self, database: MongoDbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         """end previous operation"""
         unit: Unit = self._get_unit_copy()
         ipfs_hashes: tp.List[str] = []
