@@ -8,7 +8,7 @@ from loguru import logger
 
 from .database import MongoDbWrapper
 from .Types import AdditionalInfo, GlobalConfig
-from ._Config import Config
+from .Config import Config
 from ._external_io_operations import ExternalIoGateway
 from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
 

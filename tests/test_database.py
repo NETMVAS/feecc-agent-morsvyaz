@@ -1,6 +1,6 @@
 import os
 
-from feecc_hub_src.feecc_hub._Config import Config
+from feecc_hub_src.feecc_hub.Config import Config
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
 

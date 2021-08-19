@@ -11,7 +11,7 @@ from substrateinterface import Keypair, SubstrateInterface
 
 from .Singleton import SingletonMeta
 from .Types import GlobalConfig, ConfigSection
-from ._Config import Config
+from .Config import Config
 from ._image_generation import create_qr
 from ._short_url_generator import generate_short_url, update_short_url
 from .exceptions import DatalogError, SubstrateError

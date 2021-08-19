@@ -9,7 +9,7 @@ from .Singleton import SingletonMeta
 from .Types import GlobalConfig, WorkbenchConfig
 from .Unit import Unit
 from .WorkBench import WorkBench
-from ._Config import Config
+from .Config import Config
 from ._Printer import Printer
 from .database import MongoDbWrapper
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
@@ -23,7 +23,7 @@ class Hub(metaclass=SingletonMeta):
 
     def __init__(self) -> None:
         logger.info(f"Initialized an instance of hub {self}")
-        self.config: GlobalConfig = Config().global_config
+        self._config: GlobalConfig = Config().global_config
         self.database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
@@ -37,7 +37,7 @@ class Hub(metaclass=SingletonMeta):
 
     def _init_singletons(self) -> None:
         """Initialize all singleton classes for future reuse"""
-        Printer(self.config)
+        Printer(self._config)
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
@@ -72,8 +72,8 @@ class Hub(metaclass=SingletonMeta):
             env_credentials = self._get_credentials_from_env()
 
             if env_credentials is None:
-                username: str = self.config["mongo_db"]["username"]
-                password: str = self.config["mongo_db"]["password"]
+                username: str = self._config["mongo_db"]["username"]
+                password: str = self._config["mongo_db"]["password"]
             else:
                 username, password = env_credentials
 
@@ -108,7 +108,7 @@ class Hub(metaclass=SingletonMeta):
 
     def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
-        unit = Unit(self.config, unit_type)
+        unit = Unit(self._config, unit_type)
         self.database.upload_unit(unit)
 
         if unit.internal_id is not None:
@@ -126,7 +126,7 @@ class Hub(metaclass=SingletonMeta):
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         try:
-            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self.config)
+            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self._config)
             return unit
 
         except Exception as e:

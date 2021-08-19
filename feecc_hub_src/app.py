@@ -3,8 +3,14 @@ import typing as tp
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from feecc_hub.exceptions import EmployeeNotFoundError, EmployeeUnauthorizedError, WorkbenchNotFoundError
+from loguru import logger
+
+from feecc_hub.Config import Config
 from feecc_hub.Hub import Hub
+from feecc_hub.Types import RequestPayload
+from feecc_hub.Unit import Unit
+from feecc_hub.WorkBench import WorkBench
+from feecc_hub.exceptions import EmployeeNotFoundError, EmployeeUnauthorizedError, WorkbenchNotFoundError
 from feecc_hub.models import (
     BaseOut,
     EmployeeData,
@@ -16,11 +22,6 @@ from feecc_hub.models import (
     WorkbenchExtraDetails,
     WorkbenchExtraDetailsWithoutStage,
 )
-from feecc_hub.Types import RequestPayload
-from feecc_hub.Unit import Unit
-from feecc_hub.WorkBench import WorkBench
-from loguru import logger
-
 from ._logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 
 if tp.TYPE_CHECKING:
@@ -30,7 +31,6 @@ if tp.TYPE_CHECKING:
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
 
 # global variables
-hub = Hub()
 api = FastAPI()
 
 api.add_middleware(
@@ -50,7 +50,7 @@ def create_unit(payload: NewUnitData) -> RequestPayload:
     logger.debug(f"Got request at /api/unit/new with payload: {payload.dict()}")
 
     try:
-        new_unit_internal_id: str = hub.create_new_unit(payload.unit_type)
+        new_unit_internal_id: str = Hub().create_new_unit(payload.unit_type)
         response = UnitOut(
             status=True,
             comment="New unit created successfully",
@@ -73,8 +73,8 @@ def unit_start_record(workbench_details: WorkbenchExtraDetails, unit_internal_id
     logger.debug(f"Got request at /api/unit/{unit_internal_id}/start with payload:" f" {request_payload}")
 
     try:
-        workbench: WorkBench = hub.get_workbench_by_number(request_payload["workbench_no"])
-        unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+        workbench: WorkBench = Hub().get_workbench_by_number(request_payload["workbench_no"])
+        unit: Unit = Hub().get_unit_by_internal_id(unit_internal_id)
         workbench.state.start_operation(
             unit, request_payload["production_stage_name"], request_payload["additional_info"]
         )
@@ -105,7 +105,7 @@ def unit_stop_record(workbench_data: WorkbenchExtraDetailsWithoutStage, unit_int
     additional_info: tp.Optional[RequestPayload] = request_payload["additional_info"] or None
 
     try:
-        workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
+        workbench: WorkBench = Hub().get_workbench_by_number(workbench_no)
         workbench.state.end_operation(unit_internal_id, additional_info)
         message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
         return {"status": True, "comment": message}
@@ -123,7 +123,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
     logger.debug(f"Got request at /api/unit/{unit_internal_id}/upload with payload:" f" {request_payload}")
 
     try:
-        unit: Unit = hub.get_unit_by_internal_id(unit_internal_id)
+        unit: Unit = Hub().get_unit_by_internal_id(unit_internal_id)
         unit.upload()
 
         return {"status": True, "comment": f"Uploaded data for unit {unit_internal_id}"}
@@ -141,7 +141,7 @@ def get_employee_data(rfid_card_id: str) -> RequestPayload:
     logger.debug(f"Got request at /api/employee/{rfid_card_id}/info")
 
     try:
-        employee: Employee = hub.get_employee_by_card_id(rfid_card_id)
+        employee: Employee = Hub().get_employee_by_card_id(rfid_card_id)
         response_data = {
             "status": True,
             "comment": "Employee retrieved successfully",
@@ -171,9 +171,9 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
     employee_rfid_card_no: str = request_payload["employee_rfid_card_no"]
 
     try:
-        workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
+        workbench: WorkBench = Hub().get_workbench_by_number(workbench_no)
 
-        hub.authorize_employee(employee_rfid_card_no, workbench_no)
+        Hub().authorize_employee(employee_rfid_card_no, workbench_no)
         employee: tp.Optional[Employee] = workbench.employee
 
         if employee is None:
@@ -213,7 +213,7 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
     logger.debug(f"Got request at /api/employee/log-out with payload:" f" {request_payload}")
 
     try:
-        workbench: WorkBench = hub.get_workbench_by_number(int(request_payload["workbench_no"]))
+        workbench: WorkBench = Hub().get_workbench_by_number(int(request_payload["workbench_no"]))
         workbench.state.end_shift()
 
         if workbench.employee is None:
@@ -242,7 +242,7 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
     # find the WorkBench with the provided number
 
     try:
-        workbench: WorkBench = hub.get_workbench_by_number(workbench_no)
+        workbench: WorkBench = Hub().get_workbench_by_number(workbench_no)
     except Exception as E:
         return {"status": False, "comment": str(E)}
 
@@ -270,6 +270,6 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
 
 if __name__ == "__main__":
     # start the server
-    host: str = hub.config["api_server"]["ip"]
-    port: int = hub.config["api_server"]["port"]
+    host: str = Config().global_config["api_server"]["ip"]
+    port: int = Config().global_config["api_server"]["port"]
     uvicorn.run("app:api", host=host, port=port)
