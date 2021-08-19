@@ -2,35 +2,42 @@ import os
 import sys
 import typing as tp
 
-import yaml
 from loguru import logger
 
-from .database import DbWrapper, MongoDbWrapper
 from .Employee import Employee
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
-from .Types import Config
+from .Singleton import SingletonMeta
+from .Types import GlobalConfig, WorkbenchConfig
 from .Unit import Unit
 from .WorkBench import WorkBench
+from .Config import Config
+from ._Printer import Printer
+from .database import MongoDbWrapper
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
-class Hub:
+class Hub(metaclass=SingletonMeta):
     """
     Hub is the class on top of the object hierarchy that handles
     operating the workbenches and is meant to be initialized only once
     """
 
     def __init__(self) -> None:
-        logger.info(f"Initialized an instance of hub {self}")
-        self.config: Config = self._get_config()
-        self.database: DbWrapper = self._get_database()
+        logger.info("Initialized an instance of hub")
+        self._config: GlobalConfig = Config().global_config
+        self.database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
         self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
         self._create_dirs()
+        self._init_singletons()
 
     @staticmethod
     def _create_dirs() -> None:
         if not os.path.isdir("output"):
             os.mkdir("output")
+
+    def _init_singletons(self) -> None:
+        """Initialize all singleton classes for future reuse"""
+        Printer(self._config)
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
@@ -40,7 +47,7 @@ class Hub:
             raise EmployeeNotFoundError(f"Rfid card ID {employee_card_id} unknown")
 
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
-        workbench.start_shift(employee)
+        workbench.state.start_shift(employee)
 
     @staticmethod
     def _get_credentials_from_env() -> tp.Optional[tp.Tuple[str, str]]:
@@ -52,23 +59,19 @@ class Hub:
                 return username, password
 
         except KeyError:
-            logger.info(
-                "Failed to get credentials from environment variables. Trying to get from config"
-            )
+            logger.debug("Failed to get credentials from environment variables. Trying to get from config")
 
         return None
 
     def _get_database(self) -> MongoDbWrapper:
         """establish MongoDB connection and initialize the wrapper"""
 
-        logger.info("Trying to connect to database")
-
         try:
             env_credentials = self._get_credentials_from_env()
 
             if env_credentials is None:
-                username: str = self.config["mongo_db"]["username"]
-                password: str = self.config["mongo_db"]["password"]
+                username: str = self._config["mongo_db"]["username"]
+                password: str = self._config["mongo_db"]["password"]
             else:
                 username, password = env_credentials
 
@@ -88,29 +91,7 @@ class Hub:
         for employee in employee_list:
             employees[employee.rfid_card_id] = employee
 
-        logger.info(f"Initialized {len(employees.keys())} employees")
         return employees
-
-    @staticmethod
-    def _get_config(config_path: str = "config/hub_config.yaml") -> tp.Any:
-        """
-        :return: dictionary containing all the configurations
-        :rtype: dict
-
-        Reading config, containing all the required data
-        camera parameters (ip, login, password, port), etc
-        """
-        logger.debug(f"Looking for config in {config_path}")
-
-        try:
-            with open(config_path) as f:
-                content = f.read()
-                config_f: Config = yaml.load(content, Loader=yaml.FullLoader)
-                return config_f
-
-        except Exception as E:
-            logger.error(f"Error parsing configuration file {config_path}: {E}")
-            sys.exit(1)
 
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
@@ -124,7 +105,7 @@ class Hub:
 
     def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
-        unit = Unit(self.config, unit_type)
+        unit = Unit(self._config, unit_type)
         self.database.upload_unit(unit)
 
         if unit.internal_id is not None:
@@ -142,7 +123,7 @@ class Hub:
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         try:
-            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self.config)
+            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self._config)
             return unit
 
         except Exception as e:
@@ -150,21 +131,18 @@ class Hub:
             message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
 
-    def _initialize_workbenches(self) -> tp.List[WorkBench]:
+    @staticmethod
+    def _initialize_workbenches() -> tp.List[WorkBench]:
         """make all the WorkBench objects using data specified in workbench_config.yaml"""
-        workbench_config: tp.List[tp.Dict[str, tp.Any]] = self._get_config(
-            "config/workbench_config.yaml"
-        )
+        workbench_config: WorkbenchConfig = Config().workbench_config
         workbenches = []
 
         for workbench in workbench_config:
-            workbench_object = WorkBench(self, workbench)
+            workbench_object = WorkBench(workbench)
             workbenches.append(workbench_object)
 
         if not workbenches:
-            logger.critical(
-                "No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting."
-            )
+            logger.critical("No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting.")
             sys.exit(1)
 
         return workbenches

@@ -34,7 +34,6 @@ yourls: # Information about the yourls node used for short link creation
 printer: # Info about the Brother Label printer used in your operation
   printer_model: "QL-800"
   paper_width: 62 # paper width in mm
-  address: "usb://0x04f9:0x209e" # usually static
   enable: true # if false - no printing tasks will work
 
 print_barcode:

@@ -1,10 +1,10 @@
 import requests
 from loguru import logger
 
-from .Types import Config
+from .Types import GlobalConfig
 
 
-def generate_short_url(config: Config) -> str:
+def generate_short_url(config: GlobalConfig) -> str:
     """
     :param config: dictionary containing all the configurations
     :type config: dict
@@ -14,6 +14,8 @@ def generate_short_url(config: Config) -> str:
     create an url to redirecting service to encode it in the qr and print. Redirecting to some dummy link initially
     just to print the qr, later the redirect link is updated with a gateway link to the video
     """
+    logger.debug("Generating dummy short url to replace with actual link later")
+
     url = f"https://{config['yourls']['server']}/yourls-api.php"
     querystring = {
         "username": config["yourls"]["username"],
@@ -26,19 +28,17 @@ def generate_short_url(config: Config) -> str:
 
     try:
         response = requests.get(url, data=payload, params=querystring)
-        logger.debug(response.text)
+        logger.debug(f"{config['yourls']['server']} returned: {response.text}")
         keyword: str = response.json()["url"]["keyword"]
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
-        logger.info("Generating short url")
-        logger.debug(response.json())
+        logger.info(f"Assigned yourls link: {link}")
         return link
     except Exception as e:
-        logger.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
+        logger.error(f"Failed to create URL, replaced by fake link (url.today/55). Error: {e}")
         return "url.today/55"
-        # time to time creating url fails. To go on just set a dummy url and keyword
 
 
-def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
+def update_short_url(keyword: str, ipfs_hash: str, config: GlobalConfig) -> None:
     """
     :param keyword: short url keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str
@@ -50,19 +50,22 @@ def update_short_url(keyword: str, ipfs_hash: str, config: Config) -> None:
     Update redirecting service so that now the short url points to the  gateway to a video in external_io
     """
     url = f"https://{config['yourls']['server']}/yourls-api.php"
-    querystring = {
+    new_file_url: str = f"{config['ipfs']['gateway_address']}{ipfs_hash}"
+    params = {
         "username": config["yourls"]["username"],
         "password": config["yourls"]["password"],
         "action": "update",
         "format": "json",
-        "url": str(config["external_io"]["gateway_address"]) + ipfs_hash,
+        "url": new_file_url,
         "shorturl": keyword,
     }
     payload = ""  # api call with no payload just to update the link. More on yourls.org. Call created with insomnia
 
     try:
-        response = requests.get(url, data=payload, params=querystring)
-        # no need to read the response. Just wait till the process finishes
-        logger.debug(f"Trying to update short url link: {response.json()}")
+        response = requests.get(url, data=payload, params=params)
+        logger.debug(f"Trying to update short url link. Keyword: {keyword}")
+
+        if response.status_code != 200:
+            logger.warning("Failed to update short url link")
     except Exception as e:
         logger.error("Failed to update URL: ", e)

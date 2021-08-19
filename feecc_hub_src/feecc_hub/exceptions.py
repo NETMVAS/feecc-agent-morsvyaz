@@ -14,11 +14,11 @@ class WorkbenchNotFoundError(Exception):
     pass
 
 
-class AgentBusyError(Exception):
+class EmployeeNotFoundError(Exception):
     pass
 
 
-class EmployeeNotFoundError(Exception):
+class CameraNotFoundError(Exception):
     pass
 
 
@@ -27,4 +27,8 @@ class SubstrateError(Exception):
 
 
 class DatalogError(Exception):
+    pass
+
+
+class StateForbiddenError(Exception):
     pass

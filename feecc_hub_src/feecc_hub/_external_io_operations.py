@@ -4,19 +4,24 @@ import typing as tp
 from abc import ABC, abstractmethod
 
 import ipfshttpclient
+import requests
 from loguru import logger
 from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from ._short_url_generator import update_short_url
+from .Singleton import SingletonMeta
+from .Types import GlobalConfig, ConfigSection
+from .Config import Config
+from ._image_generation import create_qr
+from ._short_url_generator import generate_short_url, update_short_url
 from .exceptions import DatalogError, SubstrateError
-from .Types import Config, ConfigSection
+from .utils import time_execution
 
 
 class File:
     """stores data about one file-like entity with related attributes"""
 
-    def __init__(self, path: str, check_presence: bool = False) -> None:
+    def __init__(self, path: str, check_presence: bool = False, short_url: tp.Optional[str] = None) -> None:
         if check_presence and not os.path.exists(path):
             message = f"Path {path} doesn't point to an actual file"
             logger.error(message)
@@ -26,17 +31,33 @@ class File:
         self.filename: str = os.path.basename(self.path)
         self.ipfs_hash: tp.Optional[str] = None
         self.is_pinned: bool = False
-        self.short_url: tp.Optional[str] = None
+        self.short_url: tp.Optional[str] = short_url
         self.qrcode: tp.Optional[str] = None
 
     @property
     def keyword(self) -> tp.Optional[str]:
         return self.short_url.split("/")[-1] if self.short_url else None
 
+    @property
+    def extension(self) -> str:
+        sections = self.filename.split(".")
+        return sections[-1] if sections else ""
+
     def __str__(self) -> str:
         """convert self into a string"""
-        with open(self.path, "r") as f:
-            return "\n".join(f.readlines())
+        if self.extension in ["yaml", "json", "txt", "log"]:
+            with open(self.path, "r") as f:
+                return "\n".join(f.readlines())
+        else:
+            return self.filename
+
+    def generate_qr_code(self, config: GlobalConfig) -> str:
+        """generate a QR code with the short link"""
+        short_url: str = generate_short_url(config)
+        self.short_url = short_url
+        qr_code_image: str = create_qr(short_url, config)
+        self.qrcode = qr_code_image
+        return qr_code_image
 
     def delete(self) -> None:
         """deletes the file"""
@@ -50,31 +71,34 @@ class File:
             pass
 
 
-class ExternalIoGateway:
-    def __init__(self, config: Config):
-        self.config: Config = config
+class ExternalIoGateway(metaclass=SingletonMeta):
+    @property
+    def config(self) -> GlobalConfig:
+        return Config().global_config
 
+    @time_execution
     def send(self, file: File) -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
+
+        logger.info(f"Trying to push {file.filename} to IPFS/Pinata/Datalog")
+
         if self.config["ipfs"]["enable"]:
-            ipfs_worker = IpfsWorker(self, self.config)
+            ipfs_worker = IpfsWorker()
             ipfs_worker.post(file)
 
-            logger.debug(
-                f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}"
-            )
+            logger.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}")
 
             if file.keyword and file.ipfs_hash:
-                logger.info(f"Updating URL {file.short_url}")
+                logger.info(f"Updating short URL {file.short_url}")
                 update_short_url(file.keyword, file.ipfs_hash, self.config)
 
             if self.config["pinata"]["enable"]:
-                pinata_worker = PinataWorker(self, self.config)
+                pinata_worker = PinataWorker()
                 pinata_worker.post(file)
 
         if self.config["robonomics_network"]["enable_datalog"] and file.ipfs_hash:
             try:
-                robonomics_worker = RobonomicsWorker(self, self.config)
+                robonomics_worker = RobonomicsWorker()
                 robonomics_worker.post(file.ipfs_hash)
             except Exception as e:
                 logger.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
@@ -83,17 +107,11 @@ class ExternalIoGateway:
 
 
 class BaseIoWorker(ABC):
-    """
-    abstract Io worker class for other worker to inherit from
-    """
+    """abstract Io worker class for other worker to inherit from"""
 
-    def __init__(self, context: ExternalIoGateway, target: str) -> None:
-        """
-        :param context of type IoGateway which makes use of the class methods
-        """
-        logger.debug(f"An instance of {self.name} initialized at {self}")
-        self.target: str = target
-        self._context: ExternalIoGateway = context
+    @property
+    def config(self) -> GlobalConfig:
+        return Config().global_config
 
     @property
     def name(self) -> str:
@@ -115,10 +133,7 @@ class BaseIoWorker(ABC):
 class IpfsWorker(BaseIoWorker):
     """IPFS worker handles interactions with IPFS"""
 
-    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
-        super().__init__(context, target="IPFS")
-        self.config: Config = config
-
+    @time_execution
     def post(self, file: File) -> None:
         """publish file on IPFS"""
         ipfs_client = ipfshttpclient.connect()
@@ -134,9 +149,9 @@ class IpfsWorker(BaseIoWorker):
 class RobonomicsWorker(BaseIoWorker):
     """Robonomics worker handles interactions with Robonomics network"""
 
-    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
-        super().__init__(context, target="Robonomics Network")
-        self.config: ConfigSection = config["robonomics_network"]
+    @property
+    def config(self) -> ConfigSection:
+        return Config().global_config["robonomics_network"]
 
     def _get_substrate_connection(self) -> SubstrateInterface:
         """establish connection to a specified substrate node"""
@@ -188,12 +203,10 @@ class RobonomicsWorker(BaseIoWorker):
         """
         try:
             substrate: SubstrateInterface = self._get_substrate_connection()
-            datalog_total_number: int = (
-                substrate.query("Datalog", "DatalogIndex", [account_address]).value["end"] - 1
-            )
-            datalog: str = substrate.query(
-                "Datalog", "DatalogItem", [[account_address, datalog_total_number]]
-            ).value["payload"]
+            datalog_total_number: int = substrate.query("Datalog", "DatalogIndex", [account_address]).value["end"] - 1
+            datalog: str = substrate.query("Datalog", "DatalogItem", [[account_address, datalog_total_number]]).value[
+                "payload"
+            ]
             return datalog
 
         except Exception as e:
@@ -222,9 +235,7 @@ class RobonomicsWorker(BaseIoWorker):
 
         try:
             logger.info("Creating substrate call")
-            call = substrate.compose_call(
-                call_module="Datalog", call_function="record", call_params={"record": data}
-            )
+            call = substrate.compose_call(call_module="Datalog", call_function="record", call_params={"record": data})
             logger.info(f"Successfully created a call:\n{call}")
             logger.info("Creating extrinsic")
             extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
@@ -235,14 +246,13 @@ class RobonomicsWorker(BaseIoWorker):
         try:
             logger.info("Submitting extrinsic")
             receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
-            logger.info(
-                f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}"
-            )
+            logger.info(f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}")
             return str(receipt.extrinsic_hash)
         except Exception as e:
             logger.error(f"Failed to submit extrinsic: {e}")
             return None
 
+    @time_execution
     def post(self, data: tp.Union[File, str]) -> None:
         """write provided string to Robonomics datalog"""
         data_: str = str(data)
@@ -258,17 +268,41 @@ class RobonomicsWorker(BaseIoWorker):
 class PinataWorker(BaseIoWorker):
     """Pinata worker handles interactions with Pinata"""
 
-    def __init__(self, context: ExternalIoGateway, config: Config) -> None:
-        super().__init__(context, target="Pinata cloud")
-        self.config: ConfigSection = config["pinata"]
+    @property
+    def config(self) -> ConfigSection:
+        return Config().global_config["pinata"]
 
-    def post(self, file: File) -> None:
-        logger.info("Pinning file to Pinata in the background")
-        pinata_thread = threading.Thread(target=self._pin_to_pinata, args=(file,))
-        pinata_thread.start()
-        logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
+    @time_execution
+    def post(self, file: File, direct_pin: bool = True) -> None:
+        """pin files in Pinata Cloud to secure their copies in IPFS"""
+        if direct_pin:
+            logger.info("Pinning file to Pinata in the background")
+            pinata_thread = threading.Thread(target=self._pin_to_pinata_over_tcp, args=(file,))
+            pinata_thread.start()
+            logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
+        else:
+            if file.ipfs_hash is None:
+                logger.error("Can't pin to Pinata: IPFS hash is None")
+                return
+            logger.info(f"Starting publishing file {file.filename} to Pinata")
+            self._pin_by_ipfs_hash(file.ipfs_hash, file.filename)
+            logger.info(f"File {file.filename} published to Pinata")
 
-    def _pin_to_pinata(self, file: File) -> None:
+    def _pin_by_ipfs_hash(self, ipfs_hash: str, filename: str) -> None:
+        """push file to pinata using its hash"""
+        headers: tp.Dict[str, str] = {
+            "pinata_api_key": self.config["pinata_api"],
+            "pinata_secret_api_key": self.config["pinata_secret_api"],
+        }
+        payload: tp.Dict[str, tp.Any] = {
+            "pinataMetadata": {"name": filename},
+            "hashToPin": ipfs_hash,
+        }
+        url: str = "https://api.pinata.cloud/pinning/pinByHash"
+        response: tp.Any = requests.post(url=url, json=payload, headers=headers)
+        logger.debug(f"Pinata API response: {response.json()}")
+
+    def _pin_to_pinata_over_tcp(self, file: File) -> None:
         """pin files in Pinata Cloud to secure their copies in IPFS"""
         api_key = self.config["pinata_api"]
         api_token = self.config["pinata_secret_api"]

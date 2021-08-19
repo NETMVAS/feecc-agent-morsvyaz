@@ -12,7 +12,7 @@ class Employee:
     position: str
 
     def __post_init__(self) -> None:
-        logger.info(f"Initialized Employee with id {self.rfid_card_id}, data: {self.data}")
+        logger.debug(f"Initialized Employee with id {self.rfid_card_id}, data: {self.data}")
 
     @property
     def data(self) -> tp.Dict[str, str]:

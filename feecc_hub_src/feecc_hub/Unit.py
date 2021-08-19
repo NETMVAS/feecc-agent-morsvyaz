@@ -8,15 +8,17 @@ from uuid import uuid4
 
 from loguru import logger
 
-from ._Barcode import Barcode
-from ._external_io_operations import ExternalIoGateway
-from ._Passport import Passport
 from .Employee import Employee
+from .Types import AdditionalInfo, GlobalConfig
+from ._Barcode import Barcode
+from ._Passport import Passport
+from ._Printer import Printer
+from ._external_io_operations import ExternalIoGateway
+from ._image_generation import create_seal_tag
 from .exceptions import OperationNotFoundError
-from .Types import AdditionalInfo, Config
 
 if tp.TYPE_CHECKING:
-    from .database import DbWrapper
+    from .database import MongoDbWrapper
 
 
 @dataclass
@@ -42,22 +44,21 @@ class ProductionStage:
             if hasattr(self, key):
                 setattr(self, key, value)
             else:
-                logger.error(
-                    f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}"
-                )
+                logger.error(f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
 
 
 @dataclass
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    _config: Config
+    _config: GlobalConfig
     model: str
     uuid: str = field(default_factory=lambda: uuid4().hex)
     internal_id: tp.Optional[str] = None
     employee: tp.Optional[Employee] = None
     unit_biography: tp.List[ProductionStage] = field(default_factory=list)
     _associated_passport: tp.Optional[Passport] = None
+    passport_short_url: tp.Optional[str] = None
     is_in_db: bool = False
 
     def __post_init__(self) -> None:
@@ -75,11 +76,11 @@ class Unit:
             if stage.id == id_:
                 return stage
 
-        raise OperationNotFoundError
+        raise OperationNotFoundError(f"Production stage with id {id_} not found")
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
-        self.associated_barcode.print_barcode(self._config)
+        self.associated_barcode.print_barcode()
 
     def get_internal_id(self) -> str:
         """get own internal id using own uuid"""
@@ -108,10 +109,8 @@ class Unit:
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
-        logger.info(
-            f"Starting production stage {production_stage_name} for unit with int. id "
-            f"{self.internal_id}, additional info {additional_info}"
-        )
+        logger.info(f"Starting production stage {production_stage_name} for unit with int_id {self.internal_id}")
+        logger.debug(f"additional info for {self.internal_id} {additional_info or 'is empty'}")
 
         operation = ProductionStage(
             name=production_stage_name,
@@ -121,12 +120,13 @@ class Unit:
             additional_info=additional_info,
         )
 
-        logger.debug(str(operation))
         self.current_operation = operation
+
+        logger.debug(f"Started production stage {production_stage_name} for {str(operation)}")
 
     def end_session(
         self,
-        database: DbWrapper,
+        database: MongoDbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
@@ -160,7 +160,22 @@ class Unit:
 
     def upload(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        if self._associated_passport is not None:
-            self._associated_passport.save()
-            gateway = ExternalIoGateway(self._config)
-            gateway.send(self._associated_passport.file)
+        if self._associated_passport is None:
+            raise FileNotFoundError(f"No passport for unit {self.uuid} found")
+
+        ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
+        self._associated_passport.save(ipfs_gateway_url)
+
+        if (
+            self._config["print_qr"]["enable"]
+            and self._associated_passport is not None
+            and self._associated_passport.short_url is None
+        ):
+            qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
+            Printer().print_image(qrcode)
+
+            if self._config["print_security_tag"]["enable"]:
+                seal_tag_img: str = create_seal_tag(self._config)
+                Printer().print_image(seal_tag_img)
+
+        ExternalIoGateway().send(self._associated_passport)

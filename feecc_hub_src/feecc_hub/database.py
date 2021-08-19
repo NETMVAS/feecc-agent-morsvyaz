@@ -1,57 +1,24 @@
 import typing as tp
-from abc import ABC, abstractmethod
 from dataclasses import asdict
 
+from loguru import logger
 from pymongo import MongoClient
 
 from .Employee import Employee
-from .exceptions import UnitNotFoundError
-from .Types import Collection, Config, Document
+from .Singleton import SingletonMeta
+from .Types import Collection, Document, GlobalConfig
 from .Unit import ProductionStage, Unit
+from .exceptions import UnitNotFoundError
 
 
-class DbWrapper(ABC):
-    """
-    abstract database wrapper base class. implements common interfaces and
-    declares common wrapper functionality
-    """
-
-    @abstractmethod
-    def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def update_unit(self, unit: Unit) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def upload_employee(self, employee: Employee) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def upload_unit(self, unit: Unit) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def upload_production_stage(self, production_stage: ProductionStage) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_all_employees(self) -> tp.List[Employee]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
-        raise NotImplementedError
-
-
-class MongoDbWrapper(DbWrapper):
+class MongoDbWrapper(metaclass=SingletonMeta):
     """handles interactions with MongoDB database"""
 
-    def __init__(self, username: str, password: str, url: tp.Optional[str] = None) -> None:
-        self._mongo_client_url: str = url or (
+    def __init__(self, username: str = "", password: str = "") -> None:
+        self._mongo_client_url: str = (
             f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
         )
+        logger.info("Trying to connect to MongoDB")
         self._client: MongoClient = MongoClient(self._mongo_client_url)
         self._database = self._client["Feecc-Hub"]
 
@@ -59,6 +26,7 @@ class MongoDbWrapper(DbWrapper):
         self._employee_collection: Collection = self._database["Employee-data"]
         self._unit_collection: Collection = self._database["Unit-data"]
         self._prod_stage_collection: Collection = self._database["Production-stages-data"]
+        logger.info("Successfully connected to MongoDB")
 
     @property
     def mongo_client_url(self) -> str:
@@ -115,9 +83,7 @@ class MongoDbWrapper(DbWrapper):
         return result
 
     @staticmethod
-    def _update_document(
-        key: str, value: str, new_document: Document, collection_: Collection
-    ) -> None:
+    def _update_document(key: str, value: str, new_document: Document, collection_: Collection) -> None:
         """
         finds matching document in the specified collection, and replaces it's data
         with what is provided in the new_document argument
@@ -143,7 +109,7 @@ class MongoDbWrapper(DbWrapper):
                 self.update_production_stage(stage)
 
         base_dict = asdict(unit)
-        for key in ("_associated_passport", "_config", "unit_biography"):
+        for key in ("_associated_passport", "_config", "unit_biography", "employee"):
             del base_dict[key]
 
         self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
@@ -166,7 +132,7 @@ class MongoDbWrapper(DbWrapper):
             self.upload_production_stage(stage)
 
         # removing unnecessary keys
-        for key in ("_associated_passport", "_config", "unit_biography"):
+        for key in ("_associated_passport", "_config", "unit_biography", "employee"):
             del base_dict[key]
 
         self._upload_dict(base_dict, self._unit_collection)
@@ -179,23 +145,17 @@ class MongoDbWrapper(DbWrapper):
         self._upload_dataclass(production_stage, self._prod_stage_collection)
 
     def get_all_employees(self) -> tp.List[Employee]:
-        employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(
-            self._employee_collection
-        )
+        employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(self._employee_collection)
 
         employees = [Employee(**data) for data in employee_data]
         return employees
 
-    def get_unit_by_internal_id(self, unit_internal_id: str, config: Config) -> Unit:
+    def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
         try:
-            unit_dict: Document = self._find_item(
-                "internal_id", unit_internal_id, self._unit_collection
-            )
+            unit_dict: Document = self._find_item("internal_id", unit_internal_id, self._unit_collection)
 
             # get units biography
-            prod_stage_dicts = self._find_many(
-                "parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection
-            )
+            prod_stage_dicts = self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit_dict["unit_biography"] = prod_stages
             unit: Unit = Unit(config, **unit_dict)
