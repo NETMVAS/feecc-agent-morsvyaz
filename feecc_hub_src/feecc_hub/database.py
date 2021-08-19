@@ -5,9 +5,9 @@ from dataclasses import asdict
 from pymongo import MongoClient
 
 from .Employee import Employee
-from .exceptions import UnitNotFoundError
 from .Types import Collection, Config, Document
 from .Unit import ProductionStage, Unit
+from .exceptions import UnitNotFoundError
 
 
 class DbWrapper(ABC):

@@ -1,12 +1,13 @@
+from PIL import Image
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send
 from loguru import logger
-from PIL import Image
 
+from .Singleton import SingletonMeta
 from .Types import Config, ConfigSection
 
 
-class PrinterTask:
+class PrinterTask(metaclass=SingletonMeta):
     """a printing task for the label printer. executed at init"""
 
     def __init__(self, image_path: str, config: Config) -> None:

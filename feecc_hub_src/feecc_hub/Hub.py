@@ -5,15 +5,16 @@ import typing as tp
 import yaml
 from loguru import logger
 
-from .database import MongoDbWrapper
 from .Employee import Employee
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
+from .Singleton import SingletonMeta
 from .Types import Config
 from .Unit import Unit
 from .WorkBench import WorkBench
+from .database import MongoDbWrapper
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
 
-class Hub:
+class Hub(metaclass=SingletonMeta):
     """
     Hub is the class on top of the object hierarchy that handles
     operating the workbenches and is meant to be initialized only once
