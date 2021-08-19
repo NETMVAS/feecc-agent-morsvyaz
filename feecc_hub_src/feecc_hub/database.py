@@ -26,10 +26,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._employee_collection: Collection = self._database["Employee-data"]
         self._unit_collection: Collection = self._database["Unit-data"]
         self._prod_stage_collection: Collection = self._database["Production-stages-data"]
-        logger.info(
-            f"Successfully connected to MongoDB, loaded {len(self._employee_collection)} employees, "
-            f"{len(self._unit_collection)} units, {len(self._prod_stage_collection)} production stages"
-        )
+        logger.info("Successfully connected to MongoDB")
 
     @property
     def mongo_client_url(self) -> str:

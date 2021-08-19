@@ -79,7 +79,7 @@ class State(ABC):
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self._context.unit_in_operation:
             database: MongoDbWrapper = MongoDbWrapper()
-            logger.info(f"Trying to end operation")
+            logger.info("Trying to end operation")
             self._context.apply_state(AuthorizedIdling, database)
         else:
             message = f"Unit with int_id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
