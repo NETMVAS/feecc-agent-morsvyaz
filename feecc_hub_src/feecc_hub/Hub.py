@@ -22,7 +22,7 @@ class Hub(metaclass=SingletonMeta):
     """
 
     def __init__(self) -> None:
-        logger.info(f"Initialized an instance of hub {self}")
+        logger.info("Initialized an instance of hub")
         self._config: GlobalConfig = Config().global_config
         self.database: MongoDbWrapper = self._get_database()
         self._employees: tp.Dict[str, Employee] = self._get_employees()
@@ -59,14 +59,12 @@ class Hub(metaclass=SingletonMeta):
                 return username, password
 
         except KeyError:
-            logger.info("Failed to get credentials from environment variables. Trying to get from config")
+            logger.debug("Failed to get credentials from environment variables. Trying to get from config")
 
         return None
 
     def _get_database(self) -> MongoDbWrapper:
         """establish MongoDB connection and initialize the wrapper"""
-
-        logger.info("Trying to connect to database")
 
         try:
             env_credentials = self._get_credentials_from_env()
@@ -93,7 +91,6 @@ class Hub(metaclass=SingletonMeta):
         for employee in employee_list:
             employees[employee.rfid_card_id] = employee
 
-        logger.info(f"Initialized {len(employees.keys())} employees")
         return employees
 
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:

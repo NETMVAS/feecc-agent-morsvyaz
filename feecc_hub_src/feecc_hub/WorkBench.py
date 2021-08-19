@@ -25,8 +25,7 @@ class WorkBench:
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
         self.employee: tp.Optional[Employee] = None
         self.associated_unit: tp.Optional[Unit] = None
-        logger.info(f"Workbench no. {self.number} initialized")
-        logger.debug(f"Raw workbench configuration:\n{self._workbench_config}")
+        logger.info(f"Workbench {self.number} was initialized")
         self.state: State = AwaitLogin(self)
         self.previous_state: tp.Optional[tp.Type[State]] = None
         self._state_thread_list: tp.List[threading.Thread] = []
@@ -76,8 +75,8 @@ class WorkBench:
         logger.info(f"Workbench state is now {self.state.name}")
 
         # execute state in the background
-        logger.debug(f"Trying to execute state: {state}")
         thread_name: str = f"{self.state.name}-{randint(1, 999)}"
+        logger.debug(f"Trying to execute state: {state.name} in thread {thread_name}")
         self._state_thread = threading.Thread(
             target=self.state.perform_on_apply,
             args=args,

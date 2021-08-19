@@ -52,7 +52,6 @@ class Recording(File):
 
     def _start_record(self) -> None:
         """start a record and return future video filename"""
-        logger.info(f"Recording started for the unit with UUID {self._unit_uuid}")
         self._execute_ffmpeg(self.path)
 
     @staticmethod
@@ -72,12 +71,16 @@ class Recording(File):
         if self.is_ongoing and self._process_ffmpeg is not None:
             self._process_ffmpeg.terminate()
             logger.info(f"Finished recording video for unit {self._unit_uuid}")
+        else:
+            logger.error(f"Failed to stop record for unit {self._unit_uuid}")
+            logger.debug(f"Operation ongoing: {self.is_ongoing}, ffmpeg process: {bool(self._process_ffmpeg)}")
 
     def _execute_ffmpeg(self, filename: str) -> None:
         """Execute ffmpeg command"""
         # ffmpeg -rtsp_transport tcp -i "rtsp://login:password@ip:port/Streaming/Channels/101" -c copy -map 0 vid.mp4
         cam: Camera = self._camera
         command: str = f'ffmpeg -rtsp_transport tcp -i "rtsp://{cam.login}:{cam.password}@{cam.ip}:{cam.port}/Streaming/Channels/101" -r 25 -c copy -map 0 {filename}'
+        logger.info(f"Trying to start record for the unit with UUID {self._unit_uuid}")
         self._process_ffmpeg = subprocess.Popen(
             f"exec {command}",
             shell=True,

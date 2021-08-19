@@ -1,3 +1,4 @@
+from loguru import logger
 import typing as tp
 from dataclasses import asdict
 
@@ -17,6 +18,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._mongo_client_url: str = (
             f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
         )
+        logger.info("Trying to connect to MongoDB")
         self._client: MongoClient = MongoClient(self._mongo_client_url)
         self._database = self._client["Feecc-Hub"]
 
@@ -24,6 +26,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._employee_collection: Collection = self._database["Employee-data"]
         self._unit_collection: Collection = self._database["Unit-data"]
         self._prod_stage_collection: Collection = self._database["Production-stages-data"]
+        logger.info(
+            f"Successfully connected to MongoDB, loaded {len(self._employee_collection)} employees, "
+            f"{len(self._unit_collection)} units, {len(self._prod_stage_collection)} production stages"
+        )
 
     @property
     def mongo_client_url(self) -> str:

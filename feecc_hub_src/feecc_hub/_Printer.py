@@ -21,12 +21,12 @@ class Printer(metaclass=SingletonMeta):
     def print_image(self, image_path: str) -> None:
         """execute the task"""
         if not self._config["enable"]:
-            logger.info("Printer disabled in config. Task dropped.")
+            logger.info("Printing disabled in config. Task dropped.")
             return
         logger.info(f"Printing task created for image {image_path}")
         image: Image = self._get_image(image_path)
         self._print_image(image)
-        logger.info("Printing task done")
+        logger.info(f"Printing task done for image {image_path}")
 
     def _get_image(self, image_path: str) -> Image:
         """prepare and resize the image before printing"""
@@ -43,4 +43,5 @@ class Printer(metaclass=SingletonMeta):
         qlr: BrotherQLRaster = BrotherQLRaster(self._model)
         red: bool = self._paper_width == "62"
         conversion.convert(qlr, [image], self._paper_width, red=red)
+        logger.debug(f"Printing image with config: width={self._paper_width}, red={red}, printer={self._model}")
         send(qlr.data, self._address)

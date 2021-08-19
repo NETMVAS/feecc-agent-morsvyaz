@@ -14,6 +14,8 @@ def generate_short_url(config: GlobalConfig) -> str:
     create an url to redirecting service to encode it in the qr and print. Redirecting to some dummy link initially
     just to print the qr, later the redirect link is updated with a gateway link to the video
     """
+    logger.debug("Generating dummy short url to replace with actual link later")
+
     url = f"https://{config['yourls']['server']}/yourls-api.php"
     querystring = {
         "username": config["yourls"]["username"],
@@ -29,12 +31,11 @@ def generate_short_url(config: GlobalConfig) -> str:
         logger.debug(f"{config['yourls']['server']} returned: {response.text}")
         keyword: str = response.json()["url"]["keyword"]
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
-        logger.debug(f"Generating short url: {response.json()}")
+        logger.info(f"Assigned yourls link: {link}")
         return link
     except Exception as e:
-        logger.error(f"Failed to create URL, replaced by url.today/55. Error: {e}")
+        logger.error(f"Failed to create URL, replaced by fake link (url.today/55). Error: {e}")
         return "url.today/55"
-        # time to time creating url fails. To go on just set a dummy url and keyword
 
 
 def update_short_url(keyword: str, ipfs_hash: str, config: GlobalConfig) -> None:
@@ -62,7 +63,9 @@ def update_short_url(keyword: str, ipfs_hash: str, config: GlobalConfig) -> None
 
     try:
         response = requests.get(url, data=payload, params=params)
-        # no need to read the response. Just wait till the process finishes
-        logger.debug(f"Trying to update short url link: {response.json()}")
+        logger.debug(f"Trying to update short url link. Keyword: {keyword}")
+
+        if response.status_code != 200:
+            logger.warning("Failed to update short url link")
     except Exception as e:
         logger.error("Failed to update URL: ", e)

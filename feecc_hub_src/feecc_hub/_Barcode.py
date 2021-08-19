@@ -13,11 +13,14 @@ class Barcode:
         self.unit_code: str = unit_code
         self.filename: tp.Optional[str] = None
 
+        logger.debug(f"Initializing barcode for unit with id {self.unit_code}")
+
         try:
-            self.barcode: barcode.EAN13 = self.generate_barcode(unit_code)
+            self.barcode: barcode.EAN13 = self.generate_barcode(self.unit_code)
             self.save_barcode(self.barcode)
+            logger.debug(f"Barcode for unit with id {self.unit_code} was successfully saved to {self.filename}")
         except FileNotFoundError as E:
-            logger.error(E)
+            logger.error(f"Failed to save barcode for unit {self.unit_code}: {E}")
 
     def generate_barcode(self, int_id: str) -> barcode.EAN13:
         """
@@ -60,4 +63,4 @@ class Barcode:
         try:
             Printer().print_image(f"{self.filename}.png")
         except Exception as E:
-            logger.error(f"Failed to print barcode: {E}")
+            logger.error(f"Failed to print barcode for unit {self.unit_code}: {E}")

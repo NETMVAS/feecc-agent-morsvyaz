@@ -48,13 +48,14 @@ class State(ABC):
     def start_shift(self, employee: Employee) -> None:
         """authorize employee"""
         self._context.employee = employee
-        logger.info(f"Employee {employee.rfid_card_id} is logged in at the workbench no. {self._context.number}")
+        logger.info(f"Employee {employee.name} is logged in at the workbench no. {self._context.number}")
         database: MongoDbWrapper = MongoDbWrapper()
         self._context.apply_state(AuthorizedIdling, database)
 
     @tp.no_type_check
     def end_shift(self) -> None:
         """log out the employee"""
+        logger.info(f"Employee '{self._context.employee}' was logged out the Workbench {self._context.number}")
         self._context.employee = None
         self._context.apply_state(AwaitLogin)
 
@@ -78,9 +79,10 @@ class State(ABC):
         # make sure requested unit is associated with this workbench
         if unit_internal_id == self._context.unit_in_operation:
             database: MongoDbWrapper = MongoDbWrapper()
+            logger.info(f"Trying to end operation")
             self._context.apply_state(AuthorizedIdling, database)
         else:
-            message = f"Unit with int. id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
+            message = f"Unit with int_id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
             logger.error(message)
             raise UnitNotFoundError(message)
 
@@ -92,17 +94,17 @@ class AwaitLogin(State, ABC):
         pass
 
     def end_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot log out: no one is logged in at the workbench no. {self._context.number}"
+        msg = f"Cannot log out: no one is logged in at the workbench {self._context.number}"
         logger.error(msg)
         raise StateForbiddenError(msg)
 
     def start_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot start operation: no one is logged in at the workbench no. {self._context.number}"
+        msg = f"Cannot start operation: no one is logged in at the workbench {self._context.number}"
         logger.error(msg)
         raise StateForbiddenError(msg)
 
     def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot end operation: no one is logged in at the workbench no. {self._context.number}"
+        msg = f"Cannot end operation: no one is logged in at the workbench {self._context.number}"
         logger.error(msg)
         raise StateForbiddenError(msg)
 
@@ -112,7 +114,7 @@ class AuthorizedIdling(State):
 
     def perform_on_apply(self, database: MongoDbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         if self._context.previous_state == ProductionStageOngoing:
-            logger.info("Ending operation")
+            logger.info(f"Ending operation {self._context}")
             self._end_operation(database, additional_info)
 
     def _end_operation(self, database: MongoDbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:

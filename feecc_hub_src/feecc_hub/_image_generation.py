@@ -1,7 +1,10 @@
+import logging
 import os
 import time
 import typing as tp
 from datetime import datetime as dt
+
+from loguru import logger
 
 import qrcode
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -25,6 +28,8 @@ def create_qr(link: str, config: GlobalConfig) -> str:
 
     This is a qr-creating submodule. Inserts a Robonomics logo inside the qr and adds logos aside if required
     """
+    logger.debug(f"Generating QR code image file for {link}")
+
     robonomics_logo = Image.open("media/robonomics.jpg").resize((100, 100))
     qr_big = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
     qr_big.add_data("https://" + link)
@@ -61,11 +66,15 @@ def create_qr(link: str, config: GlobalConfig) -> str:
     path_to_qr = dir_ + f"/{int(time.time())}_qr.png"
     img_qr_big.save(path_to_qr)  # saving picture for further printing with a timestamp
 
+    logger.debug(f"Successfully saved QR code image file for {link} to {path_to_qr}")
+
     return path_to_qr
 
 
 def create_seal_tag(config: GlobalConfig) -> str:
     """generate a custom seal tag with required parameters"""
+    logger.info("Generating seal tag")
+
     timestamp_enabled: bool = config["print_security_tag"]["enable_timestamp"]
     tag_timestamp: str = dt.now().strftime("%d.%m.%Y")
     dir_: str = "output/seal_tags"
@@ -105,6 +114,8 @@ def create_seal_tag(config: GlobalConfig) -> str:
 
     # save the image in the output folder
     seal_tag_image.save(seal_tag_path)
+
+    logging.debug(f"The seal tag has been generated and saved to {seal_tag_path}")
 
     # return a relative path to the image
     return seal_tag_path

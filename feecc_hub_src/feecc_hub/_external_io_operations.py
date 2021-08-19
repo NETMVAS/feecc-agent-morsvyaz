@@ -53,10 +53,8 @@ class File:
 
     def generate_qr_code(self, config: GlobalConfig) -> str:
         """generate a QR code with the short link"""
-        logger.debug("Generating short url (a dummy for now)")
         short_url: str = generate_short_url(config)
         self.short_url = short_url
-        logger.debug("Generating QR code image file")
         qr_code_image: str = create_qr(short_url, config)
         self.qrcode = qr_code_image
         return qr_code_image
@@ -81,6 +79,9 @@ class ExternalIoGateway(metaclass=SingletonMeta):
     @time_execution
     def send(self, file: File) -> tp.Optional[str]:
         """Handle external IO operations, such as IPFS and Robonomics interactions"""
+
+        logger.info(f"Trying to push {file.filename} to IPFS/Pinata/Datalog")
+
         if self.config["ipfs"]["enable"]:
             ipfs_worker = IpfsWorker()
             ipfs_worker.post(file)
@@ -88,7 +89,7 @@ class ExternalIoGateway(metaclass=SingletonMeta):
             logger.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}")
 
             if file.keyword and file.ipfs_hash:
-                logger.info(f"Updating URL {file.short_url}")
+                logger.info(f"Updating short URL {file.short_url}")
                 update_short_url(file.keyword, file.ipfs_hash, self.config)
 
             if self.config["pinata"]["enable"]:
@@ -293,7 +294,10 @@ class PinataWorker(BaseIoWorker):
             "pinata_api_key": self.config["pinata_api"],
             "pinata_secret_api_key": self.config["pinata_secret_api"],
         }
-        payload: tp.Dict[str, tp.Any] = {"pinataMetadata": {"name": filename}, "hashToPin": ipfs_hash}
+        payload: tp.Dict[str, tp.Any] = {
+            "pinataMetadata": {"name": filename},
+            "hashToPin": ipfs_hash,
+        }
         url: str = "https://api.pinata.cloud/pinning/pinByHash"
         response: tp.Any = requests.post(url=url, json=payload, headers=headers)
         logger.debug(f"Pinata API response: {response.json()}")

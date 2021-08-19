@@ -76,7 +76,7 @@ class Unit:
             if stage.id == id_:
                 return stage
 
-        raise OperationNotFoundError
+        raise OperationNotFoundError(f"Production stage with id {id_} not found")
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
@@ -109,10 +109,8 @@ class Unit:
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
         """begin the provided operation and save data about it"""
-        logger.info(
-            f"Starting production stage {production_stage_name} for unit with int. id "
-            f"{self.internal_id}, additional info {additional_info}"
-        )
+        logger.info(f"Starting production stage {production_stage_name} for unit with int_id {self.internal_id}")
+        logger.debug(f"additional info for {self.internal_id} {additional_info or 'is empty'}")
 
         operation = ProductionStage(
             name=production_stage_name,
@@ -122,8 +120,9 @@ class Unit:
             additional_info=additional_info,
         )
 
-        logger.debug(str(operation))
         self.current_operation = operation
+
+        logger.debug(f"Started production stage {production_stage_name} for {str(operation)}")
 
     def end_session(
         self,

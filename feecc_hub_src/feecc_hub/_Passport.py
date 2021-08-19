@@ -37,6 +37,8 @@ class Passport(File):
         if prod_stage.additional_info:
             stage["Дополнительная информация"] = prod_stage.additional_info
 
+        logger.debug(f"Constructed stage dict for unit {prod_stage.parent_unit_uuid}\n{stage}")
+
         return stage
 
     def _construct_passport_dict(self, gateway: str) -> tp.Dict[str, tp.Any]:
