@@ -32,6 +32,7 @@ class ProductionStage:
     additional_info: tp.Optional[AdditionalInfo] = None
     id: str = field(default_factory=lambda: uuid4().hex)
     is_in_db: bool = False
+    creation_time: dt = field(default_factory=lambda: dt.utcnow())
 
     @staticmethod
     def timestamp() -> str:
