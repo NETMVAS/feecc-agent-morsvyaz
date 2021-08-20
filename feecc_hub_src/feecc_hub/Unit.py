@@ -159,7 +159,7 @@ class Unit:
         self.employee = None
         database.update_unit(self)
 
-    def upload(self) -> None:
+    def upload(self, database: MongoDbWrapper) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         if self._associated_passport is None:
             raise FileNotFoundError(f"No passport for unit {self.uuid} found")
@@ -181,3 +181,4 @@ class Unit:
                 Printer().print_image(seal_tag_img)
 
         ExternalIoGateway().send(self._associated_passport)
+        database.update_unit(self)

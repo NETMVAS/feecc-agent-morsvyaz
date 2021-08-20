@@ -26,6 +26,7 @@ from feecc_hub.models import (
     WorkbenchExtraDetails,
     WorkbenchExtraDetailsWithoutStage,
 )
+from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 from ._logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 
 if tp.TYPE_CHECKING:
@@ -128,7 +129,7 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
 
     try:
         unit: Unit = Hub().get_unit_by_internal_id(unit_internal_id)
-        unit.upload()
+        unit.upload(MongoDbWrapper())
 
         return {"status": True, "comment": f"Uploaded data for unit {unit_internal_id}"}
 
