@@ -71,6 +71,6 @@ class Printer(metaclass=SingletonMeta):
         """print provided image"""
         logger.info(f"Printing image of size {image.size}")
         qlr: BrotherQLRaster = BrotherQLRaster(self._model)
-        red: bool = self._paper_width == "62"
+        red: bool = self._config["red"]
         conversion.convert(qlr, [image], self._paper_width, red=red)
         send(qlr.data, self._address)
