@@ -86,8 +86,6 @@ class ExternalIoGateway(metaclass=SingletonMeta):
             ipfs_worker = IpfsWorker()
             ipfs_worker.post(file)
 
-            logger.debug(f"File parameters: {file.short_url, file.keyword, file.ipfs_hash}, file: {repr(file)}")
-
             if file.keyword and file.ipfs_hash:
                 logger.info(f"Updating short URL {file.short_url}")
                 update_short_url(file.keyword, file.ipfs_hash, self.config)

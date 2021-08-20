@@ -39,6 +39,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     @staticmethod
     def _upload_dict(document: Document, collection_: Collection) -> None:
         """insert a document into specified collection"""
+        logger.debug(f"Uploading document {document} to {collection_.name}")
         collection_.insert_one(document)
 
     def _upload_dataclass(self, dataclass: tp.Any, collection_: Collection) -> None:
@@ -88,6 +89,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         finds matching document in the specified collection, and replaces it's data
         with what is provided in the new_document argument
         """
+        logger.debug(f"Updating key {key} with value {value} in {new_document}")
         collection_.find_one_and_update({key: value}, {"$set": new_document})
 
     def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
