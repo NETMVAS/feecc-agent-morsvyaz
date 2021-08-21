@@ -128,7 +128,7 @@ class Hub(metaclass=SingletonMeta):
 
         except Exception as E:
             logger.error(E)
-            message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
+            message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
 
     @staticmethod

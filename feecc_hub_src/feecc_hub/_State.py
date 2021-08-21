@@ -82,7 +82,9 @@ class State(ABC):
             logger.info("Trying to end operation")
             self._context.apply_state(AuthorizedIdling, database)
         else:
-            message = f"Unit with int_id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
+            message: str = (
+                f"Unit with int_id {unit_internal_id} isn't associated with the Workbench {self._context.number}"
+            )
             logger.error(message)
             raise UnitNotFoundError(message)
 
@@ -94,19 +96,19 @@ class AwaitLogin(State, ABC):
         pass
 
     def end_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot log out: no one is logged in at the workbench {self._context.number}"
-        logger.error(msg)
-        raise StateForbiddenError(msg)
+        message: str = f"Cannot log out: no one is logged in at the workbench {self._context.number}"
+        logger.error(message)
+        raise StateForbiddenError(message)
 
     def start_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot start operation: no one is logged in at the workbench {self._context.number}"
-        logger.error(msg)
-        raise StateForbiddenError(msg)
+        message: str = f"Cannot start operation: no one is logged in at the workbench {self._context.number}"
+        logger.error(message)
+        raise StateForbiddenError(message)
 
     def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot end operation: no one is logged in at the workbench {self._context.number}"
-        logger.error(msg)
-        raise StateForbiddenError(msg)
+        message: str = f"Cannot end operation: no one is logged in at the workbench {self._context.number}"
+        logger.error(message)
+        raise StateForbiddenError(message)
 
 
 class AuthorizedIdling(State):
@@ -153,14 +155,16 @@ class AuthorizedIdling(State):
             self._context.camera.stop_record()
 
     def start_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot log in: a worker is already logged in at the workbench no. {self._context.number}"
-        logger.error(msg)
-        raise StateForbiddenError(msg)
+        message: str = f"Cannot log in: a worker is already logged in at the workbench no. {self._context.number}"
+        logger.error(message)
+        raise StateForbiddenError(message)
 
     def end_operation(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        msg = f"Cannot end operation: there is no ongoing operation at the workbench no. {self._context.number}"
-        logger.error(msg)
-        raise StateForbiddenError(msg)
+        message: str = (
+            f"Cannot end operation: there is no ongoing operation at the workbench no. {self._context.number}"
+        )
+        logger.error(message)
+        raise StateForbiddenError(message)
 
 
 class ProductionStageOngoing(State):

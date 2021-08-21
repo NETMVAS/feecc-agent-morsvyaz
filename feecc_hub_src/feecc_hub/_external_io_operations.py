@@ -23,7 +23,7 @@ class File:
 
     def __init__(self, path: str, check_presence: bool = False, short_url: tp.Optional[str] = None) -> None:
         if check_presence and not os.path.exists(path):
-            message = f"Path {path} doesn't point to an actual file"
+            message: str = f"Path {path} doesn't point to an actual file"
             logger.error(message)
             raise FileNotFoundError(message)
 

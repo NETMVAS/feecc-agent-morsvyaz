@@ -83,11 +83,11 @@ def unit_start_record(workbench_details: WorkbenchExtraDetails, unit_internal_id
         workbench.state.start_operation(
             unit, request_payload["production_stage_name"], request_payload["additional_info"]
         )
-        message = (
+        message: str = (
             f"Started operation '{request_payload['production_stage_name']}' on Unit {unit_internal_id} at "
             f"Workbench no. {request_payload['workbench_no']} "
         )
-        response_data = {"status": True, "comment": message}
+        response_data: RequestPayload = {"status": True, "comment": message}
         logger.info(message)
         return response_data
 
@@ -112,7 +112,7 @@ def unit_stop_record(workbench_data: WorkbenchExtraDetailsWithoutStage, unit_int
     try:
         workbench: WorkBench = Hub().get_workbench_by_number(workbench_no)
         workbench.state.end_operation(unit_internal_id, additional_info)
-        message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
+        message: str = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
         return {"status": True, "comment": message}
 
     except Exception as E:
@@ -134,10 +134,10 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
         return {"status": True, "comment": f"Uploaded data for unit {unit_internal_id}"}
 
     except Exception as E:
-        error_message = f"Can't handle unit upload. An error occurred: {E}"
-        logger.error(error_message)
+        message: str = f"Can't handle unit upload. An error occurred: {E}"
+        logger.error(message)
 
-    return {"status": False, "comment": error_message}
+    return {"status": False, "comment": message}
 
 
 @api.post("/api/employee/{rfid_card_id}/info", response_model=EmployeeOut)
@@ -147,7 +147,7 @@ def get_employee_data(rfid_card_id: str) -> RequestPayload:
 
     try:
         employee: Employee = Hub().get_employee_by_card_id(rfid_card_id)
-        response_data = {
+        response_data: RequestPayload = {
             "status": True,
             "comment": "Employee retrieved successfully",
             "employee_data": EmployeeData(**employee.data).dict(),
@@ -155,7 +155,7 @@ def get_employee_data(rfid_card_id: str) -> RequestPayload:
         return response_data
 
     except EmployeeNotFoundError as E:
-        message = f"Employee not found: {E}"
+        message: str = f"Employee not found: {E}"
         logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
@@ -174,6 +174,7 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
     logger.debug(f"Got request at /api/employee/log-in with payload:" f" {request_payload}")
     workbench_no: int = int(request_payload["workbench_no"])
     employee_rfid_card_no: str = request_payload["employee_rfid_card_no"]
+    message: str = "Employee logged in successfully"
 
     try:
         workbench: WorkBench = Hub().get_workbench_by_number(workbench_no)
@@ -184,9 +185,9 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
         if employee is None:
             raise EmployeeUnauthorizedError(f"Couldn't login employee {employee_rfid_card_no}")
 
-        response_data = {
+        response_data: RequestPayload = {
             "status": True,
-            "comment": "Employee logged in successfully",
+            "comment": message,
             "employee_data": EmployeeData(**employee.data).dict(),
         }
 
@@ -194,21 +195,16 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
 
     except WorkbenchNotFoundError as E:
         message = f"Could not log in the Employee. Workbench not found: {E}"
-        logger.error(message)
-        response_data = {"status": False, "comment": message}
-        return response_data
 
     except EmployeeNotFoundError as E:
         message = f"Could not log in the Employee. Employee not found: {E}"
-        logger.error(message)
-        response_data = {"status": False, "comment": message}
-        return response_data
 
     except Exception as E:
         message = f"An error occurred while logging in the Employee: {E}"
-        logger.error(message)
-        response_data = {"status": False, "comment": message}
-        return response_data
+
+    logger.error(message)
+    response_data = {"status": False, "comment": message}
+    return response_data
 
 
 @api.post("/api/employee/log-out")
@@ -222,7 +218,7 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
         workbench.state.end_shift()
 
         if workbench.employee is None:
-            response_data = {
+            response_data: RequestPayload = {
                 "status": True,
                 "comment": "Employee logged out successfully",
             }
@@ -233,7 +229,7 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
             raise ValueError("Unable to logout employee")
 
     except Exception as E:
-        message = f"An error occurred while logging out the Employee: {E}"
+        message: str = f"An error occurred while logging out the Employee: {E}"
         logger.error(message)
 
         response_data = {"status": False, "comment": message}
