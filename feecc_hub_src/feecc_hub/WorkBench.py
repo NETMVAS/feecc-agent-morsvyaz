@@ -76,7 +76,7 @@ class WorkBench:
 
         # execute state in the background
         thread_name: str = f"{self.state.name}-{randint(1, 999)}"
-        logger.debug(f"Trying to execute state: {state.name} in thread {thread_name}")
+        logger.debug(f"Trying to execute state: {self.state.name} in thread {thread_name}")
         self._state_thread = threading.Thread(
             target=self.state.perform_on_apply,
             args=args,
