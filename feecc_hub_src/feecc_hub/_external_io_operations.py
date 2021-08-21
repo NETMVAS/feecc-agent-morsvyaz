@@ -98,8 +98,8 @@ class ExternalIoGateway(metaclass=SingletonMeta):
             try:
                 robonomics_worker = RobonomicsWorker()
                 robonomics_worker.post(file.ipfs_hash)
-            except Exception as e:
-                logger.error(f"Error writing IPFS hash to Robonomics datalog: {e}")
+            except Exception as E:
+                logger.error(f"Error writing IPFS hash to Robonomics datalog: {E}")
 
         return file.ipfs_hash
 
@@ -184,8 +184,8 @@ class RobonomicsWorker(BaseIoWorker):
             logger.info("Successfully established connection to substrate node")
             return substrate
 
-        except Exception as e:
-            message: str = f"Substrate connection failed: {e}"
+        except Exception as E:
+            message: str = f"Substrate connection failed: {E}"
             logger.error(message)
             raise SubstrateError(message)
 
@@ -207,8 +207,8 @@ class RobonomicsWorker(BaseIoWorker):
             ]
             return datalog
 
-        except Exception as e:
-            message: str = f"Error fetching latest datalog: {e}"
+        except Exception as E:
+            message: str = f"Error fetching latest datalog: {E}"
             logger.error(message)
             raise DatalogError(message)
 
@@ -227,8 +227,8 @@ class RobonomicsWorker(BaseIoWorker):
         # create keypair
         try:
             keypair = Keypair.create_from_mnemonic(seed, ss58_format=32)
-        except Exception as e:
-            logger.error(f"Failed to create keypair: \n{e}")
+        except Exception as E:
+            logger.error(f"Failed to create keypair: \n{E}")
             return None
 
         try:
@@ -237,8 +237,8 @@ class RobonomicsWorker(BaseIoWorker):
             logger.info(f"Successfully created a call:\n{call}")
             logger.info("Creating extrinsic")
             extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
-        except Exception as e:
-            logger.error(f"Failed to create an extrinsic: {e}")
+        except Exception as E:
+            logger.error(f"Failed to create an extrinsic: {E}")
             return None
 
         try:
@@ -246,8 +246,8 @@ class RobonomicsWorker(BaseIoWorker):
             receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
             logger.info(f"Extrinsic {receipt.extrinsic_hash} sent and included in block {receipt.extrinsic_hash}")
             return str(receipt.extrinsic_hash)
-        except Exception as e:
-            logger.error(f"Failed to submit extrinsic: {e}")
+        except Exception as E:
+            logger.error(f"Failed to submit extrinsic: {E}")
             return None
 
     @time_execution

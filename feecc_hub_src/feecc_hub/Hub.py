@@ -78,8 +78,8 @@ class Hub(metaclass=SingletonMeta):
             wrapper: MongoDbWrapper = MongoDbWrapper(username, password)
             return wrapper
 
-        except Exception as e:
-            message: str = f"Failed to establish database connection: {e}. Exiting."
+        except Exception as E:
+            message: str = f"Failed to establish database connection: {E}. Exiting."
             logger.critical(message)
             sys.exit()
 
@@ -126,8 +126,8 @@ class Hub(metaclass=SingletonMeta):
             unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self._config)
             return unit
 
-        except Exception as e:
-            logger.error(e)
+        except Exception as E:
+            logger.error(E)
             message = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
 

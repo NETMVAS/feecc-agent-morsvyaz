@@ -115,8 +115,8 @@ def unit_stop_record(workbench_data: WorkbenchExtraDetailsWithoutStage, unit_int
         message = f"Ended current operation on unit {unit_internal_id} (workbench {workbench_no})"
         return {"status": True, "comment": message}
 
-    except Exception as e:
-        logger.error(f"Couldn't handle end record request. An error occurred: {e}")
+    except Exception as E:
+        logger.error(f"Couldn't handle end record request. An error occurred: {E}")
         return {"status": False, "comment": "Couldn't handle end record request."}
 
 
@@ -133,8 +133,8 @@ def unit_upload_record(workbench: WorkbenchData, unit_internal_id: str) -> Reque
 
         return {"status": True, "comment": f"Uploaded data for unit {unit_internal_id}"}
 
-    except Exception as e:
-        error_message = f"Can't handle unit upload. An error occurred: {e}"
+    except Exception as E:
+        error_message = f"Can't handle unit upload. An error occurred: {E}"
         logger.error(error_message)
 
     return {"status": False, "comment": error_message}
@@ -160,8 +160,8 @@ def get_employee_data(rfid_card_id: str) -> RequestPayload:
         response_data = {"status": False, "comment": message}
         return response_data
 
-    except Exception as e:
-        message = f"An unknown error occurred while fetching Employee data: {e}"
+    except Exception as E:
+        message = f"An unknown error occurred while fetching Employee data: {E}"
         logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
@@ -204,8 +204,8 @@ def log_in_employee(employee_data: EmployeeDetails) -> RequestPayload:
         response_data = {"status": False, "comment": message}
         return response_data
 
-    except Exception as e:
-        message = f"An error occurred while logging in the Employee: {e}"
+    except Exception as E:
+        message = f"An error occurred while logging in the Employee: {E}"
         logger.error(message)
         response_data = {"status": False, "comment": message}
         return response_data
@@ -232,8 +232,8 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
         else:
             raise ValueError("Unable to logout employee")
 
-    except Exception as e:
-        message = f"An error occurred while logging out the Employee: {e}"
+    except Exception as E:
+        message = f"An error occurred while logging out the Employee: {E}"
         logger.error(message)
 
         response_data = {"status": False, "comment": message}

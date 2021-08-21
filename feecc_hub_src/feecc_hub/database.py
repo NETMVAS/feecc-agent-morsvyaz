@@ -164,5 +164,5 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
             return unit
 
-        except Exception as e:
-            raise UnitNotFoundError(e)
+        except Exception as E:
+            raise UnitNotFoundError(E)

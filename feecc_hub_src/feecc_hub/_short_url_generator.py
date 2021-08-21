@@ -33,8 +33,8 @@ def generate_short_url(config: GlobalConfig) -> str:
         link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
         logger.info(f"Assigned yourls link: {link}")
         return link
-    except Exception as e:
-        logger.error(f"Failed to create URL, replaced by fake link (url.today/55). Error: {e}")
+    except Exception as E:
+        logger.error(f"Failed to create URL, replaced by fake link (url.today/55). Error: {E}")
         return "url.today/55"
 
 
@@ -67,5 +67,5 @@ def update_short_url(keyword: str, ipfs_hash: str, config: GlobalConfig) -> None
 
         if response.status_code != 200:
             logger.warning("Failed to update short url link")
-    except Exception as e:
-        logger.error("Failed to update URL: ", e)
+    except Exception as E:
+        logger.error(f"Failed to update URL: {E}")
