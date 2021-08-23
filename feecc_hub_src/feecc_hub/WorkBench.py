@@ -39,8 +39,7 @@ class WorkBench:
         self._state_thread_list.append(state_thread)
         thread_list = self._state_thread_list
         logger.debug(
-            f"Attribute _state_thread_list of WorkBench is now of len {len(thread_list)}:\n"
-            f"{[repr(t) for t in thread_list]}\n"
+            f"Attribute _state_thread_list of WorkBench is now of len {len(thread_list)}\n"
             f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
         )
 
