@@ -3,13 +3,14 @@ from __future__ import annotations
 import typing as tp
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from time import sleep
 
 from loguru import logger
 
-from .database import MongoDbWrapper
-from .Types import AdditionalInfo, GlobalConfig
 from .Config import Config
+from .Types import AdditionalInfo, GlobalConfig
 from ._external_io_operations import ExternalIoGateway
+from .database import MongoDbWrapper
 from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
 
 if tp.TYPE_CHECKING:
@@ -125,6 +126,7 @@ class AuthorizedIdling(State):
         ipfs_hashes: tp.List[str] = []
         if self._context.camera is not None:
             self._stop_recording()
+            sleep(1)
             ipfs_hash: tp.Optional[str] = self._publish_record()
             if ipfs_hash:
                 ipfs_hashes.append(ipfs_hash)
