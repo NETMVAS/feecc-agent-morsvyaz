@@ -26,8 +26,8 @@ from feecc_hub.models import (
     WorkbenchExtraDetails,
     WorkbenchExtraDetailsWithoutStage,
 )
-from feecc_hub_src.feecc_hub.database import MongoDbWrapper
-from ._logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
+from feecc_hub.database import MongoDbWrapper
+from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 
 if tp.TYPE_CHECKING:
     from feecc_hub.Employee import Employee
