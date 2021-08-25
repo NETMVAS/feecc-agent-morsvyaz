@@ -60,6 +60,14 @@ class WorkBench:
         return self.state.name
 
     @property
+    def ip(self) -> tp.Optional[str]:
+        try:
+            return str(self._workbench_config["api socket"].split(":")[0])
+        except Exception as E:
+            logger.error(E)
+            return None
+
+    @property
     def state_description(self) -> str:
         return str(self.state.description)
 

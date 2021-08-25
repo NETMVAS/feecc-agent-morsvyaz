@@ -39,6 +39,13 @@ class Hub(metaclass=SingletonMeta):
         """Initialize all singleton classes for future reuse"""
         Printer(self._config)
 
+    def get_workbench_number_by_ip(self, ip_address: str) -> tp.Optional[int]:
+        """find the provided ip in the config and return the workbench number for it"""
+        for workbench in self._workbenches:
+            if workbench.ip == ip_address:
+                return workbench.number
+        return None
+
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
         try:

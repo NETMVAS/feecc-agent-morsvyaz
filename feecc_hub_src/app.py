@@ -1,7 +1,7 @@
 import typing as tp
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
@@ -267,6 +267,22 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
         }
 
     return workbench_status_dict
+
+
+@api.get("/api/status/client_info")
+def get_client_info(request: Request) -> RequestPayload:
+    """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the workbench number if that is the case"""
+    ip: str = request.client.host
+    workbench_no: tp.Optional[int] = Hub().get_workbench_number_by_ip(ip)
+
+    if workbench_no is not None:
+        return {
+            "status": True,
+            "workbench_no": workbench_no,
+            "comment": "Requested ip address is known as workbench no. {workbench_no}",
+        }
+    else:
+        return {"status": False, "workbench_no": workbench_no, "comment": "Requested ip address is unknown"}
 
 
 if __name__ == "__main__":
