@@ -1,8 +1,12 @@
 import re
+import textwrap
 import typing as tp
+from statistics import mean
+from string import ascii_letters
 from subprocess import check_output
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageFont import FreeTypeFont
 from brother_ql import BrotherQLRaster, conversion
 from brother_ql.backends.helpers import send
 from loguru import logger
@@ -48,13 +52,17 @@ class Printer(metaclass=SingletonMeta):
             logger.error(f"An error occurred while parsing address: {E}")
             return ""
 
-    def print_image(self, image_path: str) -> None:
+    def print_image(self, image_path: str, annotation: tp.Optional[str] = None) -> None:
         """execute the task"""
         if not all((self._enabled, self._connected)):
             logger.info("Printer disabled in config or disconnected. Task dropped.")
             return
         logger.info(f"Printing task created for image {image_path}")
         image: Image = self._get_image(image_path)
+
+        if annotation is not None:
+            image = self._annotate_image(image, annotation)
+
         self._print_image(image)
         logger.info("Printing task done")
 
@@ -74,3 +82,30 @@ class Printer(metaclass=SingletonMeta):
         red: bool = self._config["red"]
         conversion.convert(qlr, [image], self._paper_width, red=red)
         send(qlr.data, self._address)
+
+    @staticmethod
+    def _annotate_image(image: Image, text: str) -> Image:
+        """add an annotation to the bottom of the image"""
+
+        # wrap the message
+        font: FreeTypeFont = ImageFont.truetype("feecc_hub/fonts/helvetica-cyrillic-bold.ttf", 24)
+        avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))
+        img_w, img_h = image.size
+        max_chars_in_line: int = int(img_w * 0.95 / avg_char_width)
+        wrapped_text: str = textwrap.fill(text, max_chars_in_line)
+
+        # get message size
+        sample_draw: ImageDraw.Draw = ImageDraw.Draw(image)
+        _, txt_h = sample_draw.textsize(wrapped_text, font)
+        # https://stackoverflow.com/questions/59008322/pillow-imagedraw-text-coordinates-to-center/59008967#59008967
+        txt_h += font.getoffset(text)[1]
+
+        # draw the message
+        annotated_image: Image = Image.new(mode="RGB", size=(img_w, img_h + txt_h + 5), color=(255, 255, 255))
+        annotated_image.paste(image, (0, 0))
+        new_img_w, new_img_h = annotated_image.size
+        txt_draw: ImageDraw.Draw = ImageDraw.Draw(annotated_image)
+        text_pos: tp.Tuple[int, int] = (int(new_img_w / 2), int((new_img_h - img_h) / 2 + img_h))
+        txt_draw.text(text_pos, wrapped_text, font=font, fill=(0, 0, 0), anchor="mm", align="center")
+
+        return annotated_image
