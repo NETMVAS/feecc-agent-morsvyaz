@@ -148,9 +148,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
     def get_all_employees(self) -> tp.List[Employee]:
         employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(self._employee_collection)
-
-        employees = [Employee(**data) for data in employee_data]
-        return employees
+        return [Employee(**data) for data in employee_data]
 
     def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
         try:

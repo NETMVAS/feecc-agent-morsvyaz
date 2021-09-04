@@ -89,8 +89,7 @@ class Unit:
 
     @property
     def associated_barcode(self) -> Barcode:
-        barcode = Barcode(str(int(self.uuid, 16))[:12])
-        return barcode
+        return Barcode(str(int(self.uuid, 16))[:12])
 
     @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
