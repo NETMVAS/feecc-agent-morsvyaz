@@ -59,8 +59,8 @@ class Barcode:
         filename: str = ean_code.save(self.filename, {"module_height": 8, "text_distance": 1, "font_size": 14})
         return filename
 
-    def print_barcode(self) -> None:
+    def print_barcode(self, annotation: tp.Optional[str] = None) -> None:
         try:
-            Printer().print_image(f"{self.filename}.png")
+            Printer().print_image(f"{self.filename}.png", annotation)
         except Exception as E:
             logger.error(f"Failed to print barcode for unit {self.unit_code}: {E}")

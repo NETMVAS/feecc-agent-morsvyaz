@@ -81,7 +81,7 @@ class Unit:
 
     def _print_barcode(self) -> None:
         """print barcode with own int. id"""
-        self.associated_barcode.print_barcode()
+        self.associated_barcode.print_barcode(annotation=self.model)
 
     def get_internal_id(self) -> str:
         """get own internal id using own uuid"""
@@ -174,7 +174,9 @@ class Unit:
         ):
             qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
             self.passport_short_url = self._associated_passport.short_url
-            Printer().print_image(qrcode)
+            Printer().print_image(
+                qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {self.passport_short_url}"
+            )
 
             if self._config["print_security_tag"]["enable"]:
                 seal_tag_img: str = create_seal_tag(self._config)
