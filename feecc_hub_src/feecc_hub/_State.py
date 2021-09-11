@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as tp
 from abc import ABC, abstractmethod
 from copy import copy, deepcopy
-from time import sleep
 
 from loguru import logger
 
@@ -126,7 +125,6 @@ class AuthorizedIdling(State):
         ipfs_hashes: tp.List[str] = []
         if self._context.camera is not None:
             self._stop_recording()
-            sleep(1)
             ipfs_hash: tp.Optional[str] = self._publish_record()
             if ipfs_hash:
                 ipfs_hashes.append(ipfs_hash)
