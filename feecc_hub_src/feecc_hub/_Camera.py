@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
 import typing as tp
 
@@ -69,7 +70,8 @@ class Recording(File):
     def stop(self) -> None:
         """stop recording a video"""
         if self.is_ongoing and self._process_ffmpeg is not None:
-            self._process_ffmpeg.terminate()
+            self._process_ffmpeg.send_signal(signal.SIGTERM)
+            self._process_ffmpeg.wait()
             logger.info(f"Finished recording video for unit {self._unit_uuid}")
         else:
             logger.error(f"Failed to stop record for unit {self._unit_uuid}")
