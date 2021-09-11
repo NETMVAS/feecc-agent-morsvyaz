@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as tp
 from abc import ABC, abstractmethod
-from copy import deepcopy
+from copy import copy, deepcopy
 from time import sleep
 
 from loguru import logger
@@ -135,7 +135,7 @@ class AuthorizedIdling(State):
     def _publish_record(self) -> tp.Optional[str]:
         """publish video into IPFS and pin to Pinata. Then update the short link
         to point to an actual recording"""
-        file = self._context.camera.record if self._context.camera else None
+        file = copy(self._context.camera.record) if self._context.camera else None
         if file is not None:
             ExternalIoGateway().send(file)
             return file.ipfs_hash

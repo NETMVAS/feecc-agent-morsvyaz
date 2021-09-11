@@ -217,24 +217,21 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
         workbench: WorkBench = Hub().get_workbench_by_number(int(request_payload["workbench_no"]))
         workbench.state.end_shift()
 
-        if workbench.employee is None:
-            response_data: RequestPayload = {
-                "status": True,
-                "comment": "Employee logged out successfully",
-            }
-
-            return response_data
-
-        else:
+        if workbench.employee is not None:
             raise ValueError("Unable to logout employee")
+
+        response_data: RequestPayload = {
+            "status": True,
+            "comment": "Employee logged out successfully",
+        }
+
+        return response_data
 
     except Exception as E:
         message: str = f"An error occurred while logging out the Employee: {E}"
         logger.error(message)
 
-        response_data = {"status": False, "comment": message}
-
-        return response_data
+        return {"status": False, "comment": message}
 
 
 @api.get("/api/workbench/{workbench_no}/status")
@@ -271,7 +268,8 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
 
 @api.get("/api/status/client_info")
 def get_client_info(request: Request) -> RequestPayload:
-    """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the workbench number if that is the case"""
+    """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the
+    workbench number if that is the case """
     ip: str = request.client.host
     workbench_no: tp.Optional[int] = Hub().get_workbench_number_by_ip(ip)
 
