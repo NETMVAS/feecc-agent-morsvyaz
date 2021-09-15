@@ -11,7 +11,7 @@ BASE_LOGGING_CONFIG = {
 # logging settings for the console logs
 CONSOLE_LOGGING_CONFIG = {
     **BASE_LOGGING_CONFIG,  # type: ignore
-    "level": "INFO",
+    "level": "DEBUG",
     "sink": sys.stdout,
 }
 

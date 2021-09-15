@@ -69,7 +69,7 @@ class Recording(File):
 
     def stop(self) -> None:
         """stop recording a video"""
-        if self.is_ongoing and self._process_ffmpeg is not None:
+        if self._process_ffmpeg is not None:
             self._process_ffmpeg.send_signal(signal.SIGTERM)
             self._process_ffmpeg.wait()
             logger.info(f"Finished recording video for unit {self._unit_uuid}")
