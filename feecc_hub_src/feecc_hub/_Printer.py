@@ -54,6 +54,9 @@ class Printer(metaclass=SingletonMeta):
 
     def print_image(self, image_path: str, annotation: tp.Optional[str] = None) -> None:
         """execute the task"""
+        if not self._address:
+            self._address = self._get_usb_address()
+
         if not all((self._enabled, self._connected)):
             logger.info("Printer disabled in config or disconnected. Task dropped.")
             return
@@ -86,7 +89,6 @@ class Printer(metaclass=SingletonMeta):
     @staticmethod
     def _annotate_image(image: Image, text: str) -> Image:
         """add an annotation to the bottom of the image"""
-
         # wrap the message
         font: FreeTypeFont = ImageFont.truetype("feecc_hub/fonts/helvetica-cyrillic-bold.ttf", 24)
         avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))
