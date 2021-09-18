@@ -5,16 +5,15 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
+from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from feecc_hub.Config import Config
 from feecc_hub.Hub import Hub
 from feecc_hub.Types import RequestPayload
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
-from feecc_hub.exceptions import (
-    EmployeeNotFoundError,
-    EmployeeUnauthorizedError,
-    WorkbenchNotFoundError,
-)
+from feecc_hub.database import MongoDbWrapper
+from feecc_hub.exceptions import (EmployeeNotFoundError, EmployeeUnauthorizedError, UnitNotFoundError,
+                                  WorkbenchNotFoundError)
 from feecc_hub.models import (
     BaseOut,
     EmployeeData,
@@ -26,8 +25,6 @@ from feecc_hub.models import (
     WorkbenchExtraDetails,
     WorkbenchExtraDetailsWithoutStage,
 )
-from feecc_hub.database import MongoDbWrapper
-from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 
 if tp.TYPE_CHECKING:
     from feecc_hub.Employee import Employee
@@ -234,6 +231,34 @@ def log_out_employee(employee: WorkbenchData) -> RequestPayload:
         return {"status": False, "comment": message}
 
 
+@api.get("/api/unit/{unit_internal_id}/info")
+def get_unit_data(unit_internal_id: str) -> RequestPayload:
+    """return data for a Unit with matching ID"""
+
+    try:
+        unit: Unit = Hub().get_unit_by_internal_id(unit_internal_id)
+        response_data: RequestPayload = {
+            "status": True,
+            "comment": "Unit data retrieved successfully",
+            "unit_internal_id": unit_internal_id,
+            "unit_biography": {id_: {"stage": stage.name} for id_, stage in enumerate(unit.unit_biography)},
+        }
+
+        return response_data
+
+    except UnitNotFoundError as E:
+        message: str = f"No unit found: {E}"
+        logger.error(message)
+        response_data = {"status": False, "comment": message}
+        return response_data
+
+    except Exception as E:
+        message = f"An unknown error occurred while fetching Unit data: {E}"
+        logger.error(message)
+        response_data = {"status": False, "comment": message}
+        return response_data
+
+
 @api.get("/api/workbench/{workbench_no}/status")
 def get_workbench_status(workbench_no: int) -> RequestPayload:
     """handle providing status of the given Workbench"""
@@ -269,7 +294,7 @@ def get_workbench_status(workbench_no: int) -> RequestPayload:
 @api.get("/api/status/client_info")
 def get_client_info(request: Request) -> RequestPayload:
     """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the
-    workbench number if that is the case """
+    workbench number if that is the case"""
     ip: str = request.client.host
     workbench_no: tp.Optional[int] = Hub().get_workbench_number_by_ip(ip)
 
