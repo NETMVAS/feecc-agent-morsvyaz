@@ -12,8 +12,12 @@ from feecc_hub.Types import RequestPayload
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.database import MongoDbWrapper
-from feecc_hub.exceptions import (EmployeeNotFoundError, EmployeeUnauthorizedError, UnitNotFoundError,
-                                  WorkbenchNotFoundError)
+from feecc_hub.exceptions import (
+    EmployeeNotFoundError,
+    EmployeeUnauthorizedError,
+    UnitNotFoundError,
+    WorkbenchNotFoundError,
+)
 from feecc_hub.models import (
     BaseOut,
     EmployeeData,
