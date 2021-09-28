@@ -2,11 +2,11 @@ import typing as tp
 from dataclasses import asdict
 
 from loguru import logger
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorCursor, AsyncIOMotorDatabase
 
 from .Employee import Employee
 from .Singleton import SingletonMeta
-from .Types import Collection, Document, GlobalConfig
+from .Types import Document, GlobalConfig
 from .Unit import ProductionStage, Unit
 from .exceptions import UnitNotFoundError
 
@@ -15,111 +15,106 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     """handles interactions with MongoDB database"""
 
     def __init__(self, username: str = "", password: str = "") -> None:
-        self._mongo_client_url: str = (
+        mongo_client_url: str = (
             f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
         )
         logger.info("Trying to connect to MongoDB")
-        self._client: MongoClient = MongoClient(self._mongo_client_url)
-        self._database = self._client["Feecc-Hub"]
+        self._client: AsyncIOMotorClient = AsyncIOMotorClient(mongo_client_url)
+        self._database: AsyncIOMotorDatabase = self._client["Feecc-Hub"]
 
         # collections
-        self._employee_collection: Collection = self._database["Employee-data"]
-        self._unit_collection: Collection = self._database["Unit-data"]
-        self._prod_stage_collection: Collection = self._database["Production-stages-data"]
+        self._employee_collection: AsyncIOMotorCollection = self._database["Employee-data"]
+        self._unit_collection: AsyncIOMotorCollection = self._database["Unit-data"]
+        self._prod_stage_collection: AsyncIOMotorCollection = self._database["Production-stages-data"]
+
         logger.info("Successfully connected to MongoDB")
 
     @property
-    def mongo_client_url(self) -> str:
-        return self._mongo_client_url
-
-    @property
-    def mongo_client(self) -> MongoClient:
+    def mongo_client(self) -> AsyncIOMotorClient:
         return self._client
 
     @staticmethod
-    def _upload_dict(document: Document, collection_: Collection) -> None:
+    async def _upload_dict(document: Document, collection_: AsyncIOMotorCollection) -> None:
         """insert a document into specified collection"""
         logger.debug(f"Uploading document {document} to {collection_.name}")
-        collection_.insert_one(document)
+        await collection_.insert_one(document)
 
-    def _upload_dataclass(self, dataclass: tp.Any, collection_: Collection) -> None:
+    @staticmethod
+    def _remove_id(doc: Document) -> Document:
+        del doc["_id"]
+        return doc
+
+    async def _remove_ids(self, cursor: AsyncIOMotorCursor) -> tp.List[Document]:
+        """remove all MongoDB specific IDs from the resulting documents"""
+        return [self._remove_id(doc) for doc in await cursor.to_list(length=100)]
+
+    async def _upload_dataclass(self, dataclass: tp.Any, collection_: AsyncIOMotorCollection) -> None:
         """
         convert an arbitrary dataclass to dictionary and insert it
         into the desired collection in the database
         """
-        dataclass_dict: Document = asdict(dataclass)
-        self._upload_dict(dataclass_dict, collection_)
+        await self._upload_dict(asdict(dataclass), collection_)
 
-    @staticmethod
-    def _find_item(key: str, value: str, collection_: Collection) -> Document:
+    async def _find_item(self, key: str, value: str, collection_: AsyncIOMotorCollection) -> Document:
         """
         finds one element in the specified collection, which has
         specified key matching specified value
         """
-        result: Document = collection_.find_one({key: value})
-        del result["_id"]
-        return result
+        result: Document = await collection_.find_one({key: value})
+        return self._remove_id(result)
 
-    @staticmethod
-    def _find_many(key: str, value: str, collection_: Collection) -> tp.List[Document]:
+    async def _find_many(self, key: str, value: str, collection_: AsyncIOMotorCollection) -> tp.List[Document]:
         """
         finds all elements in the specified collection, which have
         specified key matching specified value
         """
-        result: tp.List[Document] = list(collection_.find({key: value}))
+        cursor: AsyncIOMotorCursor = await collection_.find({key: value})
+        return await self._remove_ids(cursor)
 
-        for doc in result:
-            del doc["_id"]
-
-        return result
-
-    @staticmethod
-    def _get_all_items_in_collection(collection_: Collection) -> tp.List[Document]:
+    async def _get_all_items_in_collection(self, collection_: AsyncIOMotorCollection) -> tp.List[Document]:
         """get all documents in the provided collection"""
-        result: tp.List[Document] = list(collection_.find())
-
-        for doc in result:
-            del doc["_id"]
-
-        return result
+        cursor: AsyncIOMotorCursor = await collection_.find()
+        return await self._remove_ids(cursor)
 
     @staticmethod
-    def _update_document(key: str, value: str, new_document: Document, collection_: Collection) -> None:
+    async def _update_document(
+        key: str, value: str, new_document: Document, collection_: AsyncIOMotorCollection
+    ) -> None:
         """
         finds matching document in the specified collection, and replaces it's data
         with what is provided in the new_document argument
         """
         logger.debug(f"Updating key {key} with value {value}")
-        collection_.find_one_and_update({key: value}, {"$set": new_document})
+        await collection_.find_one_and_update({key: value}, {"$set": new_document})
 
-    def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
+    async def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
         """update data about the production stage in the DB"""
         stage_dict: Document = asdict(updated_production_stage)
         stage_id: str = updated_production_stage.id
-        self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
+        await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
-    def update_unit(self, unit: Unit) -> None:
+    async def update_unit(self, unit: Unit) -> None:
         """update data about the unit in the DB"""
         if not unit.is_in_db:
-            self.upload_unit(unit)
+            await self.upload_unit(unit)
             return
 
         for stage in unit.unit_biography:
-            if not stage.is_in_db:
-                self.upload_production_stage(stage)
+            if stage.is_in_db:
+                await self.update_production_stage(stage)
             else:
-                self.update_production_stage(stage)
+                await self.upload_production_stage(stage)
 
         base_dict = asdict(unit)
         for key in ("_associated_passport", "_config", "unit_biography", "employee"):
             del base_dict[key]
 
-        self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
+        await self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
 
-    def upload_employee(self, employee: Employee) -> None:
-        self._upload_dataclass(employee, self._employee_collection)
+    async def upload_employee(self, employee: Employee) -> None:
+        await self._upload_dataclass(employee, self._employee_collection)
 
-    def upload_unit(self, unit: Unit) -> None:
+    async def upload_unit(self, unit: Unit) -> None:
         """
         convert a unit instance into a dictionary suitable for future reassembly removing
         unnecessary keys and converting nested structures and upload it
@@ -131,36 +126,32 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         # upload nested dataclasses
         for stage in unit.unit_biography:
-            self.upload_production_stage(stage)
+            await self.upload_production_stage(stage)
 
         # removing unnecessary keys
         for key in ("_associated_passport", "_config", "unit_biography", "employee"):
             del base_dict[key]
 
-        self._upload_dict(base_dict, self._unit_collection)
+        await self._upload_dict(base_dict, self._unit_collection)
 
-    def upload_production_stage(self, production_stage: ProductionStage) -> None:
+    async def upload_production_stage(self, production_stage: ProductionStage) -> None:
         if production_stage.is_in_db:
             return
 
         production_stage.is_in_db = True
-        self._upload_dataclass(production_stage, self._prod_stage_collection)
+        await self._upload_dataclass(production_stage, self._prod_stage_collection)
 
-    def get_all_employees(self) -> tp.List[Employee]:
-        employee_data: tp.List[tp.Dict[str, str]] = self._get_all_items_in_collection(self._employee_collection)
+    async def get_all_employees(self) -> tp.List[Employee]:
+        employee_data: tp.List[tp.Dict[str, str]] = await self._get_all_items_in_collection(self._employee_collection)
         return [Employee(**data) for data in employee_data]
 
-    def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
+    async def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
         try:
-            unit_dict: Document = self._find_item("internal_id", unit_internal_id, self._unit_collection)
-
-            # get units biography
-            prod_stage_dicts = self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
+            unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)
+            prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit_dict["unit_biography"] = prod_stages
-            unit: Unit = Unit(config, **unit_dict)
-
-            return unit
+            return Unit(config, **unit_dict)
 
         except Exception as E:
             raise UnitNotFoundError(E)
