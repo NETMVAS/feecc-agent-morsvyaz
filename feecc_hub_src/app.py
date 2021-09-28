@@ -10,12 +10,10 @@ from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_unit_by_internal_id, validate_sender
 from feecc_hub import models as mdl
 from feecc_hub.Config import Config
+from feecc_hub.Employee import Employee
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.database import MongoDbWrapper
-
-if tp.TYPE_CHECKING:
-    from feecc_hub.Employee import Employee
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -56,13 +54,24 @@ async def create_unit(payload: mdl.NewUnitData) -> tp.Union[mdl.UnitOut, mdl.Gen
         return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=str(e))
 
 
+@api.get("/api/unit/{unit_internal_id}/info", response_model=mdl.UnitInfo)
+def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo:
+    """return data for a Unit with matching ID"""
+    return mdl.UnitInfo(
+        status=status.HTTP_200_OK,
+        details="Unit data retrieved successfully",
+        unit_internal_id=unit.internal_id,
+        unit_biography={id_: {"stage": stage.name} for id_, stage in enumerate(unit.unit_biography)},
+    )
+
+
 @api.post("/api/unit/{unit_internal_id}/start", response_model=mdl.GenericResponse)
 async def unit_start_record(
     workbench_details: mdl.WorkbenchExtraDetails, unit: Unit = Depends(get_unit_by_internal_id)
 ) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
-        workbench: WorkBench = WorkBench()
+        workbench = WorkBench()
         workbench.state.start_operation(
             unit, workbench_details.production_stage_name, workbench_details.additional_info
         )
@@ -82,7 +91,7 @@ def unit_stop_record(
 ) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        workbench: WorkBench = WorkBench()
+        workbench = WorkBench()
         workbench.state.end_operation(unit.internal_id, workbench_data.additional_info)
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
@@ -129,7 +138,7 @@ def log_in_employee(employee: Employee = Depends(get_employee_by_card_id)) -> md
 def log_out_employee() -> mdl.GenericResponse:
     """handle logging out the Employee at a given Workbench"""
     try:
-        workbench: WorkBench = WorkBench()
+        workbench = WorkBench()
         workbench.state.end_shift()
         if workbench.employee is not None:
             raise ValueError("Unable to logout employee")
@@ -141,21 +150,10 @@ def log_out_employee() -> mdl.GenericResponse:
         return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=message)
 
 
-@api.get("/api/unit/{unit_internal_id}/info", response_model=mdl.UnitInfo)
-def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo:
-    """return data for a Unit with matching ID"""
-    return mdl.UnitInfo(
-        status=status.HTTP_200_OK,
-        details="Unit data retrieved successfully",
-        unit_internal_id=unit.internal_id,
-        unit_biography={id_: {"stage": stage.name} for id_, stage in enumerate(unit.unit_biography)},
-    )
-
-
 @api.get("/api/workbench/status", response_model=mdl.WorkbenchOut)
 def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
-    workbench: WorkBench = WorkBench()
+    workbench = WorkBench()
     return mdl.WorkbenchOut(
         workbench_no=workbench.number,
         state=workbench.state_name,
@@ -172,7 +170,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     )
 
 
-@api.get("/api/status/client_info", response_model=mdl.ClientInfo)
+@api.get("/api/workbench/client_info", response_model=mdl.ClientInfo)
 def get_client_info() -> mdl.ClientInfo:
     """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the
     workbench number if that is the case"""
