@@ -6,23 +6,23 @@ from random import randint
 
 from loguru import logger
 
-from ._Camera import Camera
-from ._State import AwaitLogin, State
 from .Employee import Employee
-from .Types import ConfigSection, WorkbenchConfig
+from .Singleton import SingletonMeta
+from .Types import WorkbenchConfig
 from .Unit import Unit
+from ._State import AwaitLogin, State
 
 
-class WorkBench:
+class WorkBench(metaclass=SingletonMeta):
     """
     Work bench is a union of an Employee, working at it and Camera attached.
     It provides highly abstract interface for interaction with them
     """
 
     def __init__(self, workbench_config: WorkbenchConfig) -> None:
-        self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
-        self.number: int = self._workbench_config["workbench number"]
-        self._associated_camera: tp.Optional[Camera] = self._get_camera()
+        self.number: int = workbench_config["workbench number"]
+        self.camera: tp.Dict[str, tp.Any] = workbench_config["hardware"]["camera"]
+        self.ip: str = workbench_config["api socket"].split(":")[0]
         self.employee: tp.Optional[Employee] = None
         self.associated_unit: tp.Optional[Unit] = None
         logger.info(f"Workbench {self.number} was initialized")
@@ -44,10 +44,6 @@ class WorkBench:
         )
 
     @property
-    def camera(self) -> tp.Optional[Camera]:
-        return self._associated_camera
-
-    @property
     def unit_in_operation(self) -> tp.Optional[str]:
         return str(self.associated_unit.internal_id) if self.associated_unit else None
 
@@ -60,20 +56,8 @@ class WorkBench:
         return self.state.name
 
     @property
-    def ip(self) -> tp.Optional[str]:
-        try:
-            return str(self._workbench_config["api socket"].split(":")[0])
-        except Exception as E:
-            logger.error(E)
-            return None
-
-    @property
     def state_description(self) -> str:
         return str(self.state.description)
-
-    def _get_camera(self) -> tp.Optional[Camera]:
-        camera_config: tp.Optional[ConfigSection] = self._workbench_config["hardware"]["camera"]
-        return Camera(camera_config) if camera_config else None
 
     def apply_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
         """execute provided state in the background"""
