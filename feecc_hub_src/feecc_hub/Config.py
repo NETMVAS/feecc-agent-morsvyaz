@@ -10,8 +10,8 @@ from .Types import GlobalConfig, WorkbenchConfig
 
 class Config(metaclass=SingletonMeta):
     def __init__(self) -> None:
-        self.global_config: GlobalConfig = self._load_config("config/hub_config.yaml")  # type: ignore
-        self.workbench_config: WorkbenchConfig = self._load_config("config/workbench_config.yaml")  # type: ignore
+        self.global_config: GlobalConfig = self._load_config("config/hub_config.yaml")
+        self.workbench_config: WorkbenchConfig = self._load_config("config/workbench_config.yaml")
 
     @staticmethod
     def _load_config(config_path: str) -> tp.Union[GlobalConfig, WorkbenchConfig]:

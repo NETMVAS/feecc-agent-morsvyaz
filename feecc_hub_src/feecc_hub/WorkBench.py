@@ -68,7 +68,7 @@ class WorkBench(metaclass=SingletonMeta):
 
     @property
     def ipv4(self) -> str:
-        return self._workbench_config["api socket"].split(":")[0]
+        return str(self._workbench_config["api socket"].split(":")[0])
 
     def apply_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
         """execute provided state in the background"""

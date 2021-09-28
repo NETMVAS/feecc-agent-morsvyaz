@@ -12,8 +12,6 @@ from .Employee import Employee
 from .Types import AdditionalInfo, GlobalConfig
 from ._Barcode import Barcode
 from ._Passport import Passport
-from ._Printer import Printer
-from ._external_io_operations import ExternalIoGateway
 from ._image_generation import create_seal_tag
 from .exceptions import OperationNotFoundError
 

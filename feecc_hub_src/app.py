@@ -39,8 +39,8 @@ def startup_event() -> None:
     WorkBench()
 
 
-@api.post("/api/unit/new", response_model=tp.Optional[m.UnitOut, m.GenericResponse])
-async def create_unit(payload: m.NewUnitData) -> tp.Optional[m.UnitOut, m.GenericResponse]:
+@api.post("/api/unit/new", response_model=tp.Union[m.UnitOut, m.GenericResponse])  # type: ignore
+async def create_unit(payload: m.NewUnitData) -> tp.Union[m.UnitOut, m.GenericResponse]:
     """handle new Unit creation"""
     try:
         new_unit_internal_id: str = await WorkBench().create_new_unit(payload.unit_type)
