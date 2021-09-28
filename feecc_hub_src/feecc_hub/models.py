@@ -20,20 +20,24 @@ class WorkbenchExtraDetails(WorkbenchStageDetails):
 
 
 class WorkbenchExtraDetailsWithoutStage(WorkbenchData):
-    additional_info: tp.Dict[str, str]
+    additional_info: tp.Optional[tp.Dict[str, str]] = None
 
 
 class EmployeeDetails(WorkbenchData):
     employee_rfid_card_no: str
 
 
-class BaseOut(BaseModel):
-    status: bool
-    comment: tp.Optional[str]
+class GenericResponse(BaseModel):
+    status: int
+    details: tp.Optional[str]
 
 
-class UnitOut(BaseOut):
+class UnitOut(GenericResponse):
     unit_internal_id: tp.Optional[str]
+
+
+class UnitInfo(UnitOut):
+    unit_biography: tp.Dict[int, tp.Dict[str, str]]
 
 
 class EmployeeData(BaseModel):
@@ -41,14 +45,19 @@ class EmployeeData(BaseModel):
     position: str
 
 
-class EmployeeOut(BaseOut):
+class ClientInfo(GenericResponse):
+    workbench_no: int
+
+
+class EmployeeOut(GenericResponse):
     employee_data: tp.Optional[EmployeeData]
 
 
 class WorkbenchOut(WorkbenchData):
-    state_name: str
+    state: str
     state_description: tp.Optional[str]
     employee_logged_in: bool
     employee: tp.Optional[EmployeeData]
     operation_ongoing: bool
     unit_internal_id: tp.Optional[str]
+    unit_biography: tp.Optional[tp.Dict[int, tp.Dict[str, str]]]
