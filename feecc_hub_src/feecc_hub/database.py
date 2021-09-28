@@ -14,11 +14,9 @@ from .exceptions import UnitNotFoundError
 class MongoDbWrapper(metaclass=SingletonMeta):
     """handles interactions with MongoDB database"""
 
-    def __init__(self, username: str = "", password: str = "") -> None:
-        mongo_client_url: str = (
-            f"mongodb+srv://{username}:{password}@netmvas.hx3jm.mongodb.net/Feecc-Hub?retryWrites=true&w=majority"
-        )
+    def __init__(self, mongo_client_url: str) -> None:
         logger.info("Trying to connect to MongoDB")
+
         self._client: AsyncIOMotorClient = AsyncIOMotorClient(mongo_client_url)
         self._database: AsyncIOMotorDatabase = self._client["Feecc-Hub"]
 

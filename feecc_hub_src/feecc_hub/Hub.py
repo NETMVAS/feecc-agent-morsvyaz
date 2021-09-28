@@ -1,16 +1,16 @@
+import asyncio
 import os
 import sys
 import typing as tp
 
 from loguru import logger
 
+from .Config import Config
 from .Employee import Employee
 from .Singleton import SingletonMeta
-from .Types import GlobalConfig, WorkbenchConfig
+from .Types import GlobalConfig
 from .Unit import Unit
 from .WorkBench import WorkBench
-from .Config import Config
-from ._Printer import Printer
 from .database import MongoDbWrapper
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
 
@@ -25,26 +25,18 @@ class Hub(metaclass=SingletonMeta):
         logger.info("Initialized an instance of hub")
         self._config: GlobalConfig = Config().global_config
         self.database: MongoDbWrapper = self._get_database()
-        self._employees: tp.Dict[str, Employee] = self._get_employees()
-        self._workbenches: tp.List[WorkBench] = self._initialize_workbenches()
+        self._employees: tp.Dict[str, Employee] = asyncio.run(self._get_employees())
+        self._workbench: WorkBench = WorkBench(Config().workbench_config)
         self._create_dirs()
-        self._init_singletons()
 
     @staticmethod
     def _create_dirs() -> None:
         if not os.path.isdir("output"):
             os.mkdir("output")
 
-    def _init_singletons(self) -> None:
-        """Initialize all singleton classes for future reuse"""
-        Printer(self._config)
-
     def get_workbench_number_by_ip(self, ip_address: str) -> tp.Optional[int]:
         """find the provided ip in the config and return the workbench number for it"""
-        for workbench in self._workbenches:
-            if workbench.ip == ip_address:
-                return workbench.number
-        return None
+        return self._workbench.number if self._workbench.ip == ip_address else None
 
     def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
@@ -56,64 +48,43 @@ class Hub(metaclass=SingletonMeta):
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
         workbench.state.start_shift(employee)
 
-    @staticmethod
-    def _get_credentials_from_env() -> tp.Optional[tp.Tuple[str, str]]:
-        """getting credentials from environment variables"""
-        try:
-            username, password = os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
-
-            if all((username, password)):
-                return username, password
-
-        except KeyError:
-            logger.debug("Failed to get credentials from environment variables. Trying to get from config")
-
-        return None
-
     def _get_database(self) -> MongoDbWrapper:
         """establish MongoDB connection and initialize the wrapper"""
 
         try:
-            env_credentials = self._get_credentials_from_env()
+            mongo_connection_url_env: tp.Optional[str] = os.environ["MONGO_CONNECTION_URL"]
 
-            if env_credentials is None:
-                username: str = self._config["mongo_db"]["username"]
-                password: str = self._config["mongo_db"]["password"]
+            if mongo_connection_url_env is None:
+                mongo_connection_url: str = self._config["mongo_db"]["mongo_connection_url"]
             else:
-                username, password = env_credentials
+                mongo_connection_url = mongo_connection_url_env
 
-            wrapper: MongoDbWrapper = MongoDbWrapper(username, password)
+            wrapper: MongoDbWrapper = MongoDbWrapper(mongo_connection_url)
             return wrapper
 
         except Exception as E:
             message: str = f"Failed to establish database connection: {E}. Exiting."
             logger.critical(message)
-            sys.exit()
+            sys.exit(1)
 
-    def _get_employees(self) -> tp.Dict[str, Employee]:
+    async def _get_employees(self) -> tp.Dict[str, Employee]:
         """load up employee database and initialize an array of Employee objects"""
-        employee_list = self.database.get_all_employees()
-        employees: tp.Dict[str, Employee] = {}
-
-        for employee in employee_list:
-            employees[employee.rfid_card_id] = employee
-
-        return employees
+        employee_list = await self.database.get_all_employees()
+        return {employee.rfid_card_id: employee for employee in employee_list}
 
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
-        for workbench in self._workbenches:
-            if workbench.number == workbench_no:
-                return workbench
+        if self._workbench.number == workbench_no:
+            return self._workbench
 
         message: str = f"Could not find the workbench with number {workbench_no}. Does it exist?"
         logger.error(message)
         raise WorkbenchNotFoundError(message)
 
-    def create_new_unit(self, unit_type: str) -> str:
+    async def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
         unit = Unit(self._config, unit_type)
-        self.database.upload_unit(unit)
+        await self.database.upload_unit(unit)
 
         if unit.internal_id is not None:
             return unit.internal_id
@@ -122,34 +93,17 @@ class Hub(metaclass=SingletonMeta):
 
     def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
-        if card_id not in self._employees.keys():
+        if card_id not in self._employees:
             raise EmployeeNotFoundError(f"No employee with card ID {card_id}")
 
         return self._employees[card_id]
 
-    def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
+    async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""
         try:
-            unit: Unit = self.database.get_unit_by_internal_id(unit_internal_id, self._config)
-            return unit
+            return await self.database.get_unit_by_internal_id(unit_internal_id, self._config)
 
         except Exception as E:
             logger.error(E)
             message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
-
-    @staticmethod
-    def _initialize_workbenches() -> tp.List[WorkBench]:
-        """make all the WorkBench objects using data specified in workbench_config.yaml"""
-        workbench_config: WorkbenchConfig = Config().workbench_config
-        workbenches = []
-
-        for workbench in workbench_config:
-            workbench_object = WorkBench(workbench)
-            workbenches.append(workbench_object)
-
-        if not workbenches:
-            logger.critical("No workbenches could be spawned using 'workbench_config.yaml'. Can't operate. Exiting.")
-            sys.exit(1)
-
-        return workbenches

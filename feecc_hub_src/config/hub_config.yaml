@@ -4,8 +4,7 @@ api_server: # socket for the Api server to run on
   port: 5000
 
 mongo_db: # MongoDB credentials
-  username: "your_username"
-  password: "your_password"
+  mongo_connection_url: sample_text
 
 
 # EXTERNAL IO SECTION
@@ -34,7 +33,7 @@ yourls: # Information about the yourls node used for short link creation
 printer: # Info about the Brother Label printer used in your operation
   printer_model: "QL-800"
   paper_width: 62 # paper width in mm
-  enable: true # if false - no printing tasks will work
+  enable: false # if false - no printing tasks will work
   red: false # if black/red printing
 
 print_barcode:

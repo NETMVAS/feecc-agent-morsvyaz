@@ -9,7 +9,7 @@ from loguru import logger
 from ._Camera import Camera
 from ._State import AwaitLogin, State
 from .Employee import Employee
-from .Types import ConfigSection
+from .Types import ConfigSection, WorkbenchConfig
 from .Unit import Unit
 
 
@@ -19,7 +19,7 @@ class WorkBench:
     It provides highly abstract interface for interaction with them
     """
 
-    def __init__(self, workbench_config: tp.Dict[str, tp.Any]) -> None:
+    def __init__(self, workbench_config: WorkbenchConfig) -> None:
         self._workbench_config: tp.Dict[str, tp.Any] = workbench_config
         self.number: int = self._workbench_config["workbench number"]
         self._associated_camera: tp.Optional[Camera] = self._get_camera()
