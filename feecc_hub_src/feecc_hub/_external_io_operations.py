@@ -1,19 +1,13 @@
 import os
-import threading
 import typing as tp
-from abc import ABC, abstractmethod
 
-import ipfshttpclient
-import requests
 from loguru import logger
-from pinatapy import PinataPy
 from substrateinterface import Keypair, SubstrateInterface
 
-from .Singleton import SingletonMeta
-from .Types import GlobalConfig, ConfigSection
 from .Config import Config
+from .Types import ConfigSection, GlobalConfig
 from ._image_generation import create_qr
-from ._short_url_generator import generate_short_url, update_short_url
+from ._short_url_generator import generate_short_url
 from .exceptions import DatalogError, SubstrateError
 from .utils import time_execution
 
@@ -45,11 +39,10 @@ class File:
 
     def __str__(self) -> str:
         """convert self into a string"""
-        if self.extension in ["yaml", "json", "txt", "log"]:
-            with open(self.path, "r") as f:
-                return "\n".join(f.readlines())
-        else:
+        if self.extension not in ["yaml", "json", "txt", "log"]:
             return self.filename
+        with open(self.path, "r") as f:
+            return "\n".join(f.readlines())
 
     def generate_qr_code(self, config: GlobalConfig) -> str:
         """generate a QR code with the short link"""
@@ -71,81 +64,12 @@ class File:
             pass
 
 
-class ExternalIoGateway(metaclass=SingletonMeta):
-    @property
-    def config(self) -> GlobalConfig:
-        return Config().global_config
-
-    @time_execution
-    def send(self, file: File) -> tp.Optional[str]:
-        """Handle external IO operations, such as IPFS and Robonomics interactions"""
-
-        logger.info(f"Trying to push {file.filename} to IPFS/Pinata/Datalog")
-
-        if self.config["ipfs"]["enable"]:
-            ipfs_worker = IpfsWorker()
-            ipfs_worker.post(file)
-
-            if file.keyword and file.ipfs_hash:
-                logger.info(f"Updating short URL {file.short_url}")
-                update_short_url(file.keyword, file.ipfs_hash, self.config)
-
-            if self.config["pinata"]["enable"]:
-                pinata_worker = PinataWorker()
-                pinata_worker.post(file)
-
-        if self.config["robonomics_network"]["enable_datalog"] and file.ipfs_hash:
-            try:
-                robonomics_worker = RobonomicsWorker()
-                robonomics_worker.post(file.ipfs_hash)
-            except Exception as E:
-                logger.error(f"Error writing IPFS hash to Robonomics datalog: {E}")
-
-        return file.ipfs_hash
-
-
-class BaseIoWorker(ABC):
-    """abstract Io worker class for other worker to inherit from"""
-
-    @property
-    def config(self) -> GlobalConfig:
-        return Config().global_config
+class RobonomicsWorker:
+    """Robonomics worker handles interactions with Robonomics network"""
 
     @property
     def name(self) -> str:
         return self.__class__.__name__
-
-    @abstractmethod
-    @tp.no_type_check
-    def post(self, *args, **kwargs) -> None:
-        """uploading data to the target"""
-        raise NotImplementedError
-
-    @abstractmethod
-    @tp.no_type_check
-    def get(self, *args, **kwargs) -> None:
-        """getting data from the target"""
-        raise NotImplementedError
-
-
-class IpfsWorker(BaseIoWorker):
-    """IPFS worker handles interactions with IPFS"""
-
-    @time_execution
-    def post(self, file: File) -> None:
-        """publish file on IPFS"""
-        ipfs_client = ipfshttpclient.connect()
-        result = ipfs_client.add(file.path)
-        ipfs_hash: str = result["Hash"]
-        logger.info(f"File {file.filename} published to IPFS, hash: {ipfs_hash}")
-        file.ipfs_hash = ipfs_hash
-
-    def get(self) -> None:
-        raise NotImplementedError
-
-
-class RobonomicsWorker(BaseIoWorker):
-    """Robonomics worker handles interactions with Robonomics network"""
 
     @property
     def config(self) -> ConfigSection:
@@ -261,53 +185,3 @@ class RobonomicsWorker(BaseIoWorker):
         """get latest datalog post for the account"""
         account_address: str = self.config["account_address"]
         return self._get_latest_datalog(account_address)
-
-
-class PinataWorker(BaseIoWorker):
-    """Pinata worker handles interactions with Pinata"""
-
-    @property
-    def config(self) -> ConfigSection:
-        return Config().global_config["pinata"]
-
-    @time_execution
-    def post(self, file: File, direct_pin: bool = True) -> None:
-        """pin files in Pinata Cloud to secure their copies in IPFS"""
-        if direct_pin:
-            logger.info("Pinning file to Pinata in the background")
-            pinata_thread = threading.Thread(target=self._pin_to_pinata_over_tcp, args=(file,))
-            pinata_thread.start()
-            logger.info(f"Pinning process started. Thread name: {pinata_thread.name}")
-        else:
-            if file.ipfs_hash is None:
-                logger.error("Can't pin to Pinata: IPFS hash is None")
-                return
-            logger.info(f"Starting publishing file {file.filename} to Pinata")
-            self._pin_by_ipfs_hash(file.ipfs_hash, file.filename)
-            logger.info(f"File {file.filename} published to Pinata")
-
-    def _pin_by_ipfs_hash(self, ipfs_hash: str, filename: str) -> None:
-        """push file to pinata using its hash"""
-        headers: tp.Dict[str, str] = {
-            "pinata_api_key": self.config["pinata_api"],
-            "pinata_secret_api_key": self.config["pinata_secret_api"],
-        }
-        payload: tp.Dict[str, tp.Any] = {
-            "pinataMetadata": {"name": filename},
-            "hashToPin": ipfs_hash,
-        }
-        url: str = "https://api.pinata.cloud/pinning/pinByHash"
-        response: tp.Any = requests.post(url=url, json=payload, headers=headers)
-        logger.debug(f"Pinata API response: {response.json()}")
-
-    def _pin_to_pinata_over_tcp(self, file: File) -> None:
-        """pin files in Pinata Cloud to secure their copies in IPFS"""
-        api_key = self.config["pinata_api"]
-        api_token = self.config["pinata_secret_api"]
-        pinata = PinataPy(api_key, api_token)
-        logger.info(f"Starting publishing file {file.filename} to Pinata")
-        pinata.pin_file_to_ipfs(file.path)
-        logger.info(f"File {file.filename} published to Pinata")
-
-    def get(self) -> None:
-        raise NotImplementedError
