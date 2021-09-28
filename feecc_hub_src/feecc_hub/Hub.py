@@ -1,4 +1,3 @@
-import asyncio
 import os
 import sys
 import typing as tp
@@ -12,7 +11,7 @@ from .Types import GlobalConfig
 from .Unit import Unit
 from .WorkBench import WorkBench
 from .database import MongoDbWrapper
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError, WorkbenchNotFoundError
+from .exceptions import UnitNotFoundError, WorkbenchNotFoundError
 
 
 class Hub(metaclass=SingletonMeta):
@@ -25,7 +24,6 @@ class Hub(metaclass=SingletonMeta):
         logger.info("Initialized an instance of hub")
         self._config: GlobalConfig = Config().global_config
         self.database: MongoDbWrapper = self._get_database()
-        self._employees: tp.Dict[str, Employee] = asyncio.run(self._get_employees())
         self._workbench: WorkBench = WorkBench(Config().workbench_config)
         self._create_dirs()
 
@@ -38,13 +36,9 @@ class Hub(metaclass=SingletonMeta):
         """find the provided ip in the config and return the workbench number for it"""
         return self._workbench.number if self._workbench.ip == ip_address else None
 
-    def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
+    async def authorize_employee(self, employee_card_id: str, workbench_no: int) -> None:
         """logs the employee in at a given workbench"""
-        try:
-            employee: Employee = self._employees[employee_card_id]
-        except KeyError:
-            raise EmployeeNotFoundError(f"Rfid card ID {employee_card_id} unknown")
-
+        employee: Employee = await self.database.get_employee_by_card_id(employee_card_id)
         workbench: WorkBench = self.get_workbench_by_number(workbench_no)
         workbench.state.start_shift(employee)
 
@@ -67,11 +61,6 @@ class Hub(metaclass=SingletonMeta):
             logger.critical(message)
             sys.exit(1)
 
-    async def _get_employees(self) -> tp.Dict[str, Employee]:
-        """load up employee database and initialize an array of Employee objects"""
-        employee_list = await self.database.get_all_employees()
-        return {employee.rfid_card_id: employee for employee in employee_list}
-
     def get_workbench_by_number(self, workbench_no: int) -> WorkBench:
         """find the workbench with the provided number"""
         if self._workbench.number == workbench_no:
@@ -90,13 +79,6 @@ class Hub(metaclass=SingletonMeta):
             return unit.internal_id
         else:
             raise ValueError("Unit internal_id is None")
-
-    def get_employee_by_card_id(self, card_id: str) -> Employee:
-        """find the employee with the provided RFID card id"""
-        if card_id not in self._employees:
-            raise EmployeeNotFoundError(f"No employee with card ID {card_id}")
-
-        return self._employees[card_id]
 
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """find the unit with the provided internal id"""

@@ -16,8 +16,7 @@ class Employee:
 
     @property
     def data(self) -> tp.Dict[str, str]:
-        data = {"name": self.name, "position": self.position}
-        return data
+        return {"name": self.name, "position": self.position}
 
     @property
     def passport_code(self) -> str:

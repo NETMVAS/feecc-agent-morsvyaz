@@ -8,7 +8,7 @@ from .Employee import Employee
 from .Singleton import SingletonMeta
 from .Types import Document, GlobalConfig
 from .Unit import ProductionStage, Unit
-from .exceptions import UnitNotFoundError
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 
 
 class MongoDbWrapper(metaclass=SingletonMeta):
@@ -45,7 +45,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         await self._upload_dict(asdict(dataclass), collection_)
 
     @staticmethod
-    async def _find_item(key: str, value: str, collection_: AsyncIOMotorCollection) -> Document:
+    async def _find_item(key: str, value: str, collection_: AsyncIOMotorCollection) -> tp.Optional[Document]:
         """
         finds one element in the specified collection, which has
         specified key matching specified value
@@ -133,6 +133,17 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     async def get_all_employees(self) -> tp.List[Employee]:
         employee_data: tp.List[tp.Dict[str, str]] = await self._get_all_items_in_collection(self._employee_collection)
         return [Employee(**data) for data in employee_data]
+
+    async def get_employee_by_card_id(self, card_id: str) -> Employee:
+        """find the employee with the provided RFID card id"""
+        employee_data: tp.Optional[Document] = await self._find_item("rfid_card_id", card_id, self._employee_collection)
+
+        if employee_data is None:
+            message = f"No employee with card ID {card_id}"
+            logger.error(message)
+            raise EmployeeNotFoundError(message)
+
+        return Employee(**employee_data)
 
     async def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
         try:
