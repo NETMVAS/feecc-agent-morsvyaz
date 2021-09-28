@@ -2,24 +2,22 @@ import hashlib
 import typing as tp
 from dataclasses import dataclass
 
-from loguru import logger
 
-
-@dataclass(frozen=True)
+@dataclass
 class Employee:
     rfid_card_id: str
     name: str
     position: str
+    passport_code: str = ""
 
     def __post_init__(self) -> None:
-        logger.debug(f"Initialized Employee with id {self.rfid_card_id}, data: {self.data}")
+        self.passport_code = self.get_passport_code()
 
     @property
     def data(self) -> tp.Dict[str, str]:
         return {"name": self.name, "position": self.position}
 
-    @property
-    def passport_code(self) -> str:
+    def get_passport_code(self) -> str:
         """
         returns encoded employee name to put into the passport
 

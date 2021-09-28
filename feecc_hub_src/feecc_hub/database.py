@@ -14,7 +14,7 @@ from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 class MongoDbWrapper(metaclass=SingletonMeta):
     """handles interactions with MongoDB database"""
 
-    def __init__(self, mongo_client_url: str) -> None:
+    def __init__(self, mongo_client_url: tp.Optional[str] = None) -> None:
         logger.info("Trying to connect to MongoDB")
 
         self._client: AsyncIOMotorClient = AsyncIOMotorClient(mongo_client_url)
@@ -154,4 +154,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             return Unit(config, **unit_dict)
 
         except Exception as E:
-            raise UnitNotFoundError(E)
+            logger.error(E)
+            message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
+            raise UnitNotFoundError(message)
