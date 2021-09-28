@@ -2,7 +2,7 @@ import typing as tp
 from dataclasses import asdict
 
 from loguru import logger
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorCursor, AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
 from .Employee import Employee
 from .Singleton import SingletonMeta
@@ -39,15 +39,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.debug(f"Uploading document {document} to {collection_.name}")
         await collection_.insert_one(document)
 
-    @staticmethod
-    def _remove_id(doc: Document) -> Document:
-        del doc["_id"]
-        return doc
-
-    async def _remove_ids(self, cursor: AsyncIOMotorCursor) -> tp.List[Document]:
-        """remove all MongoDB specific IDs from the resulting documents"""
-        return [self._remove_id(doc) for doc in await cursor.to_list(length=100)]
-
     async def _upload_dataclass(self, dataclass: tp.Any, collection_: AsyncIOMotorCollection) -> None:
         """
         convert an arbitrary dataclass to dictionary and insert it
@@ -55,26 +46,26 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         """
         await self._upload_dict(asdict(dataclass), collection_)
 
-    async def _find_item(self, key: str, value: str, collection_: AsyncIOMotorCollection) -> Document:
+    @staticmethod
+    async def _find_item(key: str, value: str, collection_: AsyncIOMotorCollection) -> Document:
         """
         finds one element in the specified collection, which has
         specified key matching specified value
         """
-        result: Document = await collection_.find_one({key: value})
-        return self._remove_id(result)
+        return await collection_.find_one({key: value}, {"_id": 0})  # type: ignore
 
-    async def _find_many(self, key: str, value: str, collection_: AsyncIOMotorCollection) -> tp.List[Document]:
+    @staticmethod
+    async def _find_many(key: str, value: str, collection_: AsyncIOMotorCollection) -> tp.List[Document]:
         """
         finds all elements in the specified collection, which have
         specified key matching specified value
         """
-        cursor: AsyncIOMotorCursor = await collection_.find({key: value})
-        return await self._remove_ids(cursor)
+        return await collection_.find({key: value}, {"_id": 0}).to_list(length=None)  # type: ignore
 
-    async def _get_all_items_in_collection(self, collection_: AsyncIOMotorCollection) -> tp.List[Document]:
+    @staticmethod
+    async def _get_all_items_in_collection(collection_: AsyncIOMotorCollection) -> tp.List[Document]:
         """get all documents in the provided collection"""
-        cursor: AsyncIOMotorCursor = await collection_.find()
-        return await self._remove_ids(cursor)
+        return await collection_.find({"_id": 0}).to_list(length=None)  # type: ignore
 
     @staticmethod
     async def _update_document(
