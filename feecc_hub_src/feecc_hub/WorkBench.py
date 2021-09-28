@@ -97,7 +97,7 @@ class WorkBench(metaclass=SingletonMeta):
         """establish MongoDB connection and initialize the wrapper"""
 
         try:
-            mongo_connection_url_env: tp.Optional[str] = os.environ["MONGO_CONNECTION_URL"]
+            mongo_connection_url_env: tp.Optional[str] = os.getenv("MONGO_CONNECTION_URL")
 
             if mongo_connection_url_env is None:
                 mongo_connection_url: str = self._config["mongo_db"]["mongo_connection_url"]

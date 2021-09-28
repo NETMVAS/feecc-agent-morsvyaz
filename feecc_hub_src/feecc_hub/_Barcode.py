@@ -5,8 +5,6 @@ import barcode
 from barcode.writer import ImageWriter
 from loguru import logger
 
-from ._Printer import Printer
-
 
 class Barcode:
     def __init__(self, unit_code: str) -> None:
