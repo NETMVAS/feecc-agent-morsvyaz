@@ -1,5 +1,4 @@
 import typing as tp
-from dataclasses import asdict
 
 import uvicorn
 from fastapi import Depends, FastAPI, status
@@ -38,30 +37,30 @@ def startup_event() -> None:
 
 
 @api.post("/api/unit/new", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse])  # type: ignore
-async def create_unit(payload: mdl.NewUnitData) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
+async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
     """handle new Unit creation"""
     try:
         new_unit_internal_id: str = await WorkBench().create_new_unit(payload.unit_type)
         logger.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
         return mdl.UnitOut(
-            status=status.HTTP_200_OK,
-            details="New unit created successfully",
+            status_code=status.HTTP_200_OK,
+            detail="New unit created successfully",
             unit_internal_id=new_unit_internal_id,
         )
 
     except Exception as e:
         logger.error(f"Exception occurred while creating new Unit: {e}")
-        return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=str(e))
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @api.get("/api/unit/{unit_internal_id}/info", response_model=mdl.UnitInfo)
 def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo:
     """return data for a Unit with matching ID"""
     return mdl.UnitInfo(
-        status=status.HTTP_200_OK,
-        details="Unit data retrieved successfully",
+        status_code=status.HTTP_200_OK,
+        detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
-        unit_biography={id_: {"stage": stage.name} for id_, stage in enumerate(unit.unit_biography)},
+        unit_biography=[stage.name for stage in unit.unit_biography],
     )
 
 
@@ -77,12 +76,12 @@ async def unit_start_record(
         )
         message: str = f"Started operation '{workbench_details.production_stage_name}' on Unit {unit.internal_id}"
         logger.info(message)
-        return mdl.GenericResponse(status=status.HTTP_200_OK, details=message)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
 
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
 @api.post("/api/unit/{unit_internal_id}/end", response_model=mdl.GenericResponse)
@@ -95,12 +94,12 @@ def unit_stop_record(
         workbench.state.end_operation(unit.internal_id, workbench_data.additional_info)
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
-        return mdl.GenericResponse(status=status.HTTP_200_OK, details=message)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
 
     except Exception as e:
         message = f"Couldn't handle end record request. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
 @api.post("/api/unit/{unit_internal_id}/upload", response_model=mdl.GenericResponse)
@@ -108,19 +107,19 @@ async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> m
     """handle Unit lifecycle end"""
     try:
         unit.upload(MongoDbWrapper())
-        return mdl.GenericResponse(status=status.HTTP_200_OK, details=f"Uploaded data for unit {unit.internal_id}")
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
 
     except Exception as e:
         message: str = f"Can't handle unit upload. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
 @api.post("/api/employee/info", response_model=mdl.EmployeeOut)
 def get_employee_data(employee: Employee = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
     """return data for an Employee with matching ID card"""
     return mdl.EmployeeOut(
-        status=status.HTTP_200_OK, details="Employee retrieved successfully", employee_data=asdict(employee)
+        status_code=status.HTTP_200_OK, detail="Employee retrieved successfully", employee_data=employee
     )
 
 
@@ -128,9 +127,8 @@ def get_employee_data(employee: Employee = Depends(get_employee_by_card_id)) -> 
 def log_in_employee(employee: Employee = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
     """handle logging in the Employee at a given Workbench"""
     WorkBench().authorize_employee(employee.rfid_card_id)
-
     return mdl.EmployeeOut(
-        status=status.HTTP_200_OK, details="Employee logged in successfully", employee_data=asdict(employee)
+        status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
     )
 
 
@@ -142,12 +140,12 @@ def log_out_employee() -> mdl.GenericResponse:
         workbench.state.end_shift()
         if workbench.employee is not None:
             raise ValueError("Unable to logout employee")
-        return mdl.GenericResponse(status=status.HTTP_200_OK, details="Employee logged out successfully")
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Employee logged out successfully")
 
     except Exception as e:
         message: str = f"An error occurred while logging out the Employee: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
 @api.get("/api/workbench/status", response_model=mdl.WorkbenchOut)
@@ -162,9 +160,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
         employee=workbench.employee.data if workbench.employee else None,
         operation_ongoing=workbench.is_operation_ongoing,
         unit_internal_id=workbench.unit_in_operation,
-        unit_biography={
-            id_: {"stage": stage.name} for id_, stage in enumerate(workbench.associated_unit.unit_biography)
-        }
+        unit_biography=[stage.name for stage in workbench.associated_unit.unit_biography]
         if workbench.associated_unit
         else None,
     )
@@ -176,8 +172,8 @@ def get_client_info() -> mdl.ClientInfo:
     workbench number if that is the case"""
     workbench = WorkBench()
     return mdl.ClientInfo(
-        status=status.HTTP_200_OK,
-        details=f"Requested ip address is known as workbench no. {workbench.number}",
+        status_code=status.HTTP_200_OK,
+        detail=f"Requested ip address is known as workbench no. {workbench.number}",
         workbench_no=workbench.number,
     )
 
