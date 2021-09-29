@@ -1,5 +1,0 @@
-workbench number: 1
-description: Монтажный стол 1 # optional description, leave blank if you don't need it
-api socket: 192.168.66.19:5000  # a socket, at which the REST API of the device is listening on
-hardware:  # list of attached devices to make use of
-  camera:  null

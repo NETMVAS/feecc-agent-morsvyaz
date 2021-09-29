@@ -6,8 +6,7 @@ from copy import copy, deepcopy
 
 from loguru import logger
 
-from .Config import Config
-from .Types import AdditionalInfo, GlobalConfig
+from .Types import AdditionalInfo
 from .database import MongoDbWrapper
 from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
 
@@ -32,10 +31,6 @@ class State(ABC):
     def description(self) -> str:
         """returns own docstring which describes the state"""
         return self.__doc__ or ""
-
-    @property
-    def _config(self) -> GlobalConfig:
-        return Config().global_config
 
     @abstractmethod
     @tp.no_type_check
@@ -76,7 +71,7 @@ class State(ABC):
     def end_operation(self, unit_internal_id: str, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         """end work on the provided unit"""
         # make sure requested unit is associated with this workbench
-        if unit_internal_id == self._context.unit_in_operation:
+        if unit_internal_id == self._context.unit_in_operation_id:
             database: MongoDbWrapper = MongoDbWrapper()
             logger.info("Trying to end operation")
             self._context.apply_state(AuthorizedIdling, database)
@@ -140,10 +135,10 @@ class AuthorizedIdling(State):
 
     def _get_unit_copy(self) -> Unit:
         """make a copy of unit to work with securely in another thread"""
-        if self._context.associated_unit is None:
+        if self._context.unit is None:
             raise ValueError("No context associated unit found")
-        unit: Unit = deepcopy(self._context.associated_unit)
-        self._context.associated_unit = None
+        unit: Unit = deepcopy(self._context.unit)
+        self._context.unit = None
         return unit
 
     def _stop_recording(self) -> None:
@@ -176,7 +171,7 @@ class ProductionStageOngoing(State):
         production_stage_name: str,
         additional_info: AdditionalInfo,
     ) -> None:
-        self._context.associated_unit = unit
+        self._context.unit = unit
         unit.employee = employee
         unit.start_session(production_stage_name, employee.passport_code, additional_info)
         if self._context.camera:

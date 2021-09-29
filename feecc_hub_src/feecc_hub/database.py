@@ -6,11 +6,11 @@ from dataclasses import asdict
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
-from .Config import Config
 from .Employee import Employee
 from .Singleton import SingletonMeta
 from .Types import Document
 from .Unit import ProductionStage, Unit
+from .config import config
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 
 
@@ -22,7 +22,7 @@ def _get_database_credentials() -> str:
         if mongo_connection_url_env is not None:
             return mongo_connection_url_env
         else:
-            return Config().global_config["mongo_db"]["mongo_connection_url"]
+            return config.mongo_db.mongo_connection_url
 
     except Exception as E:
         message: str = f"Failed to establish database connection: {E}. Exiting."
@@ -98,7 +98,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         stage_id: str = updated_production_stage.id
         await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
-    async def update_unit(self, unit: Unit, passport_short_url: tp.Optional[str] = None) -> None:
+    async def update_unit(self, unit: Unit) -> None:
         """update data about the unit in the DB"""
         for stage in unit.biography:
             if stage.is_in_db:
@@ -107,17 +107,15 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 await self.upload_production_stage(stage)
 
         unit_dict = unit.dict_data()
-        unit_dict["passport_short_url"] = passport_short_url
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
-    async def upload_unit(self, unit: Unit, passport_short_url: tp.Optional[str] = None) -> None:
+    async def upload_unit(self, unit: Unit) -> None:
         """
         convert a unit instance into a dictionary suitable for future reassembly while
         converting nested structures and uploading them
         """
         unit.is_in_db = True
         unit_dict = unit.dict_data()
-        unit_dict["passport_short_url"] = passport_short_url
 
         # upload nested dataclasses
         for stage in unit.biography:

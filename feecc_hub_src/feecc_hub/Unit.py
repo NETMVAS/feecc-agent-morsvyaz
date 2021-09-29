@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -6,13 +8,15 @@ from uuid import uuid4
 
 from loguru import logger
 
-from .Config import Config
+from .config import config
 from .Employee import Employee
-from .Types import AdditionalInfo, GlobalConfig
+from .Types import AdditionalInfo
 from ._Barcode import Barcode
 from ._Passport import Passport
 from ._image_generation import create_seal_tag
-from .database import MongoDbWrapper
+
+if tp.TYPE_CHECKING:
+    from .database import MongoDbWrapper
 
 
 def timestamp() -> str:
@@ -44,18 +48,19 @@ class Unit:
         internal_id: tp.Optional[str] = None,
         is_in_db: tp.Optional[bool] = None,
         biography: tp.Optional[tp.List[ProductionStage]] = None,
+        passport_short_url: tp.Optional[str] = None
     ) -> None:
         self.model: str = model
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
+        self.passport_short_url: tp.Optional[str] = passport_short_url
 
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
-        self._config: GlobalConfig = Config().global_config
 
-        if self._config["print_barcode"]["enable"] and not self.is_in_db:
+        if config.print_barcode.enable and not self.is_in_db:
             Printer().print_image(self.barcode.filename, self.model)
 
     def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
@@ -64,6 +69,7 @@ class Unit:
             "uuid": self.uuid,
             "internal_id": self.internal_id,
             "is_in_db": self.is_in_db,
+            "passport_short_url": self.passport_short_url,
         }
 
     @property
@@ -129,25 +135,23 @@ class Unit:
         self.employee = None
         database.update_unit(self)
 
-    def upload(self) -> None:
+    def upload(self, database: MongoDbWrapper) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        database: MongoDbWrapper = MongoDbWrapper()
         passport = Passport(self)
-        ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
-        passport.save(ipfs_gateway_url)
+        passport.save()
 
-        if self._config["print_qr"]["enable"]:
-            qrcode: str = passport.generate_qr_code(config=self._config)
+        if config.print_qr.enable:
+            qrcode: str = passport.generate_qr_code()
             # Printer().print_image(
             #     qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
             # )
 
-            if self._config["print_security_tag"]["enable"]:
-                seal_tag_img: str = create_seal_tag(self._config)
+            if config.print_security_tag.enable:
+                seal_tag_img: str = create_seal_tag()
                 # Printer().print_image(seal_tag_img)
 
         # ExternalIoGateway().send(self._associated_passport)
         if self.is_in_db:
             database.update_unit(self)
         else:
-            database.upload_unit(self, passport.short_url)
+            database.upload_unit(self)

@@ -1,13 +1,11 @@
 import requests
 from loguru import logger
 
-from .Types import GlobalConfig
+from .config import config
 
 
-def generate_short_url(config: GlobalConfig) -> str:
+def generate_short_url() -> str:
     """
-    :param config: dictionary containing all the configurations
-    :type config: dict
     :return keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :return link: full yourls url. E.g. url.today/6b
 
@@ -16,21 +14,22 @@ def generate_short_url(config: GlobalConfig) -> str:
     """
     logger.debug("Generating dummy short url to replace with actual link later")
 
-    url = f"https://{config['yourls']['server']}/yourls-api.php"
+    config_ = config.yourls
+    url = f"https://{config_.server}/yourls-api.php"
     querystring = {
-        "username": config["yourls"]["username"],
-        "password": config["yourls"]["password"],
+        "username": config_.username,
+        "password": config_.password,
         "action": "shorturl",
         "format": "json",
-        "url": config["ipfs"]["gateway_address"],
+        "url": "example.com",
     }  # api call to the yourls server. More on yourls.org
     payload = ""  # payload. Server creates a short url and returns it as a response
 
     try:
         response = requests.get(url, data=payload, params=querystring)
-        logger.debug(f"{config['yourls']['server']} returned: {response.text}")
+        logger.debug(f"{config_.server} returned: {response.text}")
         keyword: str = response.json()["url"]["keyword"]
-        link = str(config["yourls"]["server"]) + "/" + keyword  # link of form url.today/6b
+        link = str(config_.server) + "/" + keyword  # link of form url.today/6b
         logger.info(f"Assigned yourls link: {link}")
         return link
     except Exception as E:
@@ -38,22 +37,20 @@ def generate_short_url(config: GlobalConfig) -> str:
         return "url.today/55"
 
 
-def update_short_url(keyword: str, ipfs_hash: str, config: GlobalConfig) -> None:
+def update_short_url(keyword: str, ipfs_hash: str) -> None:
     """
     :param keyword: short url keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :type keyword: str
     :param ipfs_hash: IPFS hash of a recorded video
     :type ipfs_hash: str
-    :param config: dictionary containing all the configurations
-    :type config: dict
 
     Update redirecting service so that now the short url points to the  gateway to a video in external_io
     """
-    url = f"https://{config['yourls']['server']}/yourls-api.php"
-    new_file_url: str = f"{config['ipfs']['gateway_address']}{ipfs_hash}"
+    url = f"https://{config.ipfs}/yourls-api.php"
+    new_file_url: str = f"{config.ipfs}{ipfs_hash}"
     params = {
-        "username": config["yourls"]["username"],
-        "password": config["yourls"]["password"],
+        "username": config.yourls.username,
+        "password": config.yourls.password,
         "action": "update",
         "format": "json",
         "url": new_file_url,

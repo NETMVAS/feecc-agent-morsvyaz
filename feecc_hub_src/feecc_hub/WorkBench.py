@@ -6,10 +6,9 @@ from random import randint
 
 from loguru import logger
 
-from .Config import Config
+from .config import config
 from .Employee import Employee
 from .Singleton import SingletonMeta
-from .Types import GlobalConfig, WorkbenchConfig
 from .Unit import Unit
 from ._State import AwaitLogin, State
 from .database import MongoDbWrapper
@@ -23,13 +22,11 @@ class WorkBench(metaclass=SingletonMeta):
 
     @logger.catch
     def __init__(self) -> None:
-        self._workbench_config: WorkbenchConfig = Config().workbench_config
-        self._global_config: GlobalConfig = Config().global_config
         self._database: MongoDbWrapper = MongoDbWrapper()
 
-        self.number: int = self._workbench_config["workbench number"]
-        self.camera: tp.Dict[str, tp.Any] = self._workbench_config["hardware"]["camera"]
-        self.ip: str = self._workbench_config["api socket"].split(":")[0]
+        self.number: int = config.workbench_config.number
+        self.camera: tp.Dict[str, tp.Any] = config.workbench_config.hardware["camera"]
+        self.ip: str = config.workbench_config.api_socket.split(":")[0]
         self.employee: tp.Optional[Employee] = None
         self.unit: tp.Optional[Unit] = None
 

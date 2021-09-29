@@ -3,12 +3,11 @@ import time
 import typing as tp
 from datetime import datetime as dt
 
-from loguru import logger
-
 import qrcode
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from loguru import logger
 
-from .Types import GlobalConfig
+from .config import config
 
 # color values
 color = tp.Tuple[int, int, int]
@@ -16,12 +15,10 @@ WHITE: color = (255, 255, 255)
 BLACK: color = (0, 0, 0)
 
 
-def create_qr(link: str, config: GlobalConfig) -> str:
+def create_qr(link: str) -> str:
     """
     :param link: full yourls url. E.g. url.today/6b
     :type link: str
-    :param config: dictionary containing all the configurations
-    :type config: dict
     :return: full filename of a resulted qr-code
     :rtype: str
 
@@ -48,7 +45,7 @@ def create_qr(link: str, config: GlobalConfig) -> str:
     img_qr_pos = 0, border_s - 2, qr_size + border_s * 2, border_s + qr_size + 2
     img_qr_big = img_qr_big.crop(img_qr_pos)
 
-    if config["print_qr"]["logos"]:
+    if config.print_qr.logos:
         left_pic = Image.open("media/left_pic.jpg").resize((qr_size, qr_size))
         posl = (24, 2)
         img_qr_big.paste(left_pic, posl)
@@ -70,11 +67,11 @@ def create_qr(link: str, config: GlobalConfig) -> str:
     return path_to_qr
 
 
-def create_seal_tag(config: GlobalConfig) -> str:
+def create_seal_tag() -> str:
     """generate a custom seal tag with required parameters"""
     logger.info("Generating seal tag")
 
-    timestamp_enabled: bool = config["print_security_tag"]["enable_timestamp"]
+    timestamp_enabled: bool = config.print_security_tag.enable_timestamp
     tag_timestamp: str = dt.now().strftime("%d.%m.%Y")
     dir_: str = "output/seal_tags"
 

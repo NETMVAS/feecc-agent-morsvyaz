@@ -16,12 +16,9 @@ robonomics_network:
 
 pinata:
   enable: false # Enable pinning of files published to IPFS to Pinata
-  pinata_api: ""
-  pinata_secret_api: ""
 
 ipfs:
   enable: false
-  gateway_address: "https://gateway.ipfs.io/ipfs/" # IPFS gateway to use when creating links
 
 yourls: # Information about the yourls node used for short link creation
   server: ''
@@ -48,10 +45,10 @@ print_security_tag: # Whether to print seal tags with optional timestamp on them
   enable_timestamp: false
 
 
-# VIDEO SECTION
-video:
-  delete_after_publishing: false # Whether to delete local copies of videos
-
-intro:
-  intro_path: "media/intro.mp4"
-  enable: false # If you want to attach an intro to the main video
+# WORKBENCH CONFIG SECTION
+workbench_config:
+  number: 1
+  description: Монтажный стол 1 # optional description, leave blank if you don't need it
+  api_socket: 192.168.66.19:5000  # a socket, at which the REST API of the device is listening on
+  hardware:  # list of attached devices to make use of
+    camera: null # null or number

@@ -1,7 +1,6 @@
 from fastapi import HTTPException, Request, status
 
 from feecc_hub import models
-from feecc_hub.Config import Config
 from feecc_hub.Employee import Employee
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
@@ -11,7 +10,7 @@ from feecc_hub.exceptions import EmployeeNotFoundError, UnitNotFoundError
 
 async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
     try:
-        return await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id, Config().global_config)
+        return await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e)

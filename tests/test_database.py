@@ -1,6 +1,6 @@
 import os
 
-from feecc_hub_src.feecc_hub.Config import Config
+from feecc_hub_src.feecc_hub.config import Config
 from feecc_hub_src.feecc_hub.database import MongoDbWrapper
 
 
@@ -8,7 +8,7 @@ def credentials():
     try:
         return os.environ["MONGO_LOGIN"], os.environ["MONGO_PASS"]
     except KeyError:
-        db_cfg = Config().global_config["mongo_db"]
+        db_cfg = config.global_config["mongo_db"]
         return db_cfg["username"], db_cfg["password"]
 
 

@@ -8,10 +8,10 @@ from loguru import logger
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_unit_by_internal_id, validate_sender
 from feecc_hub import models as mdl
-from feecc_hub.Config import Config
 from feecc_hub.Employee import Employee
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
+from feecc_hub.config import config
 from feecc_hub.database import MongoDbWrapper
 from feecc_hub.exceptions import StateForbiddenError
 
@@ -183,6 +183,4 @@ def get_client_info() -> mdl.ClientInfo:
 
 
 if __name__ == "__main__":
-    host: str = Config().global_config["api_server"]["ip"]
-    port: int = Config().global_config["api_server"]["port"]
-    uvicorn.run("app:api", host=host, port=port)
+    uvicorn.run("app:api", host=config.api_server.ip, port=config.api_server.port)

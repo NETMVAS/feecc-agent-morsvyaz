@@ -4,10 +4,9 @@ import typing as tp
 from loguru import logger
 from substrateinterface import Keypair, SubstrateInterface
 
-from .Config import Config
-from .Types import ConfigSection, GlobalConfig
 from ._image_generation import create_qr
 from ._short_url_generator import generate_short_url
+from .config import config
 from .exceptions import DatalogError, SubstrateError
 from .utils import time_execution
 
@@ -44,13 +43,11 @@ class File:
         with open(self.path, "r") as f:
             return "\n".join(f.readlines())
 
-    def generate_qr_code(self, config: GlobalConfig) -> str:
+    def generate_qr_code(self) -> str:
         """generate a QR code with the short link"""
-        short_url: str = generate_short_url(config)
-        self.short_url = short_url
-        qr_code_image: str = create_qr(short_url, config)
-        self.qrcode = qr_code_image
-        return qr_code_image
+        self.short_url = generate_short_url()
+        self.qrcode = create_qr(self.short_url)
+        return self.qrcode
 
     def delete(self) -> None:
         """deletes the file"""
@@ -67,18 +64,11 @@ class File:
 class RobonomicsWorker:
     """Robonomics worker handles interactions with Robonomics network"""
 
-    @property
-    def name(self) -> str:
-        return self.__class__.__name__
-
-    @property
-    def config(self) -> ConfigSection:
-        return Config().global_config["robonomics_network"]
-
+    @logger.catch()
     def _get_substrate_connection(self) -> SubstrateInterface:
         """establish connection to a specified substrate node"""
         try:
-            substrate_node_url: str = self.config["substrate_node_url"]
+            substrate_node_url: str = config.robonomics_network.substrate_node_url
             logger.info("Establishing connection to substrate node")
             substrate = SubstrateInterface(
                 url=substrate_node_url,
@@ -147,7 +137,7 @@ class RobonomicsWorker:
         Hash of the datalog transaction
         """
         substrate: SubstrateInterface = self._get_substrate_connection()
-        seed: str = self.config["account_seed"]
+        seed: str = config.robonomics_network.account_seed
         # create keypair
         try:
             keypair = Keypair.create_from_mnemonic(seed, ss58_format=32)
@@ -183,5 +173,5 @@ class RobonomicsWorker:
 
     def get(self) -> str:
         """get latest datalog post for the account"""
-        account_address: str = self.config["account_address"]
+        account_address: str = config.robonomics_network.account_address
         return self._get_latest_datalog(account_address)
