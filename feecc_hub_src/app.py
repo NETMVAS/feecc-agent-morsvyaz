@@ -13,6 +13,7 @@ from feecc_hub.Employee import Employee
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.database import MongoDbWrapper
+from feecc_hub.exceptions import StateForbiddenError
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -31,8 +32,7 @@ api.add_middleware(
 
 @api.on_event("startup")
 def startup_event() -> None:
-    config = Config()
-    MongoDbWrapper(config.global_config["mongo_db"]["mongo_connection_url"])
+    MongoDbWrapper()
     WorkBench()
 
 
@@ -60,7 +60,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         status_code=status.HTTP_200_OK,
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
-        unit_biography=[stage.name for stage in unit.unit_biography],
+        unit_biography=[stage.name for stage in unit.biography],
     )
 
 
@@ -106,7 +106,7 @@ def unit_stop_record(
 async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """handle Unit lifecycle end"""
     try:
-        unit.upload(MongoDbWrapper())
+        unit.upload()
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
 
     except Exception as e:
@@ -123,13 +123,19 @@ def get_employee_data(employee: Employee = Depends(get_employee_by_card_id)) -> 
     )
 
 
-@api.post("/api/employee/log-in", response_model=mdl.EmployeeOut)
-def log_in_employee(employee: Employee = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
+@api.post("/api/employee/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse])
+def log_in_employee(
+    employee: Employee = Depends(get_employee_by_card_id),
+) -> tp.Union[mdl.EmployeeOut, mdl.GenericResponse]:
     """handle logging in the Employee at a given Workbench"""
-    WorkBench().authorize_employee(employee.rfid_card_id)
-    return mdl.EmployeeOut(
-        status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
-    )
+    try:
+        WorkBench().state.start_shift(employee)
+        return mdl.EmployeeOut(
+            status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
+        )
+
+    except StateForbiddenError as e:
+        return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
 
 @api.post("/api/employee/log-out", response_model=mdl.GenericResponse)
@@ -159,10 +165,8 @@ def get_workbench_status() -> mdl.WorkbenchOut:
         employee_logged_in=bool(workbench.employee),
         employee=workbench.employee.data if workbench.employee else None,
         operation_ongoing=workbench.is_operation_ongoing,
-        unit_internal_id=workbench.unit_in_operation,
-        unit_biography=[stage.name for stage in workbench.associated_unit.unit_biography]
-        if workbench.associated_unit
-        else None,
+        unit_internal_id=workbench.unit_in_operation_id,
+        unit_biography=[stage.name for stage in workbench.unit.biography] if workbench.unit else None,
     )
 
 

@@ -1,23 +1,43 @@
+import os
+import sys
 import typing as tp
 from dataclasses import asdict
 
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
+from .Config import Config
 from .Employee import Employee
 from .Singleton import SingletonMeta
-from .Types import Document, GlobalConfig
+from .Types import Document
 from .Unit import ProductionStage, Unit
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
+
+
+def _get_database_credentials() -> str:
+    """Get MongoDB connection url"""
+    try:
+        mongo_connection_url_env: tp.Optional[str] = os.getenv("MONGO_CONNECTION_URL")
+
+        if mongo_connection_url_env is not None:
+            return mongo_connection_url_env
+        else:
+            return Config().global_config["mongo_db"]["mongo_connection_url"]
+
+    except Exception as E:
+        message: str = f"Failed to establish database connection: {E}. Exiting."
+        logger.critical(message)
+        sys.exit(1)
 
 
 class MongoDbWrapper(metaclass=SingletonMeta):
     """handles interactions with MongoDB database"""
 
-    def __init__(self, mongo_client_url: tp.Optional[str] = None) -> None:
+    @logger.catch
+    def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        self._client: AsyncIOMotorClient = AsyncIOMotorClient(mongo_client_url)
+        self._client: AsyncIOMotorClient = AsyncIOMotorClient(_get_database_credentials())
         self._database: AsyncIOMotorDatabase = self._client["Feecc-Hub"]
 
         # collections
@@ -78,43 +98,32 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         stage_id: str = updated_production_stage.id
         await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
-    async def update_unit(self, unit: Unit) -> None:
+    async def update_unit(self, unit: Unit, passport_short_url: tp.Optional[str] = None) -> None:
         """update data about the unit in the DB"""
-        if not unit.is_in_db:
-            await self.upload_unit(unit)
-            return
-
-        for stage in unit.unit_biography:
+        for stage in unit.biography:
             if stage.is_in_db:
                 await self.update_production_stage(stage)
             else:
                 await self.upload_production_stage(stage)
 
-        base_dict = asdict(unit)
-        for key in ("_associated_passport", "_config", "unit_biography", "employee"):
-            del base_dict[key]
+        unit_dict = unit.dict_data()
+        unit_dict["passport_short_url"] = passport_short_url
+        await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
-        await self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
-
-    async def upload_unit(self, unit: Unit) -> None:
+    async def upload_unit(self, unit: Unit, passport_short_url: tp.Optional[str] = None) -> None:
         """
-        convert a unit instance into a dictionary suitable for future reassembly removing
-        unnecessary keys and converting nested structures and upload it
+        convert a unit instance into a dictionary suitable for future reassembly while
+        converting nested structures and uploading them
         """
-
-        # get basic dict of unit
         unit.is_in_db = True
-        base_dict = asdict(unit)
+        unit_dict = unit.dict_data()
+        unit_dict["passport_short_url"] = passport_short_url
 
         # upload nested dataclasses
-        for stage in unit.unit_biography:
+        for stage in unit.biography:
             await self.upload_production_stage(stage)
 
-        # removing unnecessary keys
-        for key in ("_associated_passport", "_config", "unit_biography", "employee"):
-            del base_dict[key]
-
-        await self._upload_dict(base_dict, self._unit_collection)
+        await self._upload_dict(unit_dict, self._unit_collection)
 
     async def upload_production_stage(self, production_stage: ProductionStage) -> None:
         if production_stage.is_in_db:
@@ -134,13 +143,13 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         return Employee(**employee_data)
 
-    async def get_unit_by_internal_id(self, unit_internal_id: str, config: GlobalConfig) -> Unit:
+    async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         try:
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit_dict["unit_biography"] = prod_stages
-            return Unit(config, **unit_dict)
+            return Unit(**unit_dict)
 
         except Exception as E:
             logger.error(E)

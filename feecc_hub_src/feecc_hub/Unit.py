@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -8,15 +6,18 @@ from uuid import uuid4
 
 from loguru import logger
 
+from .Config import Config
 from .Employee import Employee
 from .Types import AdditionalInfo, GlobalConfig
 from ._Barcode import Barcode
 from ._Passport import Passport
 from ._image_generation import create_seal_tag
-from .exceptions import OperationNotFoundError
+from .database import MongoDbWrapper
 
-if tp.TYPE_CHECKING:
-    from .database import MongoDbWrapper
+
+def timestamp() -> str:
+    """generate formatted timestamp for the invocation moment"""
+    return dt.now().strftime("%d-%m-%Y %H:%M:%S")
 
 
 @dataclass
@@ -24,7 +25,7 @@ class ProductionStage:
     name: str
     employee_name: str
     parent_unit_uuid: str
-    session_start_time: str
+    session_start_time: str = field(default_factory=timestamp)
     session_end_time: tp.Optional[str] = None
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[AdditionalInfo] = None
@@ -32,66 +33,46 @@ class ProductionStage:
     is_in_db: bool = False
     creation_time: dt = field(default_factory=lambda: dt.utcnow())
 
-    @staticmethod
-    def timestamp() -> str:
-        """generate formatted timestamp for the invocation moment"""
-        timestamp: str = dt.now().strftime("%d-%m-%Y %H:%M:%S")
-        return timestamp
 
-
-@dataclass
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    _config: GlobalConfig
-    model: str
-    uuid: str = field(default_factory=lambda: uuid4().hex)
-    internal_id: tp.Optional[str] = None
-    employee: tp.Optional[Employee] = None
-    unit_biography: tp.List[ProductionStage] = field(default_factory=list)
-    _associated_passport: tp.Optional[Passport] = None
-    passport_short_url: tp.Optional[str] = None
-    is_in_db: bool = False
+    def __init__(
+        self,
+        model: str,
+        uuid: tp.Optional[str] = None,
+        internal_id: tp.Optional[str] = None,
+        is_in_db: tp.Optional[bool] = None,
+        biography: tp.Optional[tp.List[ProductionStage]] = None,
+    ) -> None:
+        self.model: str = model
+        self.uuid: str = uuid or uuid4().hex
+        self.barcode: Barcode = Barcode(str(int(uuid, 16))[:12])
+        self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
 
-    def __post_init__(self) -> None:
-        self._associated_passport = Passport(self)
-
-        if self.internal_id is None:
-            self.internal_id = self.get_internal_id()
+        self.employee: tp.Optional[Employee] = None
+        self.biography: tp.List[ProductionStage] = biography or []
+        self.is_in_db: bool = is_in_db or False
+        self._config: GlobalConfig = Config().global_config
 
         if self._config["print_barcode"]["enable"] and not self.is_in_db:
-            self._print_barcode()
+            Printer().print_image(self.barcode.filename, self.model)
 
-    def production_stage(self, id_: str) -> ProductionStage:
-        """find production stage with provided ID"""
-        for stage in self.unit_biography:
-            if stage.id == id_:
-                return stage
-
-        raise OperationNotFoundError(f"Production stage with id {id_} not found")
-
-    def _print_barcode(self) -> None:
-        """print barcode with own int. id"""
-        self.associated_barcode.print_barcode(annotation=self.model)
-
-    def get_internal_id(self) -> str:
-        """get own internal id using own uuid"""
-        return str(self.associated_barcode.barcode.get_fullcode())
-
-    @property
-    def associated_barcode(self) -> Barcode:
-        return Barcode(str(int(self.uuid, 16))[:12])
+    def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
+        return {
+            "model": self.model,
+            "uuid": self.uuid,
+            "internal_id": self.internal_id,
+            "is_in_db": self.is_in_db,
+        }
 
     @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
-        if self.unit_biography:
-            return self.unit_biography[-1]
-        else:
-            return None
+        return self.biography[-1] if self.biography else None
 
     @current_operation.setter
     def current_operation(self, current_operation: ProductionStage) -> None:
-        self.unit_biography.append(current_operation)
+        self.biography.append(current_operation)
 
     def start_session(
         self,
@@ -107,7 +88,6 @@ class Unit:
             name=production_stage_name,
             employee_name=employee_code_name,
             parent_unit_uuid=self.uuid,
-            session_start_time=ProductionStage.timestamp(),
             additional_info=additional_info,
         )
 
@@ -130,7 +110,7 @@ class Unit:
 
         logger.info(f"Ending production stage {self.current_operation.name}")
         operation = deepcopy(self.current_operation)
-        operation.session_end_time = ProductionStage.timestamp()
+        operation.session_end_time = timestamp()
 
         if video_hashes:
             operation.video_hashes = video_hashes
@@ -144,28 +124,22 @@ class Unit:
             else:
                 operation.additional_info = additional_info
 
-        self.unit_biography[-1] = operation
-        logger.debug(f"Unit biography stage count is now {len(self.unit_biography)}")
+        self.biography[-1] = operation
+        logger.debug(f"Unit biography stage count is now {len(self.biography)}")
         self.employee = None
         database.update_unit(self)
 
-    def upload(self, database: MongoDbWrapper) -> None:
+    def upload(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        if self._associated_passport is None:
-            raise FileNotFoundError(f"No passport for unit {self.uuid} found")
-
+        database: MongoDbWrapper = MongoDbWrapper()
+        passport = Passport(self)
         ipfs_gateway_url: str = str(self._config["ipfs"]["gateway_address"])
-        self._associated_passport.save(ipfs_gateway_url)
+        passport.save(ipfs_gateway_url)
 
-        if (
-            self._config["print_qr"]["enable"]
-            and self._associated_passport is not None
-            and self.passport_short_url is None
-        ):
-            qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
-            self.passport_short_url = self._associated_passport.short_url
+        if self._config["print_qr"]["enable"]:
+            qrcode: str = passport.generate_qr_code(config=self._config)
             # Printer().print_image(
-            #     qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {self.passport_short_url}"
+            #     qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
             # )
 
             if self._config["print_security_tag"]["enable"]:
@@ -173,4 +147,7 @@ class Unit:
                 # Printer().print_image(seal_tag_img)
 
         # ExternalIoGateway().send(self._associated_passport)
-        database.update_unit(self)
+        if self.is_in_db:
+            database.update_unit(self)
+        else:
+            database.upload_unit(self, passport.short_url)
