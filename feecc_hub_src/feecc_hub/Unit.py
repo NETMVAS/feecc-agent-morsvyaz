@@ -38,13 +38,6 @@ class ProductionStage:
         timestamp: str = dt.now().strftime("%d-%m-%Y %H:%M:%S")
         return timestamp
 
-    def update_attributes(self, new_values: tp.Dict[str, tp.Any]) -> None:
-        for key, value in new_values.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-            else:
-                logger.error(f"Cannot update attribute {key}, class {self.__class__.__name__} has no attribute {key}")
-
 
 @dataclass
 class Unit:
@@ -171,13 +164,13 @@ class Unit:
         ):
             qrcode: str = self._associated_passport.generate_qr_code(config=self._config)
             self.passport_short_url = self._associated_passport.short_url
-            Printer().print_image(
-                qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {self.passport_short_url}"
-            )
+            # Printer().print_image(
+            #     qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {self.passport_short_url}"
+            # )
 
             if self._config["print_security_tag"]["enable"]:
                 seal_tag_img: str = create_seal_tag(self._config)
-                Printer().print_image(seal_tag_img)
+                # Printer().print_image(seal_tag_img)
 
-        ExternalIoGateway().send(self._associated_passport)
+        # ExternalIoGateway().send(self._associated_passport)
         database.update_unit(self)

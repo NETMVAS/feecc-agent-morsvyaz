@@ -27,10 +27,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         logger.info("Successfully connected to MongoDB")
 
-    @property
-    def mongo_client(self) -> AsyncIOMotorClient:
-        return self._client
-
     @staticmethod
     async def _upload_dict(document: Document, collection_: AsyncIOMotorCollection) -> None:
         """insert a document into specified collection"""
@@ -100,9 +96,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         await self._update_document("uuid", unit.uuid, base_dict, self._unit_collection)
 
-    async def upload_employee(self, employee: Employee) -> None:
-        await self._upload_dataclass(employee, self._employee_collection)
-
     async def upload_unit(self, unit: Unit) -> None:
         """
         convert a unit instance into a dictionary suitable for future reassembly removing
@@ -129,10 +122,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         production_stage.is_in_db = True
         await self._upload_dataclass(production_stage, self._prod_stage_collection)
-
-    async def get_all_employees(self) -> tp.List[Employee]:
-        employee_data: tp.List[tp.Dict[str, str]] = await self._get_all_items_in_collection(self._employee_collection)
-        return [Employee(**data) for data in employee_data]
 
     async def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""

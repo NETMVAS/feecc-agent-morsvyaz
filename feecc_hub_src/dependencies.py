@@ -26,5 +26,5 @@ async def get_employee_by_card_id(employee_data: models.EmployeeID) -> Employee:
 
 
 def validate_sender(request: Request) -> None:
-    if request.client.host != WorkBench().ipv4:
+    if request.client.host != WorkBench().ip:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="All orders shall come from the localhost")
