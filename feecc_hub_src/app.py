@@ -123,7 +123,7 @@ def get_employee_data(employee: Employee = Depends(get_employee_by_card_id)) -> 
     )
 
 
-@api.post("/api/employee/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse])
+@api.post("/api/employee/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse])  # type: ignore
 def log_in_employee(
     employee: Employee = Depends(get_employee_by_card_id),
 ) -> tp.Union[mdl.EmployeeOut, mdl.GenericResponse]:

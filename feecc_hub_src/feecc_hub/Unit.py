@@ -48,11 +48,11 @@ class Unit:
         internal_id: tp.Optional[str] = None,
         is_in_db: tp.Optional[bool] = None,
         biography: tp.Optional[tp.List[ProductionStage]] = None,
-        passport_short_url: tp.Optional[str] = None
+        passport_short_url: tp.Optional[str] = None,
     ) -> None:
         self.model: str = model
         self.uuid: str = uuid or uuid4().hex
-        self.barcode: Barcode = Barcode(str(int(uuid, 16))[:12])
+        self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
 

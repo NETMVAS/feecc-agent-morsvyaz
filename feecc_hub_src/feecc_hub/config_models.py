@@ -62,6 +62,7 @@ class WorkBenchConfig(ConfigSection):
     number: int
     description: str
     api_socket: str
+    feecc_io_gateway_socket: str
     hardware: tp.Dict[str, tp.Optional[tp.Dict[str, tp.Any]]]
 
 
