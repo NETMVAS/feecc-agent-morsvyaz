@@ -146,7 +146,7 @@ class AuthorizedIdling(State):
         if self._context.camera is None:
             raise CameraNotFoundError("No associated camera")
         if self._context.camera.record is not None:
-            self._context.camera.stop_record()
+            self._context.camera.end()
 
     def start_shift(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         message: str = f"Cannot log in: a worker is already logged in at the workbench no. {self._context.number}"
@@ -175,11 +175,11 @@ class ProductionStageOngoing(State):
         unit.employee = employee
         unit.start_session(production_stage_name, employee.passport_code, additional_info)
         if self._context.camera:
-            self._start_recording(unit)
+            self._start_recording()
 
-    def _start_recording(self, unit: Unit) -> None:
+    def _start_recording(self) -> None:
         """start recording a video"""
         if self._context.camera is None:
             logger.error("Cannot start recording: associated camera is None")
         else:
-            self._context.camera.start_record(unit.uuid)
+            self._context.camera.start()
