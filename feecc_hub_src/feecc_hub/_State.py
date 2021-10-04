@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import typing as tp
 from abc import ABC, abstractmethod
-from copy import copy, deepcopy
+from copy import deepcopy
 
 from loguru import logger
 
+from .IO_gateway import publish_file
 from .Types import AdditionalInfo
 from .database import MongoDbWrapper
 from .exceptions import CameraNotFoundError, StateForbiddenError, UnitNotFoundError
@@ -113,24 +114,33 @@ class AuthorizedIdling(State):
             logger.info(f"Ending operation {self._context}")
             self._end_operation(database, additional_info)
 
-    def _end_operation(self, database: MongoDbWrapper, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
+    async def _end_operation(
+        self, database: MongoDbWrapper, additional_info: tp.Optional[AdditionalInfo] = None
+    ) -> None:
         """end previous operation"""
         unit: Unit = self._get_unit_copy()
         ipfs_hashes: tp.List[str] = []
         if self._context.camera is not None:
             self._stop_recording()
-            ipfs_hash: tp.Optional[str] = self._publish_record()
+            ipfs_hash: tp.Optional[str] = await self._publish_record()
             if ipfs_hash:
                 ipfs_hashes.append(ipfs_hash)
         unit.end_session(database, ipfs_hashes, additional_info)
 
-    def _publish_record(self) -> tp.Optional[str]:
+    async def _publish_record(self) -> tp.Optional[str]:
         """publish video into IPFS and pin to Pinata. Then update the short link
         to point to an actual recording"""
-        file = copy(self._context.camera.record) if self._context.camera else None
-        if file is not None:
-            ExternalIoGateway().send(file)
-            return file.ipfs_hash
+
+        if self._context.camera is not None and self._context.camera.record is not None:
+            file = self._context.camera.record.remote_file_path
+
+            if file is not None:
+                data = await publish_file(file)
+
+                if data is not None:
+                    cid, link = data
+                    return cid
+
         return None
 
     def _get_unit_copy(self) -> Unit:

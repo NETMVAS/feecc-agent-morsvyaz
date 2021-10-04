@@ -17,6 +17,7 @@ class Record:
     rec_id: str
     start_time: datetime = field(default_factory=datetime.now)
     end_time: tp.Optional[datetime] = None
+    remote_file_path: tp.Optional[str] = None
 
     @property
     def is_ongoing(self) -> bool:
@@ -76,3 +77,4 @@ class Camera:
 
         logger.info(f"Recording {self.record.rec_id} is ended on Camera {self.number}")
         self.record.end_time = datetime.now()
+        self.record.remote_file_path = response.json()["filename"]

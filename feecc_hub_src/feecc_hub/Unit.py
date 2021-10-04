@@ -8,12 +8,13 @@ from uuid import uuid4
 
 from loguru import logger
 
-from .config import config
 from .Employee import Employee
+from .IO_gateway import print_image
 from .Types import AdditionalInfo
 from ._Barcode import Barcode
 from ._Passport import Passport
 from ._image_generation import create_seal_tag
+from .config import config
 
 if tp.TYPE_CHECKING:
     from .database import MongoDbWrapper
@@ -61,7 +62,7 @@ class Unit:
         self.is_in_db: bool = is_in_db or False
 
         if config.print_barcode.enable and not self.is_in_db:
-            Printer().print_image(self.barcode.filename, self.model)
+            print_image(self.barcode.filename, self.model)
 
     def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
         return {
@@ -85,7 +86,7 @@ class Unit:
         production_stage_name: str,
         employee_code_name: str,
         additional_info: tp.Optional[AdditionalInfo] = None,
-    ) -> None:
+    ) -> None:  # sourcery skip: simplify-fstring-formatting
         """begin the provided operation and save data about it"""
         logger.info(f"Starting production stage {production_stage_name} for unit with int_id {self.internal_id}")
         logger.debug(f"additional info for {self.internal_id} {additional_info or 'is empty'}")

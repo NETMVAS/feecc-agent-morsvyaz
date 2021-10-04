@@ -1,6 +1,8 @@
 import os
 import typing as tp
 
+import httpx
+from fastapi import Depends
 from loguru import logger
 from substrateinterface import Keypair, SubstrateInterface
 
@@ -8,7 +10,9 @@ from ._image_generation import create_qr
 from ._short_url_generator import generate_short_url
 from .config import config
 from .exceptions import DatalogError, SubstrateError
-from .utils import time_execution
+from .utils import get_headers, time_execution
+
+IO_GATEWAY_ADDRESS: str = config.workbench_config.feecc_io_gateway_socket
 
 
 class File:
@@ -175,3 +179,69 @@ class RobonomicsWorker:
         """get latest datalog post for the account"""
         account_address: str = config.robonomics_network.account_address
         return self._get_latest_datalog(account_address)
+
+
+async def publish_to_ipfs(file_path: str, headers: tp.Dict[str, str] = Depends(get_headers)) -> tp.Tuple[str, str]:
+    """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
+
+    async with httpx.AsyncClient() as client:
+        url = f"{IO_GATEWAY_ADDRESS}/io-gateway/ipfs"
+        payload = {"filename": file_path, "background_processing": False}
+        response: httpx.Response = await client.post(url=url, headers=headers, json=payload)
+
+    if response.is_error:
+        raise httpx.RequestError(response.text)
+
+    cid: str = response.json()["ipfs_cid"]
+    link: str = response.json()["ipfs_link"]
+
+    logger.info(f"File '{file_path} published to IPFS under CID {cid}'")
+
+    return cid, link
+
+
+async def publish_to_pinata(file_path: str, headers: tp.Dict[str, str] = Depends(get_headers)) -> tp.Tuple[str, str]:
+    """publish a provided file to Pinata using the Feecc gateway and return it's CID and URL"""
+
+    async with httpx.AsyncClient() as client:
+        url = f"{IO_GATEWAY_ADDRESS}/io-gateway/pinata"
+        payload = {"filename": file_path, "background_processing": True}
+        response: httpx.Response = await client.post(url=url, headers=headers, json=payload)
+
+    if response.is_error:
+        raise httpx.RequestError(response.text)
+
+    cid: str = response.json()["ipfs_cid"]
+    link: str = response.json()["ipfs_link"]
+
+    logger.info(f"File '{file_path} published to Pinata under CID {cid}'")
+
+    return cid, link
+
+
+async def publish_file(file_path: str) -> tp.Optional[tp.Tuple[str, str]]:
+    """publish a file to pinata or IPFS according to config"""
+    if config.pinata.enable:
+        return await publish_to_pinata(file_path)
+    elif config.ipfs.enable:
+        return await publish_to_ipfs(file_path)
+    else:
+        logger.warning(f"File '{file_path}' is neither published to Pinata, nor IPFS as both options are disabled")
+        return None
+
+
+async def print_image(
+    file_path: str, annotation: tp.Optional[str] = None, headers: tp.Dict[str, str] = Depends(get_headers)
+) -> None:
+    """print the provided image file"""
+
+    async with httpx.AsyncClient() as client:
+        url = f"{IO_GATEWAY_ADDRESS}/printing/print_image"
+        payload = {"annotation": annotation}
+        files = {"upload-file": (None, open(file_path, "rb"), "image/png")}
+        response: httpx.Response = await client.post(url=url, headers=headers, json=payload, files=files)
+
+    if response.is_error:
+        raise httpx.RequestError(response.text)
+
+    logger.info(f"Printed image '{file_path}'")
