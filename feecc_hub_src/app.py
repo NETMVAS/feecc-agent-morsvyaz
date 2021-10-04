@@ -106,7 +106,7 @@ def unit_stop_record(
 async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """handle Unit lifecycle end"""
     try:
-        unit.upload()
+        unit.upload(MongoDbWrapper())
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
 
     except Exception as e:
@@ -116,7 +116,7 @@ async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> m
 
 
 @api.post("/api/employee/info", response_model=mdl.EmployeeOut)
-def get_employee_data(employee: Employee = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
+def get_employee_data(employee: mdl.EmployeeModel = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
     """return data for an Employee with matching ID card"""
     return mdl.EmployeeOut(
         status_code=status.HTTP_200_OK, detail="Employee retrieved successfully", employee_data=employee
@@ -125,11 +125,13 @@ def get_employee_data(employee: Employee = Depends(get_employee_by_card_id)) -> 
 
 @api.post("/api/employee/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse])  # type: ignore
 def log_in_employee(
-    employee: Employee = Depends(get_employee_by_card_id),
+    employee: mdl.EmployeeModel = Depends(get_employee_by_card_id),
 ) -> tp.Union[mdl.EmployeeOut, mdl.GenericResponse]:
     """handle logging in the Employee at a given Workbench"""
     try:
-        WorkBench().state.start_shift(employee)
+        WorkBench().state.start_shift(
+            Employee(rfid_card_id=employee.rfid_card_id, name=employee.name, position=employee.position)
+        )
         return mdl.EmployeeOut(
             status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
         )
