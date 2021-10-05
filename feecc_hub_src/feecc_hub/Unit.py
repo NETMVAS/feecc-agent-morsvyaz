@@ -9,7 +9,7 @@ from uuid import uuid4
 from loguru import logger
 
 from .Employee import Employee
-from .IO_gateway import print_image
+from .IO_gateway import print_image, publish_file
 from .Types import AdditionalInfo
 from ._Barcode import Barcode
 from ._Passport import Passport
@@ -136,23 +136,22 @@ class Unit:
         self.employee = None
         database.update_unit(self)
 
-    def upload(self, database: MongoDbWrapper) -> None:
+    async def upload(self, database: MongoDbWrapper) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         passport = Passport(self)
         passport.save()
 
         if config.print_qr.enable:
             qrcode: str = passport.generate_qr_code()
-            # Printer().print_image(
-            #     qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
-            # )
+            await print_image(qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}")
 
             if config.print_security_tag.enable:
                 seal_tag_img: str = create_seal_tag()
-                # Printer().print_image(seal_tag_img)
+                await print_image(seal_tag_img)
 
-        # ExternalIoGateway().send(self._associated_passport)
+        await publish_file(passport.path)
+
         if self.is_in_db:
-            database.update_unit(self)
+            await database.update_unit(self)
         else:
-            database.upload_unit(self)
+            await database.upload_unit(self)
