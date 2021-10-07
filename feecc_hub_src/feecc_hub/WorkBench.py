@@ -98,13 +98,13 @@ class WorkBench(metaclass=SingletonMeta):
         """begin work on the provided unit"""
         self._validate_state_transition(PRODUCTION_STAGE_ONGOING_STATE)
 
-        self.unit.start_session(self.employee, production_stage_name, additional_info)
+        self.unit.start_session(self.employee, production_stage_name, additional_info)  # type: ignore
 
         if self.camera is not None:
             await self.camera.start()
 
         logger.info(
-            f"Started operation {production_stage_name} on the unit {self.unit.internal_id} at the workbench no. {self.number}"
+            f"Started operation {production_stage_name} on the unit {self.unit.internal_id} at the workbench no. {self.number}"  # type: ignore
         )
 
         self.state = PRODUCTION_STAGE_ONGOING_STATE
@@ -119,7 +119,7 @@ class WorkBench(metaclass=SingletonMeta):
         if self.camera is not None:
             await self.camera.end()
 
-            file: tp.Optional[str] = self.camera.record.remote_file_path
+            file: tp.Optional[str] = self.camera.record.remote_file_path  # type: ignore
 
             if file is not None:
                 data = await publish_file(file)
@@ -128,6 +128,6 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        self.unit.end_session(MongoDbWrapper(), ipfs_hashes, additional_info)
+        self.unit.end_session(MongoDbWrapper(), ipfs_hashes, additional_info)  # type: ignore
 
         self.state = AUTHORIZED_IDLING_STATE
