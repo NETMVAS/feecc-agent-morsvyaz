@@ -1,18 +1,25 @@
 from __future__ import annotations
 
-import threading
 import typing as tp
-from random import randint
 
 from loguru import logger
-
+from .IO_gateway import publish_file
 from .Camera import Camera
 from .Employee import Employee
 from .Singleton import SingletonMeta
+from .Types import AdditionalInfo
 from .Unit import Unit
-from ._State import AwaitLogin, State
+from .states import (
+    AUTHORIZED_IDLING_STATE,
+    AWAIT_LOGIN_STATE,
+    PRODUCTION_STAGE_ONGOING_STATE,
+    STATE_TRANSITION_MAP,
+    State,
+    UNIT_ASSIGNED_IDLING_STATE,
+)
 from .config import config
 from .database import MongoDbWrapper
+from .exceptions import StateForbiddenError
 
 
 class WorkBench(metaclass=SingletonMeta):
@@ -31,12 +38,9 @@ class WorkBench(metaclass=SingletonMeta):
         self.ip: str = config.workbench_config.api_socket.split(":")[0]
         self.employee: tp.Optional[Employee] = None
         self.unit: tp.Optional[Unit] = None
+        self.state: State = AWAIT_LOGIN_STATE
 
         logger.info(f"Workbench {self.number} was initialized")
-
-        self.previous_state: tp.Optional[tp.Type[State]] = None
-        self.state: State = AwaitLogin(self)
-        self._state_thread_list: tp.List[threading.Thread] = []
 
     async def create_new_unit(self, unit_type: str) -> str:
         """initialize a new instance of the Unit class"""
@@ -48,49 +52,82 @@ class WorkBench(metaclass=SingletonMeta):
         else:
             raise ValueError("Unit internal_id is None")
 
-    @property
-    def unit_in_operation_id(self) -> tp.Optional[str]:
-        return str(self.unit.internal_id) if self.unit else None
+    def _validate_state_transition(self, new_state: State) -> None:
+        """check if state transition can be performed using the map"""
+        if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
+            raise StateForbiddenError(f"State transition from {self.state.name} to {new_state.name} is not allowed.")
 
-    @property
-    def is_operation_ongoing(self) -> bool:
-        return bool(self.unit_in_operation_id)
+    def log_in(self, employee: Employee) -> None:
+        """authorize employee"""
+        self._validate_state_transition(AUTHORIZED_IDLING_STATE)
 
-    @property
-    def _state_thread(self) -> tp.Optional[threading.Thread]:
-        return self._state_thread_list[-1] if self._state_thread_list else None
+        self.employee = employee
+        logger.info(f"Employee {employee.name} is logged in at the workbench no. {self.number}")
 
-    @_state_thread.setter
-    def _state_thread(self, state_thread: threading.Thread) -> None:
-        self._state_thread_list.append(state_thread)
-        thread_list = self._state_thread_list
-        logger.debug(
-            f"Attribute _state_thread_list of WorkBench is now of len {len(thread_list)}\n"
-            f"Threads alive: {list(filter(lambda t: t.is_alive(), thread_list))}"
+        self.state = AUTHORIZED_IDLING_STATE
+
+    def log_out(self) -> None:
+        """log out the employee"""
+        self._validate_state_transition(AWAIT_LOGIN_STATE)
+
+        if self.state is UNIT_ASSIGNED_IDLING_STATE:
+            self.remove_unit()
+
+        self.employee = None
+        logger.info(f"Employee '{self.employee}' was logged out the Workbench {self.number}")
+
+        self.state = AWAIT_LOGIN_STATE
+
+    def assign_unit(self, unit: Unit) -> None:
+        """assign a unit to the workbench"""
+        self._validate_state_transition(UNIT_ASSIGNED_IDLING_STATE)
+
+        self.unit = unit
+
+        self.state = UNIT_ASSIGNED_IDLING_STATE
+
+    def remove_unit(self) -> None:
+        """remove a unit from the workbench"""
+        self._validate_state_transition(AUTHORIZED_IDLING_STATE)
+
+        self.unit = None
+
+        self.state = UNIT_ASSIGNED_IDLING_STATE
+
+    async def start_operation(self, production_stage_name: str, additional_info: AdditionalInfo) -> None:
+        """begin work on the provided unit"""
+        self._validate_state_transition(PRODUCTION_STAGE_ONGOING_STATE)
+
+        self.unit.start_session(self.employee, production_stage_name, additional_info)
+
+        if self.camera is not None:
+            await self.camera.start()
+
+        logger.info(
+            f"Started operation {production_stage_name} on the unit {self.unit.internal_id} at the workbench no. {self.number}"
         )
 
-    @property
-    def state_name(self) -> str:
-        return self.state.name
+        self.state = PRODUCTION_STAGE_ONGOING_STATE
 
-    @property
-    def state_description(self) -> str:
-        return str(self.state.description)
+    async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
+        """end work on the provided unit"""
+        self._validate_state_transition(UNIT_ASSIGNED_IDLING_STATE)
 
-    def apply_state(self, state: tp.Type[State], *args: tp.Any, **kwargs: tp.Any) -> None:
-        """execute provided state in the background"""
-        self.previous_state = self.state.__class__
-        self.state = state(self)
-        logger.info(f"Workbench state is now {self.state.name}")
+        logger.info("Trying to end operation")
 
-        # execute state in the background
-        thread_name: str = f"{self.state.name}-{randint(1, 999)}"
-        logger.debug(f"Trying to execute state: {self.state.name} in thread {thread_name}")
-        self._state_thread = threading.Thread(
-            target=self.state.perform_on_apply,
-            args=args,
-            kwargs=kwargs,
-            daemon=False,
-            name=thread_name,
-        )
-        self._state_thread.start()
+        ipfs_hashes: tp.List[str] = []
+        if self.camera is not None:
+            await self.camera.end()
+
+            file: tp.Optional[str] = self.camera.record.remote_file_path
+
+            if file is not None:
+                data = await publish_file(file)
+
+                if data is not None:
+                    cid, link = data
+                    ipfs_hashes.append(cid)
+
+        self.unit.end_session(MongoDbWrapper(), ipfs_hashes, additional_info)
+
+        self.state = AUTHORIZED_IDLING_STATE

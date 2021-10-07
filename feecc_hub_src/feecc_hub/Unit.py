@@ -83,8 +83,8 @@ class Unit:
 
     def start_session(
         self,
+        employee: Employee,
         production_stage_name: str,
-        employee_code_name: str,
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:  # sourcery skip: simplify-fstring-formatting
         """begin the provided operation and save data about it"""
@@ -93,7 +93,7 @@ class Unit:
 
         operation = ProductionStage(
             name=production_stage_name,
-            employee_name=employee_code_name,
+            employee_name=employee.get_passport_code(),
             parent_unit_uuid=self.uuid,
             additional_info=additional_info,
         )

@@ -14,6 +14,7 @@ from feecc_hub.WorkBench import WorkBench
 from feecc_hub.config import config
 from feecc_hub.database import MongoDbWrapper
 from feecc_hub.exceptions import StateForbiddenError
+from feecc_hub.states import PRODUCTION_STAGE_ONGOING_STATE
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -29,18 +30,19 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
+WORKBENCH = WorkBench()
+
 
 @api.on_event("startup")
 def startup_event() -> None:
     MongoDbWrapper()
-    WorkBench()
 
 
 @api.post("/api/unit/new", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse])  # type: ignore
 async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
     """handle new Unit creation"""
     try:
-        new_unit_internal_id: str = await WorkBench().create_new_unit(payload.unit_type)
+        new_unit_internal_id: str = await WORKBENCH.create_new_unit(payload.unit_type)
         logger.info(f"Initialized new unit with internal ID {new_unit_internal_id}")
         return mdl.UnitOut(
             status_code=status.HTTP_200_OK,
@@ -70,10 +72,8 @@ async def unit_start_record(
 ) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
-        workbench = WorkBench()
-        workbench.state.start_operation(
-            unit, workbench_details.production_stage_name, workbench_details.additional_info
-        )
+        workbench = WORKBENCH
+        await workbench.start_operation(workbench_details.production_stage_name, workbench_details.additional_info)
         message: str = f"Started operation '{workbench_details.production_stage_name}' on Unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
@@ -90,8 +90,7 @@ def unit_stop_record(
 ) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        workbench = WorkBench()
-        workbench.state.end_operation(unit.internal_id, workbench_data.additional_info)
+        WORKBENCH.end_operation(workbench_data.additional_info)
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
@@ -106,7 +105,7 @@ def unit_stop_record(
 async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """handle Unit lifecycle end"""
     try:
-        unit.upload(MongoDbWrapper())
+        await unit.upload(MongoDbWrapper())
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
 
     except Exception as e:
@@ -129,9 +128,7 @@ def log_in_employee(
 ) -> tp.Union[mdl.EmployeeOut, mdl.GenericResponse]:
     """handle logging in the Employee at a given Workbench"""
     try:
-        WorkBench().state.start_shift(
-            Employee(rfid_card_id=employee.rfid_card_id, name=employee.name, position=employee.position)
-        )
+        WORKBENCH.log_in(Employee(rfid_card_id=employee.rfid_card_id, name=employee.name, position=employee.position))
         return mdl.EmployeeOut(
             status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
         )
@@ -144,9 +141,8 @@ def log_in_employee(
 def log_out_employee() -> mdl.GenericResponse:
     """handle logging out the Employee at a given Workbench"""
     try:
-        workbench = WorkBench()
-        workbench.state.end_shift()
-        if workbench.employee is not None:
+        WORKBENCH.log_out()
+        if WORKBENCH.employee is not None:
             raise ValueError("Unable to logout employee")
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Employee logged out successfully")
 
@@ -159,16 +155,15 @@ def log_out_employee() -> mdl.GenericResponse:
 @api.get("/api/workbench/status", response_model=mdl.WorkbenchOut)
 def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
-    workbench = WorkBench()
     return mdl.WorkbenchOut(
-        workbench_no=workbench.number,
-        state=workbench.state_name,
-        state_description=workbench.state_description,
-        employee_logged_in=bool(workbench.employee),
-        employee=workbench.employee.data if workbench.employee else None,
-        operation_ongoing=workbench.is_operation_ongoing,
-        unit_internal_id=workbench.unit_in_operation_id,
-        unit_biography=[stage.name for stage in workbench.unit.biography] if workbench.unit else None,
+        workbench_no=WORKBENCH.number,
+        state=WORKBENCH.state.name,
+        state_description=WORKBENCH.state.description,
+        employee_logged_in=bool(WORKBENCH.employee),
+        employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
+        operation_ongoing=WORKBENCH.state is PRODUCTION_STAGE_ONGOING_STATE,
+        unit_internal_id=WORKBENCH.unit.internal_id if WORKBENCH.unit else None,
+        unit_biography=[stage.name for stage in WORKBENCH.unit.biography] if WORKBENCH.unit else None,
     )
 
 
@@ -176,11 +171,10 @@ def get_workbench_status() -> mdl.WorkbenchOut:
 def get_client_info() -> mdl.ClientInfo:
     """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the
     workbench number if that is the case"""
-    workbench = WorkBench()
     return mdl.ClientInfo(
         status_code=status.HTTP_200_OK,
-        detail=f"Requested ip address is known as workbench no. {workbench.number}",
-        workbench_no=workbench.number,
+        detail=f"Requested ip address is known as workbench no. {WORKBENCH.number}",
+        workbench_no=WORKBENCH.number,
     )
 
 
