@@ -136,20 +136,22 @@ class Unit:
         self.employee = None
         database.update_unit(self)
 
-    async def upload(self, database: MongoDbWrapper) -> None:
+    async def upload(self, database: MongoDbWrapper, rfid_card_id: str) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         passport = Passport(self)
         passport.save()
 
         if config.print_qr.enable:
             qrcode: str = passport.generate_qr_code()
-            await print_image(qrcode, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}")
+            await print_image(
+                qrcode, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
+            )
 
             if config.print_security_tag.enable:
                 seal_tag_img: str = create_seal_tag()
-                await print_image(seal_tag_img)
+                await print_image(seal_tag_img, rfid_card_id)
 
-        await publish_file(passport.path)
+        await publish_file(passport.path, rfid_card_id)
 
         if self.is_in_db:
             await database.update_unit(self)

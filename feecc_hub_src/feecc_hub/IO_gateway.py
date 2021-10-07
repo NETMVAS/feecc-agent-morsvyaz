@@ -2,7 +2,6 @@ import os
 import typing as tp
 
 import httpx
-from fastapi import Depends
 from loguru import logger
 from substrateinterface import Keypair, SubstrateInterface
 
@@ -181,12 +180,13 @@ class RobonomicsWorker:
         return self._get_latest_datalog(account_address)
 
 
-async def publish_to_ipfs(file_path: str, headers: tp.Dict[str, str] = Depends(get_headers)) -> tp.Tuple[str, str]:
+async def publish_to_ipfs(file_path: str, rfid_card_id: str) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
 
     async with httpx.AsyncClient() as client:
         url = f"{IO_GATEWAY_ADDRESS}/io-gateway/ipfs"
         payload = {"filename": file_path, "background_processing": False}
+        headers: tp.Dict[str, str] = get_headers(rfid_card_id)
         response: httpx.Response = await client.post(url=url, headers=headers, json=payload)
 
     if response.is_error:
@@ -200,12 +200,13 @@ async def publish_to_ipfs(file_path: str, headers: tp.Dict[str, str] = Depends(g
     return cid, link
 
 
-async def publish_to_pinata(file_path: str, headers: tp.Dict[str, str] = Depends(get_headers)) -> tp.Tuple[str, str]:
+async def publish_to_pinata(file_path: str, rfid_card_id: str) -> tp.Tuple[str, str]:
     """publish a provided file to Pinata using the Feecc gateway and return it's CID and URL"""
 
     async with httpx.AsyncClient() as client:
         url = f"{IO_GATEWAY_ADDRESS}/io-gateway/pinata"
         payload = {"filename": file_path, "background_processing": True}
+        headers: tp.Dict[str, str] = get_headers(rfid_card_id)
         response: httpx.Response = await client.post(url=url, headers=headers, json=payload)
 
     if response.is_error:
@@ -219,26 +220,25 @@ async def publish_to_pinata(file_path: str, headers: tp.Dict[str, str] = Depends
     return cid, link
 
 
-async def publish_file(file_path: str) -> tp.Optional[tp.Tuple[str, str]]:
+async def publish_file(file_path: str, rfid_card_id: str) -> tp.Optional[tp.Tuple[str, str]]:
     """publish a file to pinata or IPFS according to config"""
     if config.pinata.enable:
-        return await publish_to_pinata(file_path)
+        return await publish_to_pinata(file_path, rfid_card_id)
     elif config.ipfs.enable:
-        return await publish_to_ipfs(file_path)
+        return await publish_to_ipfs(file_path, rfid_card_id)
     else:
         logger.warning(f"File '{file_path}' is neither published to Pinata, nor IPFS as both options are disabled")
         return None
 
 
-async def print_image(
-    file_path: str, annotation: tp.Optional[str] = None, headers: tp.Dict[str, str] = Depends(get_headers)
-) -> None:
+async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
 
     async with httpx.AsyncClient() as client:
         url = f"{IO_GATEWAY_ADDRESS}/printing/print_image"
         payload = {"annotation": annotation}
         files = {"upload-file": (None, open(file_path, "rb"), "image/png")}
+        headers: tp.Dict[str, str] = get_headers(rfid_card_id)
         response: httpx.Response = await client.post(url=url, headers=headers, json=payload, files=files)
 
     if response.is_error:

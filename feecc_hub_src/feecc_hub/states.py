@@ -2,7 +2,7 @@ import typing as tp
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class State:
     """State description container"""
 

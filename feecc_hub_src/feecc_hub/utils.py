@@ -19,4 +19,4 @@ def time_execution(func: tp.Any) -> tp.Any:
 
 def get_headers(rfid_card_id: str) -> tp.Dict[str, str]:
     """return a dict with all the headers required for using the backend"""
-    return {"rfid_card_id": rfid_card_id}
+    return {"rfid-card-id": rfid_card_id}

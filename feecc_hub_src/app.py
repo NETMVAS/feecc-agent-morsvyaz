@@ -20,7 +20,7 @@ from feecc_hub.states import PRODUCTION_STAGE_ONGOING_STATE
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
 
 # global variables
-api = FastAPI(dependencies=[Depends(validate_sender)])
+api = FastAPI(dependencies=[Depends(validate_sender)], title="Feecc Workbench daemon")
 
 api.add_middleware(
     CORSMiddleware,
@@ -38,7 +38,7 @@ def startup_event() -> None:
     MongoDbWrapper()
 
 
-@api.post("/api/unit/new", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse])  # type: ignore
+@api.post("/unit/new", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse], tags=["unit"])  # type: ignore
 async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
     """handle new Unit creation"""
     try:
@@ -55,7 +55,7 @@ async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericR
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@api.get("/api/unit/{unit_internal_id}/info", response_model=mdl.UnitInfo)
+@api.get("/unit/{unit_internal_id}/info", response_model=mdl.UnitInfo, tags=["unit"])
 def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo:
     """return data for a Unit with matching ID"""
     return mdl.UnitInfo(
@@ -66,7 +66,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
     )
 
 
-@api.post("/api/unit/{unit_internal_id}/start", response_model=mdl.GenericResponse)
+@api.post("/unit/{unit_internal_id}/start", response_model=mdl.GenericResponse, tags=["unit"])
 async def unit_start_record(
     workbench_details: mdl.WorkbenchExtraDetails, unit: Unit = Depends(get_unit_by_internal_id)
 ) -> mdl.GenericResponse:
@@ -84,13 +84,13 @@ async def unit_start_record(
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.post("/api/unit/{unit_internal_id}/end", response_model=mdl.GenericResponse)
-def unit_stop_record(
+@api.post("/unit/{unit_internal_id}/end", response_model=mdl.GenericResponse, tags=["unit"])
+async def unit_stop_record(
     workbench_data: mdl.WorkbenchExtraDetailsWithoutStage, unit: Unit = Depends(get_unit_by_internal_id)
 ) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        WORKBENCH.end_operation(workbench_data.additional_info)
+        await WORKBENCH.end_operation(workbench_data.additional_info)
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
@@ -101,11 +101,14 @@ def unit_stop_record(
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.post("/api/unit/{unit_internal_id}/upload", response_model=mdl.GenericResponse)
+@api.post("/unit/{unit_internal_id}/upload", response_model=mdl.GenericResponse, tags=["unit"])
 async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """handle Unit lifecycle end"""
     try:
-        await unit.upload(MongoDbWrapper())
+        if WORKBENCH.employee is None:
+            raise StateForbiddenError("Employee is not authorized on the workbench")
+
+        await unit.upload(MongoDbWrapper(), WORKBENCH.employee.rfid_card_id)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
 
     except Exception as e:
@@ -114,17 +117,17 @@ async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> m
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.post("/api/employee/info", response_model=mdl.EmployeeOut)
-def get_employee_data(employee: mdl.EmployeeModel = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
+@api.post("/employee/info", response_model=mdl.EmployeeOut, tags=["employee"])
+def get_employee_data(employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
     """return data for an Employee with matching ID card"""
     return mdl.EmployeeOut(
         status_code=status.HTTP_200_OK, detail="Employee retrieved successfully", employee_data=employee
     )
 
 
-@api.post("/api/employee/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse])  # type: ignore
+@api.post("/employee/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse], tags=["employee"])  # type: ignore
 def log_in_employee(
-    employee: mdl.EmployeeModel = Depends(get_employee_by_card_id),
+    employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id),
 ) -> tp.Union[mdl.EmployeeOut, mdl.GenericResponse]:
     """handle logging in the Employee at a given Workbench"""
     try:
@@ -137,7 +140,7 @@ def log_in_employee(
         return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
 
-@api.post("/api/employee/log-out", response_model=mdl.GenericResponse)
+@api.post("/employee/log-out", response_model=mdl.GenericResponse, tags=["employee"])
 def log_out_employee() -> mdl.GenericResponse:
     """handle logging out the Employee at a given Workbench"""
     try:
@@ -152,7 +155,7 @@ def log_out_employee() -> mdl.GenericResponse:
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.post("/api/workbench/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)
+@api.post("/workbench/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse, tags=["workbench"])
 def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """assign the provided unit to the workbench"""
     try:
@@ -165,7 +168,7 @@ def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericRes
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.post("/api/workbench/remove-unit", response_model=mdl.GenericResponse)
+@api.post("/workbench/remove-unit", response_model=mdl.GenericResponse, tags=["workbench"])
 def remove_unit() -> mdl.GenericResponse:
     """remove the unit from the workbench"""
     try:
@@ -178,7 +181,7 @@ def remove_unit() -> mdl.GenericResponse:
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.get("/api/workbench/status", response_model=mdl.WorkbenchOut)
+@api.get("/workbench/status", response_model=mdl.WorkbenchOut, tags=["workbench"])
 def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
     return mdl.WorkbenchOut(
@@ -193,7 +196,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     )
 
 
-@api.get("/api/workbench/client_info", response_model=mdl.ClientInfo)
+@api.get("/workbench/client_info", response_model=mdl.ClientInfo, tags=["workbench"])
 def get_client_info() -> mdl.ClientInfo:
     """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the
     workbench number if that is the case"""

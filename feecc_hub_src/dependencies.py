@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 from fastapi import HTTPException, Request, status
 
 from feecc_hub import models
@@ -13,15 +15,16 @@ async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
         return await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-async def get_employee_by_card_id(employee_data: models.EmployeeID) -> Employee:
+async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.EmployeeWCardModel:
     try:
-        return await MongoDbWrapper().get_employee_by_card_id(employee_data.employee_rfid_card_no)
+        employee: Employee = await MongoDbWrapper().get_employee_by_card_id(employee_data.employee_rfid_card_no)
+        return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 def validate_sender(request: Request) -> None:

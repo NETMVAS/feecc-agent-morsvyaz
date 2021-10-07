@@ -146,7 +146,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
-            unit_dict["unit_biography"] = prod_stages
+            unit_dict["biography"] = prod_stages
             return Unit(**unit_dict)
 
         except Exception as E:

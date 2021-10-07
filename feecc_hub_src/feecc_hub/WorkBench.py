@@ -47,10 +47,10 @@ class WorkBench(metaclass=SingletonMeta):
         unit = Unit(unit_type)
         await self._database.upload_unit(unit)
 
-        if unit.internal_id is not None:
-            return unit.internal_id
-        else:
+        if unit.internal_id is None:
             raise ValueError("Unit internal_id is None")
+
+        return unit.internal_id
 
     def _validate_state_transition(self, new_state: State) -> None:
         """check if state transition can be performed using the map"""
@@ -73,8 +73,8 @@ class WorkBench(metaclass=SingletonMeta):
         if self.state is UNIT_ASSIGNED_IDLING_STATE:
             self.remove_unit()
 
+        logger.info(f"Employee {self.employee.name} was logged out the Workbench {self.number}")  # type: ignore
         self.employee = None
-        logger.info(f"Employee '{self.employee}' was logged out the Workbench {self.number}")
 
         self.state = AWAIT_LOGIN_STATE
 
@@ -83,6 +83,7 @@ class WorkBench(metaclass=SingletonMeta):
         self._validate_state_transition(UNIT_ASSIGNED_IDLING_STATE)
 
         self.unit = unit
+        logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
 
         self.state = UNIT_ASSIGNED_IDLING_STATE
 
@@ -90,9 +91,10 @@ class WorkBench(metaclass=SingletonMeta):
         """remove a unit from the workbench"""
         self._validate_state_transition(AUTHORIZED_IDLING_STATE)
 
+        logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")  # type: ignore
         self.unit = None
 
-        self.state = UNIT_ASSIGNED_IDLING_STATE
+        self.state = AUTHORIZED_IDLING_STATE
 
     async def start_operation(self, production_stage_name: str, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
@@ -122,7 +124,7 @@ class WorkBench(metaclass=SingletonMeta):
             file: tp.Optional[str] = self.camera.record.remote_file_path  # type: ignore
 
             if file is not None:
-                data = await publish_file(file)
+                data = await publish_file(file, self.employee.rfid_card_id)  # type: ignore
 
                 if data is not None:
                     cid, link = data

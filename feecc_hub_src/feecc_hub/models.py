@@ -25,10 +25,12 @@ class WorkbenchExtraDetailsWithoutStage(WorkbenchData):
 
 
 class EmployeeModel(BaseModel):
-    rfid_card_id: str
     name: str
     position: str
-    passport_code: str = ""
+
+
+class EmployeeWCardModel(EmployeeModel):
+    rfid_card_id: tp.Optional[str]
 
 
 class WorkbenchOut(WorkbenchData):
@@ -42,7 +44,7 @@ class WorkbenchOut(WorkbenchData):
 
 
 class EmployeeOut(GenericResponse):
-    employee_data: tp.Optional[EmployeeModel]
+    employee_data: tp.Optional[EmployeeWCardModel]
 
 
 class EmployeeID(BaseModel):
