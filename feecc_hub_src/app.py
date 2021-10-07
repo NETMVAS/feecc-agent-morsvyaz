@@ -152,6 +152,32 @@ def log_out_employee() -> mdl.GenericResponse:
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
+@api.post("/api/workbench/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)
+def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+    """assign the provided unit to the workbench"""
+    try:
+        WORKBENCH.assign_unit(unit)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Unit {unit.internal_id} has been assigned")
+
+    except Exception as e:
+        message: str = f"An error occurred during unit assignment: {e}"
+        logger.error(message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+
+@api.post("/api/workbench/remove-unit", response_model=mdl.GenericResponse)
+def remove_unit() -> mdl.GenericResponse:
+    """remove the unit from the workbench"""
+    try:
+        WORKBENCH.remove_unit()
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Unit has been removed")
+
+    except Exception as e:
+        message: str = f"An error occurred during unit removal: {e}"
+        logger.error(message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+
 @api.get("/api/workbench/status", response_model=mdl.WorkbenchOut)
 def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
