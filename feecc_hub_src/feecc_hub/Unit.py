@@ -61,8 +61,9 @@ class Unit:
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
 
+        # TODO: need rfid card to print + not awaited
         if config.print_barcode.enable and not self.is_in_db:
-            print_image(self.barcode.filename, self.model)
+            print_image(file_path=self.barcode.filename, annotation=self.model)
 
     def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
         return {
@@ -142,9 +143,9 @@ class Unit:
         passport.save()
 
         if config.print_qr.enable:
-            qrcode: str = passport.generate_qr_code()
+            qrcode_path: str = passport.generate_qr_code()
             await print_image(
-                qrcode, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
+                qrcode_path, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
             )
 
             if config.print_security_tag.enable:
