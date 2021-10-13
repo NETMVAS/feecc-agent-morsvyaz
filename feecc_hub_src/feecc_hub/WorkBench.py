@@ -42,7 +42,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
-    async def create_new_unit(self, unit_type: str) -> str:
+    async def create_new_unit(self, unit_type: str) -> Unit:
         """initialize a new instance of the Unit class"""
         unit = Unit(unit_type)
         await self._database.upload_unit(unit)
@@ -50,7 +50,7 @@ class WorkBench(metaclass=SingletonMeta):
         if unit.internal_id is None:
             raise ValueError("Unit internal_id is None")
 
-        return unit.internal_id
+        return unit
 
     def _validate_state_transition(self, new_state: State) -> None:
         """check if state transition can be performed using the map"""

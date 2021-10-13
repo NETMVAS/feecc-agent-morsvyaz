@@ -61,10 +61,6 @@ class Unit:
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
 
-        # TODO: need rfid card to print + not awaited
-        if config.print_barcode.enable and not self.is_in_db:
-            print_image(file_path=self.barcode.filename, annotation=self.model)
-
     def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
         return {
             "model": self.model,
