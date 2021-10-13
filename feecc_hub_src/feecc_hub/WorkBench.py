@@ -3,12 +3,16 @@ from __future__ import annotations
 import typing as tp
 
 from loguru import logger
-from .IO_gateway import publish_file
+
 from .Camera import Camera
 from .Employee import Employee
+from .IO_gateway import print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
 from .Unit import Unit
+from .config import config
+from .database import MongoDbWrapper
+from .exceptions import StateForbiddenError
 from .states import (
     AUTHORIZED_IDLING_STATE,
     AWAIT_LOGIN_STATE,
@@ -17,9 +21,6 @@ from .states import (
     State,
     UNIT_ASSIGNED_IDLING_STATE,
 )
-from .config import config
-from .database import MongoDbWrapper
-from .exceptions import StateForbiddenError
 
 
 class WorkBench(metaclass=SingletonMeta):
@@ -44,11 +45,17 @@ class WorkBench(metaclass=SingletonMeta):
 
     async def create_new_unit(self, unit_type: str) -> Unit:
         """initialize a new instance of the Unit class"""
+        if self.state is not AUTHORIZED_IDLING_STATE:
+            raise StateForbiddenError("Cannot create a new unit unless workbench has state AuthorizedIdling")
+
         unit = Unit(unit_type)
         await self._database.upload_unit(unit)
 
         if unit.internal_id is None:
             raise ValueError("Unit internal_id is None")
+
+        if config.print_barcode.enable and not unit.is_in_db:
+            await print_image(self.employee.rfid_card_id, unit.barcode.filename, annotation=unit.model)  # type: ignore
 
         return unit
 

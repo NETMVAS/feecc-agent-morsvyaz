@@ -9,7 +9,6 @@ from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_unit_by_internal_id, validate_sender
 from feecc_hub import models as mdl, states, utils
 from feecc_hub.Employee import Employee
-from feecc_hub.IO_gateway import print_image
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.config import config
@@ -42,14 +41,7 @@ def startup_event() -> None:
 async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
     """handle new Unit creation"""
     try:
-        if WORKBENCH.state is not states.AUTHORIZED_IDLING_STATE:
-            raise StateForbiddenError("Cannot create a new unit unless workbench has state AuthorizedIdling")
-
         unit: Unit = await WORKBENCH.create_new_unit(payload.unit_type)
-
-        if config.print_barcode.enable and not unit.is_in_db:
-            await print_image(WORKBENCH.employee.rfid_card_id, unit.barcode.filename, annotation=unit.model)
-
         logger.info(f"Initialized new unit with internal ID {unit.internal_id}")
         return mdl.UnitOut(
             status_code=status.HTTP_200_OK,
