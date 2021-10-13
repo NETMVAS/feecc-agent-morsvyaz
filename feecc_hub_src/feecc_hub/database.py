@@ -114,7 +114,14 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         convert a unit instance into a dictionary suitable for future reassembly while
         converting nested structures and uploading them
         """
-        unit.is_in_db = True
+        for component in unit.components_units:
+            await self.upload_unit(component)
+
+        if unit.is_in_db:
+            return
+        else:
+            unit.is_in_db = True
+
         unit_dict = unit.dict_data()
 
         # upload nested dataclasses
@@ -147,7 +154,9 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
             unit_dict["biography"] = prod_stages
-            return Unit(**unit_dict)
+            unit = Unit(**unit_dict)
+            unit.components_units = [await self.get_unit_by_internal_id(id_) for id_ in unit.components_internal_ids]
+            return unit
 
         except Exception as E:
             logger.error(E)

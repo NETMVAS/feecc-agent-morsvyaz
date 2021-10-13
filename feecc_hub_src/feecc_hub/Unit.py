@@ -51,8 +51,9 @@ class Unit:
         biography: tp.Optional[tp.List[ProductionStage]] = None,
         passport_short_url: tp.Optional[str] = None,
         is_a_composition: tp.Optional[bool] = None,
-        components: tp.Optional[tp.List[str]] = None,
+        components_names: tp.Optional[tp.List[str]] = None,
         components_units: tp.Optional[tp.List[Unit]] = None,
+        components_internal_ids: tp.Optional[tp.List[str]] = None,
     ) -> None:
         self.model: str = model
         self.uuid: str = uuid or uuid4().hex
@@ -61,8 +62,9 @@ class Unit:
         self.passport_short_url: tp.Optional[str] = passport_short_url
 
         self.is_a_composition: bool = is_a_composition or False
-        self.components_names: tp.List[str] = components if is_a_composition and components else []
+        self.components_names: tp.List[str] = components_names if is_a_composition and components_names else []
         self.components_units: tp.List[Unit] = components_units or []
+        self.components_internal_ids: tp.List[str] = components_internal_ids or []
 
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or []
@@ -91,13 +93,16 @@ class Unit:
             logger.error(message)
             raise ValueError(message)
 
-    def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
+    def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None, tp.List[str]]]:
         return {
             "model": self.model,
             "uuid": self.uuid,
             "internal_id": self.internal_id,
             "is_in_db": self.is_in_db,
             "passport_short_url": self.passport_short_url,
+            "is_a_composition": self.is_a_composition,
+            "components_names": self.components_names,
+            "components_components_internal_ids": self.components_internal_ids,
         }
 
     @property
