@@ -50,6 +50,9 @@ class Unit:
         is_in_db: tp.Optional[bool] = None,
         biography: tp.Optional[tp.List[ProductionStage]] = None,
         passport_short_url: tp.Optional[str] = None,
+        is_a_composition: tp.Optional[bool] = None,
+        components: tp.Optional[tp.List[str]] = None,
+        components_units: tp.Optional[tp.List[Unit]] = None,
     ) -> None:
         self.model: str = model
         self.uuid: str = uuid or uuid4().hex
@@ -57,9 +60,36 @@ class Unit:
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
 
+        self.is_a_composition: bool = is_a_composition or False
+        self.components_names: tp.List[str] = components if is_a_composition and components else []
+        self.components_units: tp.List[Unit] = components_units or []
+
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
+
+    @property
+    def components_filled(self) -> bool:
+        if self.components_names and self.components_units:
+            return len(self.components_names) == len(self.components_units)
+        return True
+
+    def assign_component(self, component: Unit) -> None:
+        """acquire one of the composite unit's components"""
+        if not self.is_a_composition or self.components_filled:
+            logger.error(f"Unit {self.model} component requirements have already been satisfied")
+        elif component.model in self.components_names:
+            if component.model not in (c.model for c in self.components_units):
+                self.components_units.append(component)
+                logger.info(f"Component {component.model} has been assigned to a composite Unit {self.model}")
+            else:
+                message = f"Component {component.model} is already assigned to a composite Unit {self.model}"
+                logger.error(message)
+                raise ValueError(message)
+        else:
+            message = f"Cannot assign component {component.model} to {self.model} as it's not a component of it"
+            logger.error(message)
+            raise ValueError(message)
 
     def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None]]:
         return {
