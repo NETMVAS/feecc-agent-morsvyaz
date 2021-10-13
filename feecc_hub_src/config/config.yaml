@@ -53,3 +53,7 @@ workbench_config:
   feecc_io_gateway_socket: ""
   hardware:  # list of attached devices to make use of
     camera: null # null or number
+
+known_hid_devices: # known attached devices with their full names
+  rfid_reader: "Sycreader RFID Technology Co., Ltd SYC ID&IC USB Reader"
+  barcode_reader: "HENEX 2D Barcode Scanner"

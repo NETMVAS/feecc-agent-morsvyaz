@@ -58,6 +58,11 @@ class PrintSecurityTag(ConfigSection):
     enable_timestamp: bool
 
 
+class HidDevices(ConfigSection):
+    rfid_reader: str
+    barcode_reader: str
+
+
 class WorkBenchConfig(ConfigSection):
     number: int
     description: str
@@ -78,3 +83,4 @@ class GlobalConfig(ConfigSection):
     print_qr: PrintQr
     print_security_tag: PrintSecurityTag
     workbench_config: WorkBenchConfig
+    known_hid_devices: HidDevices

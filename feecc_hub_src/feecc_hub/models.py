@@ -65,3 +65,10 @@ class UnitInfo(UnitOut):
 
 class ClientInfo(GenericResponse, WorkbenchData):
     pass
+
+
+class HidEvent(BaseModel):
+    string: str
+    name: str
+    timestamp: float
+    info: tp.Dict[str, tp.Union[int, str]]

@@ -7,14 +7,13 @@ from loguru import logger
 
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_unit_by_internal_id, validate_sender
-from feecc_hub import models as mdl
+from feecc_hub import models as mdl, states, utils
 from feecc_hub.Employee import Employee
 from feecc_hub.Unit import Unit
 from feecc_hub.WorkBench import WorkBench
 from feecc_hub.config import config
 from feecc_hub.database import MongoDbWrapper
 from feecc_hub.exceptions import StateForbiddenError
-from feecc_hub.states import PRODUCTION_STAGE_ONGOING_STATE
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -190,7 +189,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
         state_description=WORKBENCH.state.description,
         employee_logged_in=bool(WORKBENCH.employee),
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
-        operation_ongoing=WORKBENCH.state is PRODUCTION_STAGE_ONGOING_STATE,
+        operation_ongoing=WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE,
         unit_internal_id=WORKBENCH.unit.internal_id if WORKBENCH.unit else None,
         unit_biography=[stage.name for stage in WORKBENCH.unit.biography] if WORKBENCH.unit else None,
     )
@@ -205,6 +204,50 @@ def get_client_info() -> mdl.ClientInfo:
         detail=f"Requested ip address is known as workbench no. {WORKBENCH.number}",
         workbench_no=WORKBENCH.number,
     )
+
+
+@api.post("/workbench/hid_event", response_model=mdl.GenericResponse, tags=["workbench"])
+async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
+    """Parse the event dict JSON"""
+    logger.debug(f"Received event dict:\n{event.json()}")
+    # handle the event in accord with it's source
+    sender: tp.Optional[str] = utils.identify_sender(event.name)
+
+    try:
+        if sender == "rfid_reader":
+            logger.debug(f"Handling RFID event. String: {event.string}")
+
+            if WORKBENCH.employee is not None:
+                WORKBENCH.log_out()
+            else:
+                employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
+                WORKBENCH.log_in(employee)
+
+        elif sender == "barcode_reader":
+            logger.debug(f"Handling barcode event. String: {event.string}")
+
+            if not utils.is_a_ean13_barcode(event.string):
+                logger.warning(f"'{event.string}' is not a EAN13 barcode and cannot be an internal unit ID.")
+            elif WORKBENCH.state is states.AUTHORIZED_IDLING_STATE:
+                unit = await get_unit_by_internal_id(event.string)
+                WORKBENCH.assign_unit(unit)
+            elif WORKBENCH.state is states.UNIT_ASSIGNED_IDLING_STATE:
+                WORKBENCH.remove_unit()
+                unit = await get_unit_by_internal_id(event.string)
+                WORKBENCH.assign_unit(unit)
+            elif WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE:
+                await WORKBENCH.end_operation()
+            else:
+                logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
+
+        else:
+            message: str = "Sender of the event dict is not mentioned in the config. Request ignored."
+            return mdl.GenericResponse(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
+
+    except StateForbiddenError as e:
+        return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
 
 if __name__ == "__main__":
