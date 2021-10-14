@@ -20,7 +20,7 @@ class RobonomicsNetwork(ConfigSection):
     enable_datalog: bool
     account_address: str
     account_seed: str
-    substrate_node_url: str
+    substrate_node_url: tp.Optional[str]
 
 
 class Pinata(ConfigSection):

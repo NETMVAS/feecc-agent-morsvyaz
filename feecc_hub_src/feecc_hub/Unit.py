@@ -9,7 +9,7 @@ from uuid import uuid4
 from loguru import logger
 
 from .Employee import Employee
-from .IO_gateway import print_image, publish_file
+from .IO_gateway import post_to_datalog, print_image, publish_file
 from .Types import AdditionalInfo
 from ._Barcode import Barcode
 from ._Passport import Passport
@@ -183,7 +183,11 @@ class Unit:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, rfid_card_id)
 
-        await publish_file(passport.path, rfid_card_id)
+        res = await publish_file(passport.path, rfid_card_id)
+
+        if config.robonomics_network.enable_datalog and res is not None:
+            cid: str = res[0]
+            post_to_datalog(cid)
 
         if self.is_in_db:
             await database.update_unit(self)
