@@ -1,6 +1,5 @@
 import typing as tp
 
-import uvicorn
 from fastapi import Depends, FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -11,7 +10,6 @@ from feecc_workbench import models as mdl, states, utils
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
 from feecc_workbench.WorkBench import WorkBench
-from feecc_workbench.config import config
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import StateForbiddenError
 
