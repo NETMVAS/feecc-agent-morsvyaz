@@ -1,0 +1,10 @@
+version: "3"
+services:
+  feecc_workbench_daemon:
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "0.0.0.0:5000:5000"
+    volumes:
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
