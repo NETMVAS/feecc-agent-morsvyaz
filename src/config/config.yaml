@@ -1,8 +1,4 @@
 # SERVICE IO SECTION
-api_server: # socket for the Api server to run on
-  ip: "0.0.0.0"
-  port: 5000
-
 mongo_db: # MongoDB credentials
   mongo_connection_url: sample_text
 

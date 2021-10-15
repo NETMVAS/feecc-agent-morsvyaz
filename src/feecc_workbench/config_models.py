@@ -7,11 +7,6 @@ class ConfigSection(BaseModel):
     pass
 
 
-class ApiServer(ConfigSection):
-    ip: str
-    port: int
-
-
 class MongoDB(ConfigSection):
     mongo_connection_url: str
 
@@ -72,7 +67,6 @@ class WorkBenchConfig(ConfigSection):
 
 
 class GlobalConfig(ConfigSection):
-    api_server: ApiServer
     mongo_db: MongoDB
     robonomics_network: RobonomicsNetwork
     pinata: Pinata

@@ -25,6 +25,11 @@ UNIT_ASSIGNED_IDLING_STATE = State(
     description="State when a unit is already assigned to the workbench but there is no ongoing operation",
 )
 
+GATHER_COMPONENTS_STATE = State(
+    name="GatherComponents",
+    description="State when information about composite unit's components is gathered",
+)
+
 PRODUCTION_STAGE_ONGOING_STATE = State(
     name="ProductionStageOngoing",
     description="State when there is an active job ongoing",
@@ -32,7 +37,8 @@ PRODUCTION_STAGE_ONGOING_STATE = State(
 
 STATE_TRANSITION_MAP: tp.Dict[State, tp.List[State]] = {
     AWAIT_LOGIN_STATE: [AUTHORIZED_IDLING_STATE],
-    AUTHORIZED_IDLING_STATE: [UNIT_ASSIGNED_IDLING_STATE, AWAIT_LOGIN_STATE],
+    AUTHORIZED_IDLING_STATE: [UNIT_ASSIGNED_IDLING_STATE, AWAIT_LOGIN_STATE, GATHER_COMPONENTS_STATE],
+    GATHER_COMPONENTS_STATE: [AUTHORIZED_IDLING_STATE, UNIT_ASSIGNED_IDLING_STATE],
     UNIT_ASSIGNED_IDLING_STATE: [AUTHORIZED_IDLING_STATE, AWAIT_LOGIN_STATE, PRODUCTION_STAGE_ONGOING_STATE],
     PRODUCTION_STAGE_ONGOING_STATE: [UNIT_ASSIGNED_IDLING_STATE],
 }

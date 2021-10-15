@@ -1,7 +1,7 @@
 import os
 
-from feecc_hub_src.feecc_hub.config import Config
-from feecc_hub_src.feecc_hub.database import MongoDbWrapper
+from src.feecc_workbench.config import Config
+from src.feecc_workbench.database import MongoDbWrapper
 
 
 def credentials():

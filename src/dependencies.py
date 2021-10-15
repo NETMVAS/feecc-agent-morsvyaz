@@ -2,12 +2,12 @@ from dataclasses import asdict
 
 from fastapi import HTTPException, Request, status
 
-from feecc_hub import models
-from feecc_hub.Employee import Employee
-from feecc_hub.Unit import Unit
-from feecc_hub.WorkBench import WorkBench
-from feecc_hub.database import MongoDbWrapper
-from feecc_hub.exceptions import EmployeeNotFoundError, UnitNotFoundError
+from feecc_workbench import models
+from feecc_workbench.Employee import Employee
+from feecc_workbench.Unit import Unit
+from feecc_workbench.WorkBench import WorkBench
+from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 
 
 async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:

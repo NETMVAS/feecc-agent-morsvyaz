@@ -7,13 +7,13 @@ from loguru import logger
 
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_unit_by_internal_id, validate_sender
-from feecc_hub import models as mdl, states, utils
-from feecc_hub.Employee import Employee
-from feecc_hub.Unit import Unit
-from feecc_hub.WorkBench import WorkBench
-from feecc_hub.config import config
-from feecc_hub.database import MongoDbWrapper
-from feecc_hub.exceptions import StateForbiddenError
+from feecc_workbench import models as mdl, states, utils
+from feecc_workbench.Employee import Employee
+from feecc_workbench.Unit import Unit
+from feecc_workbench.WorkBench import WorkBench
+from feecc_workbench.config import config
+from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.exceptions import StateForbiddenError
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -248,7 +248,3 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
 
     except StateForbiddenError as e:
         return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-
-
-if __name__ == "__main__":
-    uvicorn.run("app:api", host=config.api_server.ip, port=config.api_server.port)
