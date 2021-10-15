@@ -19,7 +19,7 @@ CONSOLE_LOGGING_CONFIG = {
 FILE_LOGGING_CONFIG = {
     **BASE_LOGGING_CONFIG,  # type: ignore
     "level": "DEBUG",
-    "sink": "hub.log",
+    "sink": "workbench.log",
     "rotation": "10 MB",
     "compression": "zip",
 }
