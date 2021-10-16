@@ -138,9 +138,9 @@ async def publish_file(
 ) -> tp.Optional[tp.Tuple[str, str]]:
     """publish a file to pinata or IPFS according to config"""
     if config.pinata.enable:
-        return await publish_to_pinata(rfid_card_id, local_file_path, remote_file_path)
+        return await publish_to_pinata(rfid_card_id, local_file_path, remote_file_path)  # type: ignore
     elif config.ipfs.enable:
-        return await publish_to_ipfs(rfid_card_id, local_file_path, remote_file_path)
+        return await publish_to_ipfs(rfid_card_id, local_file_path, remote_file_path)  # type: ignore
     else:
         logger.warning(
             f"File '{local_file_path or remote_file_path}' is neither published to Pinata, nor IPFS as both options are disabled"
