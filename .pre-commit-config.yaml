@@ -33,14 +33,14 @@ repos:
         require_serial: true
         args: ["--config=.flake8"]
 
-  - repo: local
-    hooks:
-      - id: pytest-check
-        name: pytest-check
-        entry: make test
-        language: system
-        pass_filenames: false
-        always_run: true
+#  - repo: local
+#    hooks:
+#      - id: pytest-check
+#        name: pytest-check
+#        entry: make test
+#        language: system
+#        pass_filenames: false
+#        always_run: true
 
   - repo: https://github.com/myint/eradicate
     rev: v2.0.0
