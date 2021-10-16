@@ -1,6 +1,6 @@
 import typing as tp
 
-from fastapi import Depends, FastAPI, status
+from fastapi import Depends, FastAPI, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
@@ -110,6 +110,25 @@ async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> m
 
     except Exception as e:
         message: str = f"Can't handle unit upload. An error occurred: {e}"
+        logger.error(message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+
+@api.post("/unit/{unit_internal_id}/assign-component", response_model=mdl.GenericResponse, tags=["unit"])
+def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+    """assign a unit as a component to the composite unit"""
+    if WORKBENCH.state is not states.GATHER_COMPONENTS_STATE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Component assignment can only be done while the workbench is in state 'GatherComponents'",
+        )
+
+    try:
+        WORKBENCH.unit.assign_component(unit)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Component has been assigned")
+
+    except Exception as e:
+        message: str = f"An error occurred during component assignment: {e}"
         logger.error(message)
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
@@ -226,17 +245,20 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
 
             if not utils.is_a_ean13_barcode(event.string):
                 logger.warning(f"'{event.string}' is not a EAN13 barcode and cannot be an internal unit ID.")
-            elif WORKBENCH.state is states.AUTHORIZED_IDLING_STATE:
-                unit = await get_unit_by_internal_id(event.string)
-                WORKBENCH.assign_unit(unit)
-            elif WORKBENCH.state is states.UNIT_ASSIGNED_IDLING_STATE:
-                WORKBENCH.remove_unit()
-                unit = await get_unit_by_internal_id(event.string)
-                WORKBENCH.assign_unit(unit)
             elif WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE:
                 await WORKBENCH.end_operation()
             else:
-                logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
+                unit = await get_unit_by_internal_id(event.string)
+
+                if WORKBENCH.state is states.AUTHORIZED_IDLING_STATE:
+                    WORKBENCH.assign_unit(unit)
+                elif WORKBENCH.state is states.UNIT_ASSIGNED_IDLING_STATE:
+                    WORKBENCH.remove_unit()
+                    WORKBENCH.assign_unit(unit)
+                elif WORKBENCH.state is states.GATHER_COMPONENTS_STATE:
+                    WORKBENCH.unit.assign_component(unit)
+                else:
+                    logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
 
         else:
             message: str = "Sender of the event dict is not mentioned in the config. Request ignored."
