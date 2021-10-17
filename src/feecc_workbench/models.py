@@ -8,11 +8,7 @@ class GenericResponse(BaseModel):
     detail: tp.Optional[str]
 
 
-class WorkbenchData(BaseModel):
-    workbench_no: int
-
-
-class WorkbenchStageDetails(WorkbenchData):
+class WorkbenchStageDetails(BaseModel):
     production_stage_name: str
 
 
@@ -20,7 +16,7 @@ class WorkbenchExtraDetails(WorkbenchStageDetails):
     additional_info: tp.Dict[str, str]
 
 
-class WorkbenchExtraDetailsWithoutStage(WorkbenchData):
+class WorkbenchExtraDetailsWithoutStage(BaseModel):
     additional_info: tp.Optional[tp.Dict[str, str]] = None
 
 
@@ -33,7 +29,7 @@ class EmployeeWCardModel(EmployeeModel):
     rfid_card_id: tp.Optional[str]
 
 
-class WorkbenchOut(WorkbenchData):
+class WorkbenchOut(BaseModel):
     state: str
     state_description: tp.Optional[str]
     employee_logged_in: bool
@@ -61,10 +57,6 @@ class UnitOut(GenericResponse):
 
 class UnitInfo(UnitOut):
     unit_biography: tp.List[str]
-
-
-class ClientInfo(GenericResponse, WorkbenchData):
-    pass
 
 
 class HidEvent(BaseModel):

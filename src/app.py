@@ -63,48 +63,14 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
     )
 
 
-@api.post("/unit/{unit_internal_id}/start", response_model=mdl.GenericResponse, tags=["unit"])
-async def unit_start_record(
-    workbench_details: mdl.WorkbenchExtraDetails, unit: Unit = Depends(get_unit_by_internal_id)
-) -> mdl.GenericResponse:
-    """handle start recording operation on a Unit"""
-    try:
-        workbench = WORKBENCH
-        await workbench.start_operation(workbench_details.production_stage_name, workbench_details.additional_info)
-        message: str = f"Started operation '{workbench_details.production_stage_name}' on Unit {unit.internal_id}"
-        logger.info(message)
-        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
-
-    except Exception as e:
-        message = f"Couldn't handle request. An error occurred: {e}"
-        logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
-
-
-@api.post("/unit/{unit_internal_id}/end", response_model=mdl.GenericResponse, tags=["unit"])
-async def unit_stop_record(
-    workbench_data: mdl.WorkbenchExtraDetailsWithoutStage, unit: Unit = Depends(get_unit_by_internal_id)
-) -> mdl.GenericResponse:
-    """handle end recording operation on a Unit"""
-    try:
-        await WORKBENCH.end_operation(workbench_data.additional_info)
-        message: str = f"Ended current operation on unit {unit.internal_id}"
-        logger.info(message)
-        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
-
-    except Exception as e:
-        message = f"Couldn't handle end record request. An error occurred: {e}"
-        logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
-
-
-@api.post("/unit/{unit_internal_id}/upload", response_model=mdl.GenericResponse, tags=["unit"])
-async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+@api.post("/unit/upload", response_model=mdl.GenericResponse, tags=["unit"])
+async def unit_upload_record() -> mdl.GenericResponse:
     """handle Unit lifecycle end"""
     try:
         if WORKBENCH.employee is None:
             raise StateForbiddenError("Employee is not authorized on the workbench")
 
+        unit = WORKBENCH.unit
         await unit.upload(MongoDbWrapper(), WORKBENCH.employee.rfid_card_id)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
 
@@ -114,7 +80,7 @@ async def unit_upload_record(unit: Unit = Depends(get_unit_by_internal_id)) -> m
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.post("/unit/{unit_internal_id}/assign-component", response_model=mdl.GenericResponse, tags=["unit"])
+@api.post("/unit/assign-component/{unit_internal_id}", response_model=mdl.GenericResponse, tags=["unit"])
 def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """assign a unit as a component to the composite unit"""
     if WORKBENCH.state is not states.GATHER_COMPONENTS_STATE:
@@ -171,6 +137,20 @@ def log_out_employee() -> mdl.GenericResponse:
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
+@api.get("/workbench/status", response_model=mdl.WorkbenchOut, tags=["workbench"])
+def get_workbench_status() -> mdl.WorkbenchOut:
+    """handle providing status of the given Workbench"""
+    return mdl.WorkbenchOut(
+        state=WORKBENCH.state.name,
+        state_description=WORKBENCH.state.description,
+        employee_logged_in=bool(WORKBENCH.employee),
+        employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
+        operation_ongoing=WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE,
+        unit_internal_id=WORKBENCH.unit.internal_id if WORKBENCH.unit else None,
+        unit_biography=[stage.name for stage in WORKBENCH.unit.biography] if WORKBENCH.unit else None,
+    )
+
+
 @api.post("/workbench/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse, tags=["workbench"])
 def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """assign the provided unit to the workbench"""
@@ -197,30 +177,36 @@ def remove_unit() -> mdl.GenericResponse:
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.get("/workbench/status", response_model=mdl.WorkbenchOut, tags=["workbench"])
-def get_workbench_status() -> mdl.WorkbenchOut:
-    """handle providing status of the given Workbench"""
-    return mdl.WorkbenchOut(
-        workbench_no=WORKBENCH.number,
-        state=WORKBENCH.state.name,
-        state_description=WORKBENCH.state.description,
-        employee_logged_in=bool(WORKBENCH.employee),
-        employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
-        operation_ongoing=WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE,
-        unit_internal_id=WORKBENCH.unit.internal_id if WORKBENCH.unit else None,
-        unit_biography=[stage.name for stage in WORKBENCH.unit.biography] if WORKBENCH.unit else None,
-    )
+@api.post("/workbench/start-operation", response_model=mdl.GenericResponse, tags=["workbench"])
+async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.GenericResponse:
+    """handle start recording operation on a Unit"""
+    try:
+        await WORKBENCH.start_operation(workbench_details.production_stage_name, workbench_details.additional_info)
+        unit = WORKBENCH.unit
+        message: str = f"Started operation '{workbench_details.production_stage_name}' on Unit {unit.internal_id}"
+        logger.info(message)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
+
+    except Exception as e:
+        message = f"Couldn't handle request. An error occurred: {e}"
+        logger.error(message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@api.get("/workbench/client_info", response_model=mdl.ClientInfo, tags=["workbench"])
-def get_client_info() -> mdl.ClientInfo:
-    """A client can make a request to this endpoint to know if it's ip is recognized as a workbench and get the
-    workbench number if that is the case"""
-    return mdl.ClientInfo(
-        status_code=status.HTTP_200_OK,
-        detail=f"Requested ip address is known as workbench no. {WORKBENCH.number}",
-        workbench_no=WORKBENCH.number,
-    )
+@api.post("/workbench/end-operation", response_model=mdl.GenericResponse, tags=["workbench"])
+async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -> mdl.GenericResponse:
+    """handle end recording operation on a Unit"""
+    try:
+        await WORKBENCH.end_operation(workbench_data.additional_info)
+        unit = WORKBENCH.unit
+        message: str = f"Ended current operation on unit {unit.internal_id}"
+        logger.info(message)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
+
+    except Exception as e:
+        message = f"Couldn't handle end record request. An error occurred: {e}"
+        logger.error(message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
 @api.post("/workbench/hid_event", response_model=mdl.GenericResponse, tags=["workbench"])
