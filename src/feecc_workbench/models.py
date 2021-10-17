@@ -37,6 +37,7 @@ class WorkbenchOut(BaseModel):
     operation_ongoing: bool
     unit_internal_id: tp.Optional[str]
     unit_biography: tp.Optional[tp.List[str]]
+    unit_components: tp.Optional[tp.Dict[str, bool]]
 
 
 class EmployeeOut(GenericResponse):

@@ -76,6 +76,16 @@ class Unit:
             return len(self.components_names) == len(self.components_units)
         return True
 
+    def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
+        """get a mapping for all the currently assigned components VS the desired components"""
+        assigned_components = {component.model: component.internal_id for component in self.components_units}
+
+        for component_name in self.components_names:
+            if component_name not in assigned_components:
+                assigned_components[component_name] = None
+
+        return assigned_components or None
+
     def assign_component(self, component: Unit) -> None:
         """acquire one of the composite unit's components"""
         if not self.is_a_composition or self.components_filled:

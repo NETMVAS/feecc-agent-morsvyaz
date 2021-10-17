@@ -140,14 +140,16 @@ def log_out_employee() -> mdl.GenericResponse:
 @api.get("/workbench/status", response_model=mdl.WorkbenchOut, tags=["workbench"])
 def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
+    unit = WORKBENCH.unit
     return mdl.WorkbenchOut(
         state=WORKBENCH.state.name,
         state_description=WORKBENCH.state.description,
         employee_logged_in=bool(WORKBENCH.employee),
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
         operation_ongoing=WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE,
-        unit_internal_id=WORKBENCH.unit.internal_id if WORKBENCH.unit else None,
-        unit_biography=[stage.name for stage in WORKBENCH.unit.biography] if WORKBENCH.unit else None,
+        unit_internal_id=unit.internal_id if unit else None,
+        unit_biography=[stage.name for stage in unit.biography] if unit else None,
+        unit_components=unit.assigned_components() if unit else None,
     )
 
 
