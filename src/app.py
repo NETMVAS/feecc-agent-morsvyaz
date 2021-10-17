@@ -39,7 +39,7 @@ def startup_event() -> None:
 async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
     """handle new Unit creation"""
     try:
-        unit: Unit = await WORKBENCH.create_new_unit(payload.unit_type)
+        unit: Unit = await WORKBENCH.create_new_unit(payload.unit_type, payload.component_names)
         logger.info(f"Initialized new unit with internal ID {unit.internal_id}")
         return mdl.UnitOut(
             status_code=status.HTTP_200_OK,

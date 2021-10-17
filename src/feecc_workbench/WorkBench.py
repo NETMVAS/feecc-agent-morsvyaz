@@ -43,12 +43,12 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
-    async def create_new_unit(self, unit_type: str) -> Unit:
+    async def create_new_unit(self, unit_type: str, components_names: tp.Optional[tp.List[str]]) -> Unit:
         """initialize a new instance of the Unit class"""
         if self.state is not AUTHORIZED_IDLING_STATE:
             raise StateForbiddenError("Cannot create a new unit unless workbench has state AuthorizedIdling")
 
-        unit = Unit(unit_type)
+        unit = Unit(unit_type, components_names=components_names)
         await self._database.upload_unit(unit)
 
         if unit.internal_id is None:

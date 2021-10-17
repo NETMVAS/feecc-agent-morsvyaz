@@ -50,6 +50,7 @@ class EmployeeID(BaseModel):
 
 class UnitIn(BaseModel):
     unit_type: str
+    component_names: tp.Optional[tp.List[str]]
 
 
 class UnitOut(GenericResponse):
