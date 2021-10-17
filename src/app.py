@@ -60,6 +60,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
         unit_biography=[stage.name for stage in unit.biography],
+        unit_components=unit.components_names or None,
     )
 
 
