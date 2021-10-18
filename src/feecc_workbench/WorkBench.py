@@ -20,6 +20,7 @@ from .states import (
     STATE_TRANSITION_MAP,
     State,
     UNIT_ASSIGNED_IDLING_STATE,
+    GATHER_COMPONENTS_STATE,
 )
 
 
@@ -92,7 +93,13 @@ class WorkBench(metaclass=SingletonMeta):
         self.unit = unit
         logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
 
-        self.state = UNIT_ASSIGNED_IDLING_STATE
+        if unit.is_a_composition and not unit.components_filled:
+            logger.info(
+                f"Unit {unit.internal_id} is a composition with unsatisfied component requirements. Entering component gathering state."
+            )
+            self.state = GATHER_COMPONENTS_STATE
+        else:
+            self.state = UNIT_ASSIGNED_IDLING_STATE
 
     def remove_unit(self) -> None:
         """remove a unit from the workbench"""
@@ -137,6 +144,6 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        self.unit.end_session(MongoDbWrapper(), ipfs_hashes, additional_info)  # type: ignore
+        await self.unit.end_session(MongoDbWrapper(), ipfs_hashes, additional_info)  # type: ignore
 
-        self.state = AUTHORIZED_IDLING_STATE
+        self.state = UNIT_ASSIGNED_IDLING_STATE

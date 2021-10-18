@@ -1,4 +1,5 @@
 import os
+import socket
 import typing as tp
 
 import httpx
@@ -14,6 +15,25 @@ IO_GATEWAY_ADDRESS: str = config.workbench_config.feecc_io_gateway_socket
 ROBONOMICS_CLIENT = RobonomicsInterface(
     seed=config.robonomics_network.account_seed, remote_ws=config.robonomics_network.substrate_node_url
 )
+
+
+def gateway_is_up() -> None:
+    """check if camera is reachable on the specified port and ip"""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.25)
+
+    try:
+        gw_socket_no_proto = IO_GATEWAY_ADDRESS.split("//")[1]
+        ip, port = gw_socket_no_proto.split(":")
+        s.connect((ip, int(port)))
+        logger.debug(f"{IO_GATEWAY_ADDRESS} is up")
+        s.close()
+
+    except socket.error:
+        raise BrokenPipeError(f"{IO_GATEWAY_ADDRESS} is unreachable")
+
+    except Exception as e:
+        logger.error(e)
 
 
 class File:
@@ -79,6 +99,8 @@ async def publish_to_ipfs(
     rfid_card_id: str, local_file_path: tp.Optional[str] = None, remote_file_path: tp.Optional[str] = None
 ) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
+    gateway_is_up()
+
     url = f"{IO_GATEWAY_ADDRESS}/io-gateway/ipfs"
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
 
@@ -107,6 +129,8 @@ async def publish_to_pinata(
     rfid_card_id: str, local_file_path: tp.Optional[str] = None, remote_file_path: tp.Optional[str] = None
 ) -> tp.Tuple[str, str]:
     """publish a provided file to Pinata using the Feecc gateway and return it's CID and URL"""
+    gateway_is_up()
+
     url = f"{IO_GATEWAY_ADDRESS}/io-gateway/pinata"
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
 
@@ -150,6 +174,7 @@ async def publish_file(
 
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
+    gateway_is_up()
 
     async with httpx.AsyncClient() as client:
         url = f"{IO_GATEWAY_ADDRESS}/printing/print_image"

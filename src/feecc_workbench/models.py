@@ -59,7 +59,7 @@ class UnitOut(GenericResponse):
 
 class UnitInfo(UnitOut):
     unit_biography: tp.List[str]
-    unit_components: tp.Optional[tp.List[str]]
+    unit_components: tp.Optional[tp.List[str]] = None
 
 
 class HidEvent(BaseModel):

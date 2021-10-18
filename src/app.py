@@ -92,6 +92,10 @@ def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.Gener
 
     try:
         WORKBENCH.unit.assign_component(unit)
+
+        if WORKBENCH.unit.components_filled:
+            WORKBENCH.state = states.UNIT_ASSIGNED_IDLING_STATE
+
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Component has been assigned")
 
     except Exception as e:

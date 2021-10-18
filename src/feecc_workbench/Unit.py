@@ -50,7 +50,6 @@ class Unit:
         is_in_db: tp.Optional[bool] = None,
         biography: tp.Optional[tp.List[ProductionStage]] = None,
         passport_short_url: tp.Optional[str] = None,
-        is_a_composition: tp.Optional[bool] = None,
         components_names: tp.Optional[tp.List[str]] = None,
         components_units: tp.Optional[tp.List[Unit]] = None,
         components_internal_ids: tp.Optional[tp.List[str]] = None,
@@ -61,8 +60,7 @@ class Unit:
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
 
-        self.is_a_composition: bool = is_a_composition or False
-        self.components_names: tp.List[str] = components_names if is_a_composition and components_names else []
+        self.components_names: tp.List[str] = components_names or []
         self.components_units: tp.List[Unit] = components_units or []
         self.components_internal_ids: tp.List[str] = components_internal_ids or []
 
@@ -71,11 +69,20 @@ class Unit:
         self.is_in_db: bool = is_in_db or False
 
     @property
+    def is_a_composition(self) -> bool:
+        return bool(self.components_names)
+
+    @property
     def components_filled(self) -> bool:
-        if self.components_names and self.components_units:
+        if self.components_names:
+            if not self.components_units:
+                return False
+
             return len(self.components_names) == len(self.components_units)
+
         return True
 
+    @tp.no_type_check
     def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
         """get a mapping for all the currently assigned components VS the desired components"""
         assigned_components = {component.model: component.internal_id for component in self.components_units}
@@ -110,9 +117,8 @@ class Unit:
             "internal_id": self.internal_id,
             "is_in_db": self.is_in_db,
             "passport_short_url": self.passport_short_url,
-            "is_a_composition": self.is_a_composition,
             "components_names": self.components_names,
-            "components_components_internal_ids": self.components_internal_ids,
+            "components_internal_ids": self.components_internal_ids,
         }
 
     @property
@@ -144,7 +150,7 @@ class Unit:
 
         logger.debug(f"Started production stage {production_stage_name} for {str(operation)}")
 
-    def end_session(
+    async def end_session(
         self,
         database: MongoDbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
@@ -176,8 +182,9 @@ class Unit:
         self.biography[-1] = operation
         logger.debug(f"Unit biography stage count is now {len(self.biography)}")
         self.employee = None
-        database.update_unit(self)
+        await database.update_unit(self)
 
+    @logger.catch
     async def upload(self, database: MongoDbWrapper, rfid_card_id: str) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         passport = Passport(self)

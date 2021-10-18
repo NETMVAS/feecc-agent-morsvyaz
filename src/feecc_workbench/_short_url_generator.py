@@ -1,4 +1,4 @@
-import requests
+import httpx
 from loguru import logger
 
 from .config import config
@@ -23,10 +23,9 @@ def generate_short_url() -> str:
         "format": "json",
         "url": "example.com",
     }  # api call to the yourls server. More on yourls.org
-    payload = ""  # payload. Server creates a short url and returns it as a response
 
     try:
-        response = requests.get(url, data=payload, params=querystring)
+        response = httpx.get(url, params=querystring)
         logger.debug(f"{config_.server} returned: {response.text}")
         keyword: str = response.json()["url"]["keyword"]
         link = str(config_.server) + "/" + keyword  # link of form url.today/6b
@@ -56,10 +55,9 @@ def update_short_url(keyword: str, ipfs_hash: str) -> None:
         "url": new_file_url,
         "shorturl": keyword,
     }
-    payload = ""  # api call with no payload just to update the link. More on yourls.org. Call created with insomnia
 
     try:
-        response = requests.get(url, data=payload, params=params)
+        response = httpx.get(url, params=params)
         logger.debug(f"Trying to update short url link. Keyword: {keyword}")
 
         if response.status_code != 200:
