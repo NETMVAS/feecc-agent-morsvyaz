@@ -83,8 +83,13 @@ class ProductionSchema(BaseModel):
     schema_id: str = uuid4().hex
     unit_name: str
     production_stages: tp.Optional[tp.List[ProductionSchemaStage]]
-    required_components: tp.Optional[tp.List[str]] = None
+    required_components_schema_ids: tp.Optional[tp.List[str]] = None
+
+
+class SchemaListEntry(BaseModel):
+    schema_id: str
+    schema_name: str
 
 
 class SchemasList(GenericResponse):
-    available_schemas: tp.Dict[str, str]
+    available_schemas: tp.List[SchemaListEntry]

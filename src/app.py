@@ -219,7 +219,10 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 @app.get("/workbench/production-schemas/names", response_model=mdl.SchemasList, tags=["workbench"])
 async def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    schemas = {schema.schema_id: schema.unit_name for schema in await MongoDbWrapper().get_schemas()}
+    schemas = [
+        mdl.SchemaListEntry(schema_id=schema.schema_id, schema_name=schema.unit_name)
+        for schema in await MongoDbWrapper().get_schemas()
+    ]
     return mdl.SchemasList(
         status_code=status.HTTP_200_OK,
         detail=f"Gathered {len(schemas)} schemas",
