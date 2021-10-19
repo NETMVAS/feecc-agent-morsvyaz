@@ -1,3 +1,6 @@
+import os
+from time import sleep
+
 from app import app
 from fastapi.testclient import TestClient
 from feecc_workbench.states import (
@@ -10,9 +13,17 @@ from feecc_workbench.states import (
 
 CLIENT = TestClient(base_url="http://127.0.0.1:5000", app=app)
 VALID_TEST_CARD = "1111111111"
+SLOW_MODE = bool(os.environ.get("SLOW_MODE", None))
+SLOW_MODE_DELAY = int(os.environ.get("SLOW_MODE_DELAY", 3))
 
 
 # UTILS
+def wait() -> None:
+    """wait some time to see the frontend response to the backend state switching"""
+    if SLOW_MODE:
+        sleep(SLOW_MODE_DELAY)
+
+
 def check_status(response, target_status: int = 200) -> None:
     assert response.status_code in [200, target_status], f"Request status code was {response.status_code}"
     if response.status_code == 200:
@@ -62,12 +73,14 @@ def test_valid_login() -> None:
     check_state(target_state=AWAIT_LOGIN_STATE.name)
     login(VALID_TEST_CARD)
     check_state(target_state=AUTHORIZED_IDLING_STATE.name)
+    wait()
 
 
 def test_valid_logout() -> None:
     check_state(target_state=AUTHORIZED_IDLING_STATE.name)
     CLIENT.post("/employee/log-out")
     check_state(target_state=AWAIT_LOGIN_STATE.name)
+    wait()
 
 
 # TEST UNIT ENDPOINTS
@@ -133,6 +146,7 @@ def test_assign_simple_unit() -> None:
     response = CLIENT.post(f"/workbench/assign-unit/{simple_unit_internal_id}")
     check_status(response, 200)
     check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    wait()
 
 
 def test_remove_unit() -> None:
@@ -140,6 +154,7 @@ def test_remove_unit() -> None:
     response = CLIENT.post("/workbench/remove-unit")
     check_status(response, 200)
     check_state(AUTHORIZED_IDLING_STATE.name)
+    wait()
 
 
 def test_assign_composite_unit() -> None:
@@ -147,6 +162,7 @@ def test_assign_composite_unit() -> None:
     response = CLIENT.post(f"/workbench/assign-unit/{composite_unit_internal_id}")
     check_status(response, 200)
     check_state(GATHER_COMPONENTS_STATE.name)
+    wait()
 
 
 def test_remove_unit_while_gathering() -> None:
@@ -154,6 +170,7 @@ def test_remove_unit_while_gathering() -> None:
     response = CLIENT.post("/workbench/remove-unit")
     check_status(response, 200)
     check_state(AUTHORIZED_IDLING_STATE.name)
+    wait()
 
 
 def test_assign_invalid_component() -> None:
@@ -170,6 +187,7 @@ def test_assign_valid_component() -> None:
     response = CLIENT.post(f"/unit/assign-component/{simple_unit_internal_id}")
     check_status(response, 200)
     check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    wait()
 
 
 def test_start_operation() -> None:
@@ -183,6 +201,7 @@ def test_start_operation() -> None:
     )
     check_status(response, 200)
     check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+    wait()
 
 
 def test_end_operation() -> None:
@@ -195,6 +214,7 @@ def test_end_operation() -> None:
     )
     check_status(response, 200)
     check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    wait()
 
 
 def test_upload_unit() -> None:  # TODO: False positive when GW is offline
