@@ -1,7 +1,7 @@
 import typing as tp
 from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GenericResponse(BaseModel):
@@ -80,9 +80,9 @@ class ProductionSchemaStage(BaseModel):
 
 
 class ProductionSchema(BaseModel):
-    schema_id: str = uuid4().hex
+    schema_id: str = Field(default_factory=lambda: uuid4().hex)
     unit_name: str
-    production_stages: tp.Optional[tp.List[ProductionSchemaStage]]
+    production_stages: tp.Optional[tp.List[ProductionSchemaStage]] = None
     required_components_schema_ids: tp.Optional[tp.List[str]] = None
 
 
