@@ -1,4 +1,5 @@
 import typing as tp
+from uuid import uuid4
 
 from pydantic import BaseModel
 
@@ -67,3 +68,23 @@ class HidEvent(BaseModel):
     name: str
     timestamp: float
     info: tp.Dict[str, tp.Union[int, str]]
+
+
+class ProductionSchemaStage(BaseModel):
+    name: str
+    type: tp.Optional[str] = None
+    description: tp.Optional[str] = None
+    equipment: tp.Optional[tp.List[str]] = None
+    workplace: tp.Optional[str] = None
+    duration_seconds: tp.Optional[int] = None
+
+
+class ProductionSchema(BaseModel):
+    schema_id: str = uuid4().hex
+    unit_name: str
+    production_stages: tp.Optional[tp.List[ProductionSchemaStage]]
+    required_components: tp.Optional[tp.List[str]] = None
+
+
+class SchemasList(GenericResponse):
+    available_schemas: tp.Dict[str, str]

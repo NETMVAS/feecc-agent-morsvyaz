@@ -216,6 +216,34 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
+@app.get("/workbench/production-schemas/names", response_model=mdl.SchemasList, tags=["workbench"])
+async def get_schemas() -> mdl.SchemasList:
+    """get all available schemas"""
+    schemas = {schema.schema_id: schema.unit_name for schema in await MongoDbWrapper().get_schemas()}
+    return mdl.SchemasList(
+        status_code=status.HTTP_200_OK,
+        detail=f"Gathered {len(schemas)} schemas",
+        available_schemas=schemas,
+    )
+
+
+@app.get(
+    "/workbench/production-schemas/{schema_id}",
+    response_model=tp.Union[mdl.ProductionSchema, mdl.GenericResponse],  # type: ignore
+    tags=["workbench"],
+)
+async def get_schema_by_id(schema_id: str) -> tp.Union[mdl.ProductionSchema, mdl.GenericResponse]:
+    """get schema by it's ID"""
+    try:
+        all_schemas = await MongoDbWrapper().get_schemas(schema_id)
+        return all_schemas[0]
+
+    except Exception as e:
+        message = f"Couldn't find schema {schema_id}. An error occurred: {e}"
+        logger.error(message)
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+
 @app.post("/workbench/hid_event", response_model=mdl.GenericResponse, tags=["workbench"])
 async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
     """Parse the event dict JSON"""

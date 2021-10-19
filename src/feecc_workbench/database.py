@@ -3,6 +3,7 @@ import sys
 import typing as tp
 from dataclasses import asdict
 
+import pydantic
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
@@ -12,6 +13,7 @@ from .Types import Document
 from .Unit import ProductionStage, Unit
 from .config import config
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
+from .models import ProductionSchema
 
 
 def _get_database_credentials() -> str:
@@ -44,6 +46,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._employee_collection: AsyncIOMotorCollection = self._database["Employee-data"]
         self._unit_collection: AsyncIOMotorCollection = self._database["Unit-data"]
         self._prod_stage_collection: AsyncIOMotorCollection = self._database["Production-stages-data"]
+        self._schemas_collection: AsyncIOMotorCollection = self._database["Production-schemas"]
 
         logger.info("Successfully connected to MongoDB")
 
@@ -162,3 +165,16 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             logger.error(E)
             message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
+
+    async def get_schemas(self, schema_id: tp.Optional[str] = None) -> tp.List[ProductionSchema]:
+        """get either all or only the specified production schema"""
+        if schema_id is not None:
+            target_schema = await self._find_item("schema_id", schema_id, self._schemas_collection)
+            if target_schema is None:
+                raise ValueError(f"Schema {schema_id} not found")
+            schema_data: tp.List[Document] = [target_schema]
+
+        else:
+            schema_data = await self._get_all_items_in_collection(self._schemas_collection)
+
+        return [pydantic.parse_obj_as(ProductionSchema, schema) for schema in schema_data]
