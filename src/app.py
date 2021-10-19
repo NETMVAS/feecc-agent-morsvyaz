@@ -244,7 +244,7 @@ async def get_schema_by_id(schema_id: str) -> tp.Union[mdl.ProductionSchema, mdl
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
 
 
-@app.post("/workbench/hid_event", response_model=mdl.GenericResponse, tags=["workbench"])
+@app.post("/workbench/hid-event", response_model=mdl.GenericResponse, tags=["workbench"])
 async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
     """Parse the event dict JSON"""
     logger.debug(f"Received event dict:\n{event.json()}")
