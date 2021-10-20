@@ -82,7 +82,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     @staticmethod
     async def _get_all_items_in_collection(collection_: AsyncIOMotorCollection) -> tp.List[Document]:
         """get all documents in the provided collection"""
-        return await collection_.find({"_id": 0}).to_list(length=None)  # type: ignore
+        return await collection_.find({}, {"_id": 0}).to_list(length=None)  # type: ignore
 
     @staticmethod
     async def _update_document(
