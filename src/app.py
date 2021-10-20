@@ -1,6 +1,7 @@
 import typing as tp
 
-from fastapi import Depends, FastAPI, status, HTTPException
+import uvicorn
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
@@ -292,3 +293,7 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
 
     except StateForbiddenError as e:
         return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", port=5000)
