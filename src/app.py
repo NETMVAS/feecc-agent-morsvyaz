@@ -233,14 +233,18 @@ async def get_schemas() -> mdl.SchemasList:
 
 @app.get(
     "/workbench/production-schemas/{schema_id}",
-    response_model=tp.Union[mdl.ProductionSchema, mdl.GenericResponse],  # type: ignore
+    response_model=tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse],  # type: ignore
     tags=["workbench"],
 )
-async def get_schema_by_id(schema_id: str) -> tp.Union[mdl.ProductionSchema, mdl.GenericResponse]:
+async def get_schema_by_id(schema_id: str) -> tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse]:
     """get schema by it's ID"""
     try:
         all_schemas = await MongoDbWrapper().get_schemas(schema_id)
-        return all_schemas[0]
+        return mdl.ProductionSchemaResponse(
+            status_code=status.HTTP_200_OK,
+            detail=f"Found schema {schema_id}",
+            production_schema=all_schemas[0],
+        )
 
     except Exception as e:
         message = f"Couldn't find schema {schema_id}. An error occurred: {e}"

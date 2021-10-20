@@ -86,6 +86,10 @@ class ProductionSchema(BaseModel):
     required_components_schema_ids: tp.Optional[tp.List[str]] = None
 
 
+class ProductionSchemaResponse(GenericResponse):
+    production_schema: ProductionSchema
+
+
 class SchemaListEntry(BaseModel):
     schema_id: str
     schema_name: str
