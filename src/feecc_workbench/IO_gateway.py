@@ -1,4 +1,3 @@
-import os
 import socket
 import typing as tp
 
@@ -36,54 +35,12 @@ def gateway_is_up() -> None:
         logger.error(e)
 
 
-class File:
-    """stores data about one file-like entity with related attributes"""
-
-    def __init__(self, path: str, check_presence: bool = False, short_url: tp.Optional[str] = None) -> None:
-        if check_presence and not os.path.exists(path):
-            message: str = f"Path {path} doesn't point to an actual file"
-            logger.error(message)
-            raise FileNotFoundError(message)
-
-        self.path: str = path
-        self.filename: str = os.path.basename(self.path)
-        self.ipfs_hash: tp.Optional[str] = None
-        self.is_pinned: bool = False
-        self.short_url: tp.Optional[str] = short_url
-        self.qrcode: tp.Optional[str] = None
-
-    @property
-    def keyword(self) -> tp.Optional[str]:
-        return self.short_url.split("/")[-1] if self.short_url else None
-
-    @property
-    def extension(self) -> str:
-        sections = self.filename.split(".")
-        return sections[-1] if sections else ""
-
-    def __str__(self) -> str:
-        """convert self into a string"""
-        if self.extension not in ["yaml", "json", "txt", "log"]:
-            return self.filename
-        with open(self.path, "r") as f:
-            return "\n".join(f.readlines())
-
-    def generate_qr_code(self) -> str:
-        """generate a QR code with the short link"""
-        self.short_url = generate_short_url()
-        self.qrcode = create_qr(self.short_url)
-        return self.qrcode
-
-    def delete(self) -> None:
-        """deletes the file"""
-        try:
-            os.remove(self.path)
-
-            if self.qrcode is not None:
-                os.remove(self.qrcode)
-
-        except FileNotFoundError:
-            pass
+@time_execution
+def generate_qr_code() -> tp.Tuple[str, str]:
+    """generate a QR code with the short link"""
+    short_url: str = generate_short_url()
+    qrcode_path: str = create_qr(short_url)
+    return short_url, qrcode_path
 
 
 @time_execution
@@ -157,6 +114,7 @@ async def publish_to_pinata(
     return cid, link
 
 
+@time_execution
 async def publish_file(
     rfid_card_id: str, local_file_path: tp.Optional[str] = None, remote_file_path: tp.Optional[str] = None
 ) -> tp.Optional[tp.Tuple[str, str]]:
@@ -172,6 +130,7 @@ async def publish_file(
         return None
 
 
+@time_execution
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
     gateway_is_up()

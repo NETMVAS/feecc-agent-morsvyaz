@@ -1,20 +1,22 @@
 from __future__ import annotations
 
+import os
 import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime as dt
 from uuid import uuid4
 
+import yaml
 from loguru import logger
 
 from .Employee import Employee
-from .IO_gateway import post_to_datalog, print_image, publish_file
+from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Types import AdditionalInfo
 from ._Barcode import Barcode
-from ._Passport import Passport
 from ._image_generation import create_seal_tag
 from .config import config
+from .models import ProductionSchema
 
 if tp.TYPE_CHECKING:
     from .database import MongoDbWrapper
@@ -39,12 +41,14 @@ class ProductionStage:
     creation_time: dt = field(default_factory=lambda: dt.utcnow())
 
 
+#  TODO: Integrate schema parsing logic
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
     def __init__(
         self,
         model: str,
+        schema: tp.Optional[ProductionSchema] = None,
         uuid: tp.Optional[str] = None,
         internal_id: tp.Optional[str] = None,
         is_in_db: tp.Optional[bool] = None,
@@ -54,6 +58,7 @@ class Unit:
         components_units: tp.Optional[tp.List[Unit]] = None,
         components_internal_ids: tp.Optional[tp.List[str]] = None,
     ) -> None:
+        self._schema: tp.Optional[ProductionSchema] = schema
         self.model: str = model
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
@@ -184,23 +189,65 @@ class Unit:
         self.employee = None
         await database.update_unit(self)
 
+    @staticmethod
+    def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
+        stage: tp.Dict[str, tp.Any] = {
+            "Наименование": prod_stage.name,
+            "Код сотрудника": prod_stage.employee_name,
+            "Время начала": prod_stage.session_start_time,
+            "Время окончания": prod_stage.session_end_time,
+        }
+
+        if prod_stage.video_hashes is not None:
+            stage["Видеозаписи процесса сборки в IPFS"] = prod_stage.video_hashes
+
+        if prod_stage.additional_info:
+            stage["Дополнительная информация"] = prod_stage.additional_info
+
+        return stage
+
+    def get_passport_dict(self) -> tp.Dict[str, tp.Any]:
+        """
+        form a nested dictionary containing all the unit
+        data to dump it into a in a human friendly passport
+        """
+        passport_dict = {
+            "Уникальный номер паспорта изделия": self.uuid,
+            "Модель изделия": self.model,
+            "Этапы производства": [self._construct_stage_dict(prod_stage) for prod_stage in self.biography],
+        }
+
+        if self.components_units:
+            passport_dict["Компоненты в составе изделия"] = [c.get_passport_dict() for c in self.components_units]
+
+        return passport_dict
+
+    def _save_passport(self, passport_dict: tp.Dict[str, tp.Any], path: str) -> None:
+        """makes a unit passport and dumps it in a form of a YAML file"""
+        if not os.path.isdir("unit-passports"):
+            os.mkdir("unit-passports")
+        with open(path, "w") as passport_file:
+            yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
+        logger.info(f"Unit passport with UUID {self.uuid} has been dumped successfully")
+
     @logger.catch
     async def upload(self, database: MongoDbWrapper, rfid_card_id: str) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        passport = Passport(self)
-        passport.save()
+        passport = self.get_passport_dict()
+        path = f"unit-passports/unit-passport-{self.uuid}.yaml"
+        self._save_passport(passport, path)
 
         if config.print_qr.enable:
-            qrcode_path: str = passport.generate_qr_code()
+            short_url, qrcode_path = generate_qr_code()
             await print_image(
-                qrcode_path, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {passport.short_url}"
+                qrcode_path, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {short_url}"
             )
 
             if config.print_security_tag.enable:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, rfid_card_id)
 
-        res = await publish_file(passport.path, rfid_card_id)
+        res = await publish_file(path, rfid_card_id)
 
         if config.robonomics_network.enable_datalog and res is not None:
             cid: str = res[0]
