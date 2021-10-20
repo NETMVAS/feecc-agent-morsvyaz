@@ -49,11 +49,6 @@ class EmployeeID(BaseModel):
     employee_rfid_card_no: str
 
 
-class UnitIn(BaseModel):
-    unit_type: str
-    component_names: tp.Optional[tp.List[str]] = None
-
-
 class UnitOut(GenericResponse):
     unit_internal_id: tp.Optional[str]
 
@@ -61,6 +56,7 @@ class UnitOut(GenericResponse):
 class UnitInfo(UnitOut):
     unit_biography: tp.List[str]
     unit_components: tp.Optional[tp.List[str]] = None
+    schema_id: str
 
 
 class HidEvent(BaseModel):

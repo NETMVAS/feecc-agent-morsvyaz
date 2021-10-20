@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
-from dependencies import get_employee_by_card_id, get_unit_by_internal_id
+from dependencies import get_employee_by_card_id, get_unit_by_internal_id, get_schema_by_id
 from feecc_workbench import models as mdl, states, utils
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
@@ -36,11 +36,13 @@ def startup_event() -> None:
     MongoDbWrapper()
 
 
-@app.post("/unit/new", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse], tags=["unit"])  # type: ignore
-async def create_unit(payload: mdl.UnitIn) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
+@app.post("/unit/new/{schema_id}", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse], tags=["unit"])  # type: ignore
+async def create_unit(
+    schema: mdl.ProductionSchema = Depends(get_schema_by_id),
+) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
     """handle new Unit creation"""
     try:
-        unit: Unit = await WORKBENCH.create_new_unit(payload.unit_type, payload.component_names)
+        unit: Unit = await WORKBENCH.create_new_unit(schema)
         logger.info(f"Initialized new unit with internal ID {unit.internal_id}")
         return mdl.UnitOut(
             status_code=status.HTTP_200_OK,
@@ -61,7 +63,8 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
         unit_biography=[stage.name for stage in unit.biography],
-        unit_components=unit.components_names or None,
+        unit_components=unit.components_schema_ids or None,
+        schema_id=unit.schema.schema_id,
     )
 
 
@@ -222,7 +225,7 @@ async def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
     schemas = [
         mdl.SchemaListEntry(schema_id=schema.schema_id, schema_name=schema.unit_name)
-        for schema in await MongoDbWrapper().get_schemas()
+        for schema in await MongoDbWrapper().get_all_schemas()
     ]
     return mdl.SchemasList(
         status_code=status.HTTP_200_OK,
@@ -236,20 +239,15 @@ async def get_schemas() -> mdl.SchemasList:
     response_model=tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse],  # type: ignore
     tags=["workbench"],
 )
-async def get_schema_by_id(schema_id: str) -> tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse]:
+async def get_schema(
+    schema: mdl.ProductionSchema = Depends(get_schema_by_id),
+) -> tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse]:
     """get schema by it's ID"""
-    try:
-        all_schemas = await MongoDbWrapper().get_schemas(schema_id)
-        return mdl.ProductionSchemaResponse(
-            status_code=status.HTTP_200_OK,
-            detail=f"Found schema {schema_id}",
-            production_schema=all_schemas[0],
-        )
-
-    except Exception as e:
-        message = f"Couldn't find schema {schema_id}. An error occurred: {e}"
-        logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+    return mdl.ProductionSchemaResponse(
+        status_code=status.HTTP_200_OK,
+        detail=f"Found schema {schema.schema_id}",
+        production_schema=schema,
+    )
 
 
 @app.post("/workbench/hid-event", response_model=mdl.GenericResponse, tags=["workbench"])

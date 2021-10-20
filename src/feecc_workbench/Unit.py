@@ -41,49 +41,48 @@ class ProductionStage:
     creation_time: dt = field(default_factory=lambda: dt.utcnow())
 
 
-#  TODO: Integrate schema parsing logic
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
     def __init__(
         self,
-        model: str,
-        schema: tp.Optional[ProductionSchema] = None,
+        schema: ProductionSchema,
         uuid: tp.Optional[str] = None,
         internal_id: tp.Optional[str] = None,
         is_in_db: tp.Optional[bool] = None,
         biography: tp.Optional[tp.List[ProductionStage]] = None,
-        passport_short_url: tp.Optional[str] = None,
-        components_names: tp.Optional[tp.List[str]] = None,
         components_units: tp.Optional[tp.List[Unit]] = None,
-        components_internal_ids: tp.Optional[tp.List[str]] = None,
+        passport_short_url: tp.Optional[str] = None,
     ) -> None:
-        self._schema: tp.Optional[ProductionSchema] = schema
-        self.model: str = model
+        self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
-
-        self.components_names: tp.List[str] = components_names or []
         self.components_units: tp.List[Unit] = components_units or []
-        self.components_internal_ids: tp.List[str] = components_internal_ids or []
-
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
 
     @property
-    def is_a_composition(self) -> bool:
-        return bool(self.components_names)
+    def components_schema_ids(self) -> tp.List[str]:
+        return self.schema.required_components_schema_ids or []
+
+    @property
+    def components_internal_ids(self) -> tp.List[str]:
+        return [c.internal_id for c in self.components_units]
+
+    @property
+    def model(self) -> str:
+        return self.schema.unit_name
 
     @property
     def components_filled(self) -> bool:
-        if self.components_names:
+        if self.components_schema_ids:
             if not self.components_units:
                 return False
 
-            return len(self.components_names) == len(self.components_units)
+            return len(self.components_schema_ids) == len(self.components_units)
 
         return True
 
@@ -92,7 +91,7 @@ class Unit:
         """get a mapping for all the currently assigned components VS the desired components"""
         assigned_components = {component.model: component.internal_id for component in self.components_units}
 
-        for component_name in self.components_names:
+        for component_name in self.components_schema_ids:
             if component_name not in assigned_components:
                 assigned_components[component_name] = None
 
@@ -100,16 +99,18 @@ class Unit:
 
     def assign_component(self, component: Unit) -> None:
         """acquire one of the composite unit's components"""
-        if not self.is_a_composition or self.components_filled:
+        if self.components_filled:
             logger.error(f"Unit {self.model} component requirements have already been satisfied")
-        elif component.model in self.components_names:
-            if component.model not in (c.model for c in self.components_units):
+
+        elif component.schema.schema_id in self.components_schema_ids:
+            if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
                 self.components_units.append(component)
                 logger.info(f"Component {component.model} has been assigned to a composite Unit {self.model}")
             else:
                 message = f"Component {component.model} is already assigned to a composite Unit {self.model}"
                 logger.error(message)
                 raise ValueError(message)
+
         else:
             message = f"Cannot assign component {component.model} to {self.model} as it's not a component of it"
             logger.error(message)
@@ -117,12 +118,11 @@ class Unit:
 
     def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None, tp.List[str]]]:
         return {
-            "model": self.model,
+            "schema_id": self.schema.schema_id,
             "uuid": self.uuid,
             "internal_id": self.internal_id,
             "is_in_db": self.is_in_db,
             "passport_short_url": self.passport_short_url,
-            "components_names": self.components_names,
             "components_internal_ids": self.components_internal_ids,
         }
 

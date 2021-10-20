@@ -24,3 +24,11 @@ async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Em
 
     except EmployeeNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+async def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
+    """get the specified production schema"""
+    try:
+        return await MongoDbWrapper().get_schema_by_id(schema_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

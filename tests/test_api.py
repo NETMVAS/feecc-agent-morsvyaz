@@ -13,6 +13,8 @@ from feecc_workbench.states import (
 
 CLIENT = TestClient(base_url="http://127.0.0.1:5000", app=app)
 VALID_TEST_CARD = "1111111111"
+VALID_SIMPLE_SCHEMA_ID = "a44e26dc79944980b1e5602a11b2f06f"
+VALID_COMPOSITE_SCHEMA_ID = "a69fa27a0c794903bc6fdced134de56d"
 SLOW_MODE = bool(os.environ.get("SLOW_MODE", None))
 SLOW_MODE_DELAY = int(os.environ.get("SLOW_MODE_DELAY", 3))
 
@@ -94,13 +96,13 @@ def test_get_unit_data_invalid() -> None:
 
 
 def test_create_new_simple_unit_unauthorized() -> None:
-    response = CLIENT.post("/unit/new", json={"unit_type": "simple_unit"})
+    response = CLIENT.post(f"/unit/new/{VALID_SIMPLE_SCHEMA_ID}")
     check_status(response, 500)
 
 
 def test_create_new_simple_unit() -> None:
     login(VALID_TEST_CARD)
-    response = CLIENT.post("/unit/new", json={"unit_type": "simple_unit"})
+    response = CLIENT.post(f"/unit/new/{VALID_SIMPLE_SCHEMA_ID}")
     check_status(response, 200)
     global simple_unit_internal_id
     assert "unit_internal_id" in response.json()
@@ -118,7 +120,7 @@ def test_get_simple_unit_data_valid() -> None:
 
 
 def test_create_new_composite_unit() -> None:
-    response = CLIENT.post("/unit/new", json={"unit_type": "composite_unit", "component_names": ["simple_unit"]})
+    response = CLIENT.post(f"/unit/new/{VALID_COMPOSITE_SCHEMA_ID}")
     check_status(response, 200)
     global composite_unit_internal_id
     assert "unit_internal_id" in response.json()
@@ -132,7 +134,9 @@ def test_get_composite_unit_data_valid() -> None:
     data = response.json()
     assert data.get("unit_internal_id") == composite_unit_internal_id, "Internal ID mismatch"
     assert data.get("unit_biography") == [], "Unexpected biography entries"
-    assert data.get("unit_components") == ["simple_unit"], f"Components not found for {composite_unit_internal_id}"
+    assert data.get("unit_components") == [
+        VALID_SIMPLE_SCHEMA_ID
+    ], f"Components not found for {composite_unit_internal_id}"
 
 
 # TEST WORKBENCH ENDPOINTS
@@ -177,7 +181,7 @@ def test_assign_invalid_component() -> None:
     test_assign_composite_unit()
     check_state(GATHER_COMPONENTS_STATE.name)
     response = CLIENT.post("/unit/assign-component/3050673369727")
-    check_status(response, 500)
+    check_status(response, 404)
     check_state(GATHER_COMPONENTS_STATE.name)
 
 

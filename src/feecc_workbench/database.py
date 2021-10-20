@@ -155,26 +155,41 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         try:
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
-            prod_stages = [ProductionStage(**stage) for stage in prod_stage_dicts]
-            unit_dict["biography"] = prod_stages
-            unit = Unit(**unit_dict)
-            unit.components_units = [await self.get_unit_by_internal_id(id_) for id_ in unit.components_internal_ids]
-            return unit
+            return Unit(
+                schema=await self.get_schema_by_id(unit_dict["schema_id"]),
+                uuid=unit_dict.get("uuid", None),
+                internal_id=unit_dict.get("internal_id", None),
+                is_in_db=unit_dict.get("is_in_db", None),
+                biography=[ProductionStage(**stage) for stage in prod_stage_dicts] or None,
+                components_units=[
+                    await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
+                ]
+                or None,
+                passport_short_url=unit_dict.get("passport_short_url", None),
+            )
 
         except Exception as E:
             logger.error(E)
             message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
             raise UnitNotFoundError(message)
 
-    async def get_schemas(self, schema_id: tp.Optional[str] = None) -> tp.List[ProductionSchema]:
-        """get either all or only the specified production schema"""
-        if schema_id is not None:
-            target_schema = await self._find_item("schema_id", schema_id, self._schemas_collection)
-            if target_schema is None:
-                raise ValueError(f"Schema {schema_id} not found")
-            schema_data: tp.List[Document] = [target_schema]
-
-        else:
-            schema_data = await self._get_all_items_in_collection(self._schemas_collection)
-
+    async def get_all_schemas(self) -> tp.List[ProductionSchema]:
+        """get all production schemas"""
+        schema_data = await self._get_all_items_in_collection(self._schemas_collection)
         return [pydantic.parse_obj_as(ProductionSchema, schema) for schema in schema_data]
+
+    async def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
+        """get the specified production schema"""
+        target_schema = await self._find_item("schema_id", schema_id, self._schemas_collection)
+
+        if target_schema is None:
+            raise ValueError(f"Schema {schema_id} not found")
+
+        return pydantic.parse_obj_as(ProductionSchema, target_schema)
+
+
+# if __name__ == "__main__":
+# if True:
+#
+#
+#     for file in os.listdir(DIR):

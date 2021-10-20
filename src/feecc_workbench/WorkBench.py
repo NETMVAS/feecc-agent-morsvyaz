@@ -13,6 +13,7 @@ from .Unit import Unit
 from .config import config
 from .database import MongoDbWrapper
 from .exceptions import StateForbiddenError
+from .models import ProductionSchema
 from .states import (
     AUTHORIZED_IDLING_STATE,
     AWAIT_LOGIN_STATE,
@@ -44,16 +45,13 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
-    async def create_new_unit(self, unit_type: str, components_names: tp.Optional[tp.List[str]]) -> Unit:
+    async def create_new_unit(self, schema: ProductionSchema) -> Unit:
         """initialize a new instance of the Unit class"""
         if self.state is not AUTHORIZED_IDLING_STATE:
             raise StateForbiddenError("Cannot create a new unit unless workbench has state AuthorizedIdling")
 
-        unit = Unit(unit_type, components_names=components_names)
+        unit = Unit(schema)
         await self._database.upload_unit(unit)
-
-        if unit.internal_id is None:
-            raise ValueError("Unit internal_id is None")
 
         if config.print_barcode.enable and not unit.is_in_db:
             await print_image(self.employee.rfid_card_id, unit.barcode.filename, annotation=unit.model)  # type: ignore
@@ -93,7 +91,7 @@ class WorkBench(metaclass=SingletonMeta):
         self.unit = unit
         logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
 
-        if unit.is_a_composition and not unit.components_filled:
+        if not unit.components_filled:
             logger.info(
                 f"Unit {unit.internal_id} is a composition with unsatisfied component requirements. Entering component gathering state."
             )
