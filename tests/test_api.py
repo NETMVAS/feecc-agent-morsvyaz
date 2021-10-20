@@ -226,3 +226,11 @@ def test_upload_unit() -> None:  # TODO: False positive when GW is offline
 
 def test_hid_event() -> None:  # TODO
     pass
+
+
+def test_get_schema_by_id() -> None:  # TODO
+    pass
+
+
+def test_get_schemas_list() -> None:  # TODO
+    pass
