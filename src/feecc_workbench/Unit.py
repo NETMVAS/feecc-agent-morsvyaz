@@ -86,6 +86,20 @@ class Unit:
 
         return True
 
+    @property
+    def current_operation(self) -> tp.Optional[ProductionStage]:
+        return self.biography[-1] if self.biography else None
+
+    @current_operation.setter
+    def current_operation(self, current_operation: ProductionStage) -> None:
+        self.biography.append(current_operation)
+
+    @property
+    def is_completed(self) -> bool:
+        if self.schema.production_stages is None:
+            return True
+        return len(self.schema.production_stages) == len(self.biography)
+
     @tp.no_type_check
     def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
         """get a mapping for all the currently assigned components VS the desired components"""
@@ -104,6 +118,8 @@ class Unit:
 
         elif component.schema.schema_id in self.components_schema_ids:
             if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
+                if not component.is_completed:
+                    raise ValueError(f"Component {component.model} assembly is not completed")
                 self.components_units.append(component)
                 logger.info(f"Component {component.model} has been assigned to a composite Unit {self.model}")
             else:
@@ -125,14 +141,6 @@ class Unit:
             "passport_short_url": self.passport_short_url,
             "components_internal_ids": self.components_internal_ids,
         }
-
-    @property
-    def current_operation(self) -> tp.Optional[ProductionStage]:
-        return self.biography[-1] if self.biography else None
-
-    @current_operation.setter
-    def current_operation(self, current_operation: ProductionStage) -> None:
-        self.biography.append(current_operation)
 
     def start_session(
         self,
