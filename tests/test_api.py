@@ -13,15 +13,14 @@ from feecc_workbench.states import (
 
 CLIENT = TestClient(base_url="http://127.0.0.1:5000", app=app)
 VALID_TEST_CARD = "1111111111"
-VALID_SIMPLE_SCHEMA_ID = "a44e26dc79944980b1e5602a11b2f06f"
-VALID_COMPOSITE_SCHEMA_ID = "a69fa27a0c794903bc6fdced134de56d"
+VALID_SIMPLE_SCHEMA_ID = "test_simple_unit_1"
+VALID_COMPOSITE_SCHEMA_ID = "test_composite_unit_1"
 VALID_HID_RFID_DEVICE_NAME = "Sycreader RFID Technology Co., Ltd SYC ID&IC USB Reader"
 VALID_HID_BARCODE_DEVICE_NAME = "HENEX 2D Barcode Scanner"
 SLOW_MODE = bool(os.environ.get("SLOW_MODE", None))
 SLOW_MODE_DELAY = int(os.environ.get("SLOW_MODE_DELAY", 3))
 
 
-# UTILS
 def wait() -> None:
     """wait some time to see the frontend response to the backend state switching"""
     if SLOW_MODE:
@@ -44,13 +43,11 @@ def login(card: str) -> None:
     CLIENT.post("/employee/log-in", json={"employee_rfid_card_no": card})
 
 
-# BASE TESTS
 def test_server_is_up() -> None:
     response = CLIENT.get("/")
     check_status(response, 404)
 
 
-# TEST EMPLOYEE ENDPOINTS
 def test_valid_get_info() -> None:
     response = CLIENT.post("/employee/info", json={"employee_rfid_card_no": VALID_TEST_CARD})
     check_status(response, 200)
@@ -87,7 +84,6 @@ def test_valid_logout() -> None:
     wait()
 
 
-# TEST UNIT ENDPOINTS
 simple_unit_internal_id: str = ""
 composite_unit_internal_id: str = ""
 
@@ -141,7 +137,6 @@ def test_get_composite_unit_data_valid() -> None:
     ], f"Components not found for {composite_unit_internal_id}"
 
 
-# TEST WORKBENCH ENDPOINTS
 def test_get_workbench_status() -> None:
     response = CLIENT.get("/workbench/status")
     assert response.status_code == 200, "Status request failed"
@@ -201,7 +196,7 @@ def test_start_operation() -> None:
     response = CLIENT.post(
         "/workbench/start-operation",
         json={
-            "production_stage_name": "simple_stage_name",
+            "production_stage_name": "Sample stage 1",
             "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
         },
     )
@@ -249,7 +244,6 @@ def test_get_schema_by_id_valid() -> None:
 def send_hid_event(string: str, sender: str):
     payload = {"string": string, "name": sender}
     return CLIENT.post("/workbench/hid-event", json=payload)
-    # assert response.status_code == 200, f"Request to HID endpoint with payload {payload} failed: {response.json()}"
 
 
 def test_hid_event_unknown_sender() -> None:
