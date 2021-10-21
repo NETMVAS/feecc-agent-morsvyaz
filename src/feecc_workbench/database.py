@@ -186,10 +186,3 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             raise ValueError(f"Schema {schema_id} not found")
 
         return pydantic.parse_obj_as(ProductionSchema, target_schema)
-
-
-# if __name__ == "__main__":
-# if True:
-#
-#
-#     for file in os.listdir(DIR):
