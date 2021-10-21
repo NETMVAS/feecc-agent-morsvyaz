@@ -284,6 +284,8 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
                     WORKBENCH.assign_unit(unit)
                 elif WORKBENCH.state is states.GATHER_COMPONENTS_STATE:
                     WORKBENCH.unit.assign_component(unit)
+                    if WORKBENCH.unit.components_filled:
+                        WORKBENCH.state = states.UNIT_ASSIGNED_IDLING_STATE
                 else:
                     logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
 
