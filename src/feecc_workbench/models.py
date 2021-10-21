@@ -1,4 +1,5 @@
 import typing as tp
+from time import time
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -62,8 +63,8 @@ class UnitInfo(UnitOut):
 class HidEvent(BaseModel):
     string: str
     name: str
-    timestamp: float
-    info: tp.Dict[str, tp.Union[int, str]]
+    timestamp: float = Field(default_factory=time)
+    info: tp.Dict[str, tp.Union[int, str]] = {}
 
 
 class ProductionSchemaStage(BaseModel):
