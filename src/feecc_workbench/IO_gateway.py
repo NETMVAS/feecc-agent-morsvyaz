@@ -92,16 +92,14 @@ async def publish_to_pinata(
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
 
     if local_file_path is not None:
-        with open(local_file_path, "rb") as f:
-            form_data: tp.Dict[str, tp.Union[bool, tp.Optional[str], tp.BinaryIO]] = {
-                "file_data": f,
-                "background": True,
-            }
-    else:
-        form_data = {"filename": remote_file_path, "background": True}
+        files = {"file_data": open(local_file_path, "rb")}
+        data: tp.Dict[str, tp.Union[str, bool]] = {"background": True}
+    elif remote_file_path is not None:
+        files = None  # type: ignore
+        data = {"filename": remote_file_path, "background": True}
 
     async with httpx.AsyncClient() as client:
-        response: httpx.Response = await client.post(url=url, headers=headers, data=form_data)
+        response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
 
     if response.is_error:
         raise httpx.RequestError(response.text)
@@ -138,13 +136,9 @@ async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional
     async with httpx.AsyncClient() as client:
         url = f"{IO_GATEWAY_ADDRESS}/printing/print_image"
         headers: tp.Dict[str, str] = get_headers(rfid_card_id)
-
-        with open(file_path, "rb") as f:
-            form_data = {
-                "image_file": f,
-                "annotation": annotation,
-            }
-            response: httpx.Response = await client.post(url=url, headers=headers, data=form_data)
+        data = {"annotation": annotation}
+        files = {"image_file": open(file_path, "rb")}
+        response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
 
     if response.is_error:
         raise httpx.RequestError(response.text)

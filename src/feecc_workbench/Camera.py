@@ -7,7 +7,6 @@ from loguru import logger
 
 from .config import config
 from .utils import get_headers
-from fastapi import Depends
 
 IO_GATEWAY_ADDRESS: str = config.workbench_config.feecc_io_gateway_socket
 
@@ -32,11 +31,9 @@ class Camera:
         self.record: tp.Optional[Record] = None
         self._check_presence()
 
-    async def _check_presence(self) -> None:
+    def _check_presence(self) -> None:
         """check if self is registered on the backend"""
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{IO_GATEWAY_ADDRESS}/video/cameras")
-
+        response = httpx.get(f"{IO_GATEWAY_ADDRESS}/video/cameras")
         cameras: tp.List[tp.Dict[str, tp.Union[int, str]]] = response.json()["cameras"]
 
         for camera in cameras:
@@ -46,11 +43,11 @@ class Camera:
 
         raise ValueError(f"Camera with number {self.number} is unknown to the IO gateway")
 
-    async def start(self, headers: tp.Dict[str, str] = Depends(get_headers)) -> None:
+    async def start(self, rfid_card_id: str) -> None:
         """start the provided record"""
         async with httpx.AsyncClient() as client:
             response: httpx.Response = await client.post(
-                url=f"{IO_GATEWAY_ADDRESS}/video/camera/{self.number}/start", headers=headers
+                url=f"{IO_GATEWAY_ADDRESS}/video/camera/{self.number}/start", headers=get_headers(rfid_card_id)
             )
 
         if response.is_error:
@@ -60,7 +57,7 @@ class Camera:
         logger.info(f"Recording {record_id} is started on Camera {self.number}")
         self.record = Record(record_id)
 
-    async def end(self, headers: tp.Dict[str, str] = Depends(get_headers)) -> None:
+    async def end(self, rfid_card_id: str) -> None:
         """start the provided record"""
         if self.record is None:
             logger.error("There is no ongoing record to end")
@@ -69,7 +66,7 @@ class Camera:
         async with httpx.AsyncClient() as client:
             response: httpx.Response = await client.post(
                 url=f"{IO_GATEWAY_ADDRESS}/video/record/{self.record.rec_id}/stop",
-                headers=headers,
+                headers=get_headers(rfid_card_id),
             )
 
         if response.is_error:

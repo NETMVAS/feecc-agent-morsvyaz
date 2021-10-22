@@ -53,8 +53,8 @@ class WorkBench(metaclass=SingletonMeta):
         unit = Unit(schema)
         await self._database.upload_unit(unit)
 
-        if config.print_barcode.enable and not unit.is_in_db:
-            await print_image(self.employee.rfid_card_id, unit.barcode.filename, annotation=unit.model)  # type: ignore
+        if config.print_barcode.enable:
+            await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=unit.model)  # type: ignore
 
         return unit
 
@@ -114,8 +114,8 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.unit.start_session(self.employee, production_stage_name, additional_info)  # type: ignore
 
-        if self.camera is not None:
-            await self.camera.start()
+        if self.camera is not None and self.employee is not None:
+            await self.camera.start(self.employee.rfid_card_id)
 
         logger.info(
             f"Started operation {production_stage_name} on the unit {self.unit.internal_id} at the workbench no. {self.number}"  # type: ignore
@@ -130,13 +130,13 @@ class WorkBench(metaclass=SingletonMeta):
         logger.info("Trying to end operation")
 
         ipfs_hashes: tp.List[str] = []
-        if self.camera is not None:
-            await self.camera.end()
+        if self.camera is not None and self.employee is not None:
+            await self.camera.end(self.employee.rfid_card_id)
 
             file: tp.Optional[str] = self.camera.record.remote_file_path  # type: ignore
 
             if file is not None:
-                data = await publish_file(file, self.employee.rfid_card_id)  # type: ignore
+                data = await publish_file(remote_file_path=file, rfid_card_id=self.employee.rfid_card_id)
 
                 if data is not None:
                     cid, link = data

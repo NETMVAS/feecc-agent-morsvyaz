@@ -238,7 +238,7 @@ class Unit:
             yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
         logger.info(f"Unit passport with UUID {self.uuid} has been dumped successfully")
 
-    @logger.catch
+    @logger.catch(reraise=True)
     async def upload(self, database: MongoDbWrapper, rfid_card_id: str) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         passport = self.get_passport_dict()
@@ -255,7 +255,7 @@ class Unit:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, rfid_card_id)
 
-        res = await publish_file(path, rfid_card_id)
+        res = await publish_file(local_file_path=path, rfid_card_id=rfid_card_id)
 
         if config.robonomics_network.enable_datalog and res is not None:
             cid: str = res[0]
