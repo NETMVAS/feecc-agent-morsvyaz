@@ -264,7 +264,13 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
             if WORKBENCH.employee is not None:
                 WORKBENCH.log_out()
             else:
-                employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
+                try:
+                    employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
+                except EmployeeNotFoundError as e:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+                except Exception as e:
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
                 WORKBENCH.log_in(employee)
 
         elif sender == "barcode_reader":
@@ -275,7 +281,12 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
             elif WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE:
                 await WORKBENCH.end_operation()
             else:
-                unit = await get_unit_by_internal_id(event.string)
+                try:
+                    unit = await get_unit_by_internal_id(event.string)
+                except UnitNotFoundError as e:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+                except Exception as e:
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
                 if WORKBENCH.state is states.AUTHORIZED_IDLING_STATE:
                     WORKBENCH.assign_unit(unit)

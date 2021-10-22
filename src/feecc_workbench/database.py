@@ -154,6 +154,8 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         try:
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
+            if unit_dict is None:
+                raise ValueError("Unit not found")
             prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
             return Unit(
                 schema=await self.get_schema_by_id(unit_dict["schema_id"]),
