@@ -8,6 +8,7 @@ from loguru import logger
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_unit_by_internal_id, get_schema_by_id
 from feecc_workbench import models as mdl, states, utils
+from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
 from feecc_workbench.WorkBench import WorkBench
@@ -224,7 +225,7 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 async def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
     schemas = [
-        mdl.SchemaListEntry(schema_id=schema.schema_id, schema_name=schema.unit_name)
+        mdl.SchemaListEntry(schema_id=schema.schema_id, schema_name=schema.unit_name, is_composite=schema.is_composite)
         for schema in await MongoDbWrapper().get_all_schemas()
     ]
     return mdl.SchemasList(
