@@ -94,7 +94,7 @@ class ProductionSchemaResponse(GenericResponse):
 class SchemaListEntry(BaseModel):
     schema_id: str
     schema_name: str
-    is_composite: bool
+    included_schemas: tp.Optional[tp.List[tp.Dict[str, tp.Any]]]
 
 
 class SchemasList(GenericResponse):

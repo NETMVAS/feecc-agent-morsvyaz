@@ -224,14 +224,33 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 @app.get("/workbench/production-schemas/names", response_model=mdl.SchemasList, tags=["workbench"])
 async def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    schemas = [
-        mdl.SchemaListEntry(schema_id=schema.schema_id, schema_name=schema.unit_name, is_composite=schema.is_composite)
-        for schema in await MongoDbWrapper().get_all_schemas()
-    ]
+    all_schemas = {schema.schema_id: schema for schema in await MongoDbWrapper().get_all_schemas()}
+    nested_schemas = set()
+
+    def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
+        nonlocal all_schemas, nested_schemas
+
+        included_schemas = []
+        if schema.is_composite:
+            for s_id in schema.required_components_schema_ids:
+                included_schemas.append(get_schema_list_entry(all_schemas[s_id]))
+                nested_schemas.add(s_id)
+
+        return mdl.SchemaListEntry(
+            schema_id=schema.schema_id,
+            schema_name=schema.unit_name,
+            included_schemas=included_schemas or None,
+        )
+
+    available_schemas = []
+    for schema in all_schemas.values():
+        if schema.schema_id not in nested_schemas:
+            available_schemas.append(get_schema_list_entry(schema))
+
     return mdl.SchemasList(
         status_code=status.HTTP_200_OK,
-        detail=f"Gathered {len(schemas)} schemas",
-        available_schemas=schemas,
+        detail=f"Gathered {len(all_schemas)} schemas",
+        available_schemas=available_schemas,
     )
 
 
