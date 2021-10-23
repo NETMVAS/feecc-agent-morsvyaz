@@ -131,6 +131,10 @@ async def publish_file(
 @time_execution
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
+    if not config.printer.enable:
+        logger.warning("Printer disabled, task dropped")
+        return
+
     gateway_is_up()
 
     async with httpx.AsyncClient() as client:
