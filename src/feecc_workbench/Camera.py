@@ -33,7 +33,12 @@ class Camera:
 
     def _check_presence(self) -> None:
         """check if self is registered on the backend"""
-        response = httpx.get(f"{IO_GATEWAY_ADDRESS}/video/cameras")
+        try:
+            response = httpx.get(f"{IO_GATEWAY_ADDRESS}/video/cameras")
+        except httpx.ConnectError:
+            logger.critical("GW connection has been refused. Is it up?")
+            return
+
         cameras: tp.List[tp.Dict[str, tp.Union[int, str]]] = response.json()["cameras"]
 
         for camera in cameras:
