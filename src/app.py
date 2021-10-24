@@ -229,28 +229,23 @@ async def get_schemas() -> mdl.SchemasList:
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
-
-        included_schemas = []
-        if schema.is_composite:
-            for s_id in schema.required_components_schema_ids:
-                included_schemas.append(get_schema_list_entry(all_schemas[s_id]))
-
+        included_schemas: tp.Optional[tp.List[mdl.SchemaListEntry]] = (
+            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
+            if schema.is_composite
+            else None
+        )
         handled_schemas.add(schema.schema_id)
-
         return mdl.SchemaListEntry(
             schema_id=schema.schema_id,
             schema_name=schema.unit_name,
-            included_schemas=included_schemas or None,
+            included_schemas=included_schemas,
         )
 
-    available_schemas = []
-    for schema in all_schemas.values():
-        if schema.is_composite:
-            available_schemas.append(get_schema_list_entry(schema))
-
-    for schema in all_schemas.values():
-        if schema.schema_id not in handled_schemas:
-            available_schemas.append(get_schema_list_entry(schema))
+    available_schemas = [
+        get_schema_list_entry(schema)
+        for schema in sorted(all_schemas.values(), key=lambda s: bool(s.is_composite), reverse=True)
+        if schema.schema_id not in handled_schemas
+    ]
 
     return mdl.SchemasList(
         status_code=status.HTTP_200_OK,
