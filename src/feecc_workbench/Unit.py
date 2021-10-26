@@ -207,7 +207,9 @@ class Unit:
         }
 
         if prod_stage.video_hashes is not None:
-            stage["Видеозаписи процесса сборки в IPFS"] = prod_stage.video_hashes
+            stage["Видеозаписи процесса сборки в IPFS"] = [
+                "https://gateway.ipfs.io/ipfs/" + cid for cid in prod_stage.video_hashes
+            ]
 
         if prod_stage.additional_info:
             stage["Дополнительная информация"] = prod_stage.additional_info
@@ -219,11 +221,13 @@ class Unit:
         form a nested dictionary containing all the unit
         data to dump it into a in a human friendly passport
         """
-        passport_dict = {
+        passport_dict: tp.Dict[str, tp.Any] = {
             "Уникальный номер паспорта изделия": self.uuid,
             "Модель изделия": self.model,
-            "Этапы производства": [self._construct_stage_dict(prod_stage) for prod_stage in self.biography],
         }
+
+        if self.biography:
+            passport_dict["Этапы производства"] = [self._construct_stage_dict(stage) for stage in self.biography]
 
         if self.components_units:
             passport_dict["Компоненты в составе изделия"] = [c.get_passport_dict() for c in self.components_units]
