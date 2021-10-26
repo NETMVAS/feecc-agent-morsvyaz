@@ -61,14 +61,13 @@ async def publish_to_ipfs(
     url = f"{IO_GATEWAY_ADDRESS}/io-gateway/ipfs"
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
 
-    if local_file_path is not None:
-        with open(local_file_path, "rb") as f:
-            form_data: tp.Dict[str, tp.Union[tp.Optional[str], tp.BinaryIO]] = {"file_data": f}
-    else:
-        form_data = {"filename": remote_file_path}
-
     async with httpx.AsyncClient() as client:
-        response: httpx.Response = await client.post(url=url, headers=headers, data=form_data)
+        if local_file_path is not None:
+            files = {"file_data": open(local_file_path, "rb")}
+            response: httpx.Response = await client.post(url=url, headers=headers, files=files)
+        else:
+            form_data = {"filename": remote_file_path}
+            response = await client.post(url=url, headers=headers, data=form_data)
 
     if response.is_error:
         raise httpx.RequestError(response.text)
