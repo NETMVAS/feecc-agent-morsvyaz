@@ -17,7 +17,7 @@ BLACK: color = (0, 0, 0)
 
 def create_qr(link: str) -> str:
     """
-    :param link: full yourls url. E.g. url.today/6b
+    :param link: full yourls url. E.g. https://url.today/6b
     :type link: str
     :return: full filename of a resulted qr-code
     :rtype: str
@@ -28,7 +28,7 @@ def create_qr(link: str) -> str:
 
     robonomics_logo = Image.open("media/robonomics.jpg").resize((100, 100))
     qr_big = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H)
-    qr_big.add_data("https://" + link)
+    qr_big.add_data(link)
     qr_big.make()
     img_qr_big = qr_big.make_image().convert("RGB")
 
