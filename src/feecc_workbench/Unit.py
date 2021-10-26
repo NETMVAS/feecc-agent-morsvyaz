@@ -245,8 +245,11 @@ class Unit:
         path = f"unit-passports/unit-passport-{self.uuid}.yaml"
         self._save_passport(passport, path)
 
+        res = await publish_file(local_file_path=path, rfid_card_id=rfid_card_id)
+        cid, link = res or ("", "")
+
         if config.print_qr.enable:
-            short_url, qrcode_path = generate_qr_code()
+            short_url, qrcode_path = generate_qr_code(link)
             await print_image(
                 qrcode_path, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {short_url}"
             )
@@ -255,10 +258,7 @@ class Unit:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, rfid_card_id)
 
-        res = await publish_file(local_file_path=path, rfid_card_id=rfid_card_id)
-
         if config.robonomics_network.enable_datalog and res is not None:
-            cid: str = res[0]
             post_to_datalog(cid)
 
         if self.is_in_db:

@@ -36,9 +36,9 @@ def gateway_is_up() -> None:
 
 
 @time_execution
-def generate_qr_code() -> tp.Tuple[str, str]:
+def generate_qr_code(target_link: tp.Optional[str] = None) -> tp.Tuple[str, str]:
     """generate a QR code with the short link"""
-    short_url: str = generate_short_url()
+    short_url: str = generate_short_url(target_link)
     qrcode_path: str = create_qr(short_url)
     return short_url, qrcode_path
 
