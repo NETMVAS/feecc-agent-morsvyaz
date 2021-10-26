@@ -103,7 +103,7 @@ class Unit:
     @tp.no_type_check
     def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
         """get a mapping for all the currently assigned components VS the desired components"""
-        assigned_components = {component.model: component.internal_id for component in self.components_units}
+        assigned_components = {component.schema.schema_id: component.internal_id for component in self.components_units}
 
         for component_name in self.components_schema_ids:
             if component_name not in assigned_components:
