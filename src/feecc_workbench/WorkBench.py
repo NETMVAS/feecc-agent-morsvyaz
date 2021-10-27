@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as tp
+from pathlib import Path
 
 from loguru import logger
 
@@ -136,7 +137,7 @@ class WorkBench(metaclass=SingletonMeta):
             file: tp.Optional[str] = self.camera.record.remote_file_path  # type: ignore
 
             if file is not None:
-                data = await publish_file(remote_file_path=file, rfid_card_id=self.employee.rfid_card_id)
+                data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
 
                 if data is not None:
                     cid, link = data

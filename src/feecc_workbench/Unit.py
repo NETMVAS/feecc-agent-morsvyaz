@@ -5,6 +5,7 @@ import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime as dt
+from pathlib import Path
 from uuid import uuid4
 
 import yaml
@@ -249,7 +250,7 @@ class Unit:
         path = f"unit-passports/unit-passport-{self.uuid}.yaml"
         self._save_passport(passport, path)
 
-        res = await publish_file(local_file_path=path, rfid_card_id=rfid_card_id)
+        res = await publish_file(file_path=Path(path), rfid_card_id=rfid_card_id)
         cid, link = res or ("", "")
 
         if config.print_qr.enable:

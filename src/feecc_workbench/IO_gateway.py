@@ -1,3 +1,4 @@
+import os
 import socket
 import typing as tp
 
@@ -52,79 +53,32 @@ def post_to_datalog(content: str) -> None:
 
 
 @time_execution
-async def publish_to_ipfs(
-    rfid_card_id: str, local_file_path: tp.Optional[str] = None, remote_file_path: tp.Optional[str] = None
-) -> tp.Tuple[str, str]:
+async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
     gateway_is_up()
 
-    url = f"{IO_GATEWAY_ADDRESS}/io-gateway/ipfs"
+    is_local_path: bool = os.path.exists(file_path)
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
 
-    async with httpx.AsyncClient() as client:
-        if local_file_path is not None:
-            files = {"file_data": open(local_file_path, "rb")}
-            response: httpx.Response = await client.post(url=url, headers=headers, files=files)
+    async with httpx.AsyncClient(base_url=f"{IO_GATEWAY_ADDRESS}/io-gateway/publish-to-ipfs") as client:
+        if is_local_path:
+            files = {"file_data": open(file_path, "rb")}
+            response: httpx.Response = await client.post(url="/upload-file", headers=headers, files=files)
         else:
-            form_data = {"filename": remote_file_path}
-            response = await client.post(url=url, headers=headers, data=form_data)
+            json = {"absolute_path": file_path}
+            response = await client.post(url="/by-path", headers=headers, json=json)
 
     if response.is_error:
         raise httpx.RequestError(response.text)
 
-    cid: str = response.json()["ipfs_cid"]
-    link: str = response.json()["ipfs_link"]
-
-    logger.info(f"File '{local_file_path or remote_file_path} published to IPFS under CID {cid}'")
-
-    return cid, link
-
-
-@time_execution
-async def publish_to_pinata(
-    rfid_card_id: str, local_file_path: tp.Optional[str] = None, remote_file_path: tp.Optional[str] = None
-) -> tp.Tuple[str, str]:
-    """publish a provided file to Pinata using the Feecc gateway and return it's CID and URL"""
-    gateway_is_up()
-
-    url = f"{IO_GATEWAY_ADDRESS}/io-gateway/pinata"
-    headers: tp.Dict[str, str] = get_headers(rfid_card_id)
-
-    if local_file_path is not None:
-        files = {"file_data": open(local_file_path, "rb")}
-        data: tp.Dict[str, tp.Union[str, bool]] = {"background": True}
-    elif remote_file_path is not None:
-        files = None  # type: ignore
-        data = {"filename": remote_file_path, "background": True}
-
-    async with httpx.AsyncClient() as client:
-        response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
-
-    if response.is_error:
-        raise httpx.RequestError(response.text)
+    assert int(response.json().get("status", 500)) == 200, response.json()
 
     cid: str = response.json()["ipfs_cid"]
     link: str = response.json()["ipfs_link"]
 
-    logger.info(f"File {remote_file_path or local_file_path} published to Pinata under CID {cid}")
+    logger.info(f"File '{file_path} published to IPFS under CID {cid}'")
 
     return cid, link
-
-
-@time_execution
-async def publish_file(
-    rfid_card_id: str, local_file_path: tp.Optional[str] = None, remote_file_path: tp.Optional[str] = None
-) -> tp.Optional[tp.Tuple[str, str]]:
-    """publish a file to pinata or IPFS according to config"""
-    if config.pinata.enable:
-        return await publish_to_pinata(rfid_card_id, local_file_path, remote_file_path)  # type: ignore
-    elif config.ipfs.enable:
-        return await publish_to_ipfs(rfid_card_id, local_file_path, remote_file_path)  # type: ignore
-    else:
-        logger.warning(
-            f"File '{local_file_path or remote_file_path}' is neither published to Pinata, nor IPFS as both options are disabled"
-        )
-        return None
 
 
 @time_execution
