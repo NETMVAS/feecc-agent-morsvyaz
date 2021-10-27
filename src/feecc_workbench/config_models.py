@@ -18,14 +18,6 @@ class RobonomicsNetwork(ConfigSection):
     substrate_node_url: tp.Optional[str]
 
 
-class Pinata(ConfigSection):
-    enable: bool
-
-
-class Ipfs(ConfigSection):
-    enable: bool
-
-
 class Yourls(ConfigSection):
     server: str
     username: str
@@ -69,8 +61,6 @@ class WorkBenchConfig(ConfigSection):
 class GlobalConfig(ConfigSection):
     mongo_db: MongoDB
     robonomics_network: RobonomicsNetwork
-    pinata: Pinata
-    ipfs: Ipfs
     yourls: Yourls
     printer: Printer
     print_barcode: PrintBarcode
