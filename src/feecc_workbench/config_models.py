@@ -40,6 +40,10 @@ class PrintQr(ConfigSection):
     logos: bool
 
 
+class Miscellaneous(ConfigSection):
+    autonomous_mode: bool
+
+
 class PrintSecurityTag(ConfigSection):
     enable: bool
     enable_timestamp: bool
@@ -58,7 +62,7 @@ class WorkBenchConfig(ConfigSection):
     hardware: tp.Dict[str, tp.Any]
 
 
-class GlobalConfig(ConfigSection):
+class GlobalConfig(BaseModel):
     mongo_db: MongoDB
     robonomics_network: RobonomicsNetwork
     yourls: Yourls
@@ -68,3 +72,4 @@ class GlobalConfig(ConfigSection):
     print_security_tag: PrintSecurityTag
     workbench_config: WorkBenchConfig
     known_hid_devices: HidDevices
+    miscellaneous: Miscellaneous

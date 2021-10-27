@@ -17,6 +17,20 @@ ROBONOMICS_CLIENT = RobonomicsInterface(
 )
 
 
+def control_flag(func: tp.Any) -> tp.Any:
+    """This ensures autonomous mode is handled properly"""
+
+    def wrap_func(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
+        if config.miscellaneous.autonomous_mode:
+            return
+
+        result = func(*args, **kwargs)
+        return result
+
+    return wrap_func
+
+
+@control_flag
 def gateway_is_up() -> None:
     """check if camera is reachable on the specified port and ip"""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,6 +66,7 @@ def post_to_datalog(content: str) -> None:
     logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
 
 
+@control_flag
 @time_execution
 async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
@@ -81,6 +96,7 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> 
     return cid, link
 
 
+@control_flag
 @time_execution
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""

@@ -1,3 +1,8 @@
+# GENERAL SECTION
+miscellaneous:
+  autonomous_mode: false # disable io gateway interactions
+
+
 # SERVICE IO SECTION
 mongo_db: # MongoDB credentials
   mongo_connection_url: sample_text

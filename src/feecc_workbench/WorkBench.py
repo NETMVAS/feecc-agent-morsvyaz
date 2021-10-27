@@ -38,7 +38,9 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.number: int = config.workbench_config.number
         camera_number: tp.Optional[int] = config.workbench_config.hardware["camera"]
-        self.camera: tp.Optional[Camera] = Camera(camera_number) if camera_number else None
+        self.camera: tp.Optional[Camera] = (
+            Camera(camera_number) if camera_number and not config.miscellaneous.autonomous_mode else None
+        )
         self.ip: str = config.workbench_config.api_socket.split(":")[0]
         self.employee: tp.Optional[Employee] = None
         self.unit: tp.Optional[Unit] = None
