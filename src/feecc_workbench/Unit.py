@@ -254,15 +254,15 @@ class Unit:
             res = await publish_file(file_path=Path(path), rfid_card_id=rfid_card_id)
             cid, link = res or ("", "")
 
-            if config.printer.print_qr:
+            if config.printer.print_qr and (not config.printer.print_qr_only_for_composite or self.schema.is_composite):
                 short_url, qrcode_path = generate_qr_code(link)
                 await print_image(
                     qrcode_path, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {short_url}"
                 )
 
-                if config.printer.print_security_tag:
-                    seal_tag_img: str = create_seal_tag()
-                    await print_image(seal_tag_img, rfid_card_id)
+            if config.printer.print_security_tag:
+                seal_tag_img: str = create_seal_tag()
+                await print_image(seal_tag_img, rfid_card_id)
 
             if config.robonomics_network.enable_datalog and res is not None:
                 post_to_datalog(cid)
