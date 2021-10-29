@@ -8,7 +8,7 @@ from loguru import logger
 from .config import config
 from .utils import get_headers
 
-IO_GATEWAY_ADDRESS: str = config.workbench_config.feecc_io_gateway_socket
+IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
 
 
 @dataclass

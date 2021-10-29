@@ -35,13 +35,11 @@ class WorkBench(metaclass=SingletonMeta):
     @logger.catch
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
-
         self.number: int = config.workbench_config.number
-        camera_number: tp.Optional[int] = config.workbench_config.hardware["camera"]
+        camera_number: tp.Optional[int] = config.hardware.camera_no
         self.camera: tp.Optional[Camera] = (
-            Camera(camera_number) if camera_number and not config.miscellaneous.autonomous_mode else None
+            Camera(camera_number) if camera_number and not config.feecc_io_gateway.autonomous_mode else None
         )
-        self.ip: str = config.workbench_config.api_socket.split(":")[0]
         self.employee: tp.Optional[Employee] = None
         self.unit: tp.Optional[Unit] = None
         self.state: State = AWAIT_LOGIN_STATE
@@ -56,7 +54,7 @@ class WorkBench(metaclass=SingletonMeta):
         unit = Unit(schema)
         await self._database.upload_unit(unit)
 
-        if config.print_barcode.enable:
+        if config.printer.print_barcode and not config.feecc_io_gateway.autonomous_mode:
             await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=unit.model)  # type: ignore
 
         return unit

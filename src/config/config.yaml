@@ -1,12 +1,10 @@
-# GENERAL SECTION
-miscellaneous:
-  autonomous_mode: false # disable io gateway interactions
-
-
 # SERVICE IO SECTION
 mongo_db: # MongoDB credentials
   mongo_connection_url: sample_text
 
+feecc_io_gateway:
+  gateway_address: http://127.0.0.1:8000
+  autonomous_mode: true # disable io gateway interactions
 
 # EXTERNAL IO SECTION
 robonomics_network:
@@ -23,32 +21,23 @@ yourls: # Information about the yourls node used for short link creation
 
 # PERIPHERALS SECTION
 printer: # Info about the Brother Label printer used in your operation
-  printer_model: "QL-800"
-  paper_width: 62 # paper width in mm
-  enable: false # if false - no printing tasks will work
-  red: false # if black/red printing
-
-print_barcode:
-  enable: false
-
-print_qr: # Whether to print QR code stickers pointing to a video in IPFS
-  enable: false
-  logos: false # Enables logo insertion into a qrcode
-
-print_security_tag: # Whether to print seal tags with optional timestamp on them
-  enable: false
-  enable_timestamp: false
+  enable: true # if false - no printing tasks will work
+  print_barcode: true
+  print_qr: true # Whether to print QR code stickers pointing to a Passport in IPFS
+  print_qr_only_for_composite: true
+  qr_add_logos: false # Enables logo insertion into a qrcode
+  print_security_tag: false # Whether to print seal tags with optional timestamp on them
+  security_tag_add_timestamp: true
 
 
 # WORKBENCH CONFIG SECTION
 workbench_config:
   number: 1
   description: Монтажный стол 1 # optional description, leave blank if you don't need it
-  api_socket: 192.168.66.19:5000  # a socket, at which the REST API of the device is listening on
-  feecc_io_gateway_socket: ""
-  hardware:  # list of attached devices to make use of
-    camera: null # null or number
 
-known_hid_devices: # known attached devices with their full names
+hardware: # list of attached devices to make use of
+  camera_no: 1 # null or number
+
+hid_devices_names: # known attached devices with their full names
   rfid_reader: "Sycreader RFID Technology Co., Ltd SYC ID&IC USB Reader"
   barcode_reader: "HENEX 2D Barcode Scanner"

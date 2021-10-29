@@ -11,7 +11,7 @@ from ._short_url_generator import generate_short_url
 from .config import config
 from .utils import get_headers, time_execution
 
-IO_GATEWAY_ADDRESS: str = config.workbench_config.feecc_io_gateway_socket
+IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
 ROBONOMICS_CLIENT = RobonomicsInterface(
     seed=config.robonomics_network.account_seed, remote_ws=config.robonomics_network.substrate_node_url
 )
@@ -21,7 +21,7 @@ def control_flag(func: tp.Any) -> tp.Any:
     """This ensures autonomous mode is handled properly"""
 
     def wrap_func(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
-        if config.miscellaneous.autonomous_mode:
+        if config.feecc_io_gateway.autonomous_mode:
             return
 
         result = func(*args, **kwargs)
@@ -80,7 +80,7 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> 
             files = {"file_data": open(file_path, "rb")}
             response: httpx.Response = await client.post(url="/upload-file", headers=headers, files=files)
         else:
-            json = {"absolute_path": file_path}
+            json = {"absolute_path": str(file_path)}
             response = await client.post(url="/by-path", headers=headers, json=json)
 
     if response.is_error:

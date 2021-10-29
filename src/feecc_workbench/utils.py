@@ -29,7 +29,7 @@ def get_headers(rfid_card_id: str) -> tp.Dict[str, str]:
 @lru_cache
 def identify_sender(sender_device_name: str) -> tp.Optional[str]:
     """identify, which device the input is coming from and if it is known return it's role"""
-    known_hid_devices: tp.Dict[str, str] = config.known_hid_devices.dict()
+    known_hid_devices: tp.Dict[str, str] = config.hid_devices_names.dict()
 
     for sender_name, device_name in known_hid_devices.items():
         if device_name == sender_device_name:
