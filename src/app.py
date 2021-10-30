@@ -87,7 +87,7 @@ async def unit_upload_record() -> mdl.GenericResponse:
 
 
 @app.post("/unit/assign-component/{unit_internal_id}", response_model=mdl.GenericResponse, tags=["unit"])
-def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """assign a unit as a component to the composite unit"""
     if WORKBENCH.state is not states.GATHER_COMPONENTS_STATE:
         raise HTTPException(
@@ -99,6 +99,9 @@ def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.Gener
         WORKBENCH.unit.assign_component(unit)
 
         if WORKBENCH.unit.components_filled:
+            for component in WORKBENCH.unit.components_units:
+                await MongoDbWrapper().update_unit(component)
+
             WORKBENCH.state = states.UNIT_ASSIGNED_IDLING_STATE
 
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Component has been assigned")
@@ -316,6 +319,9 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
                 elif WORKBENCH.state is states.GATHER_COMPONENTS_STATE:
                     WORKBENCH.unit.assign_component(unit)
                     if WORKBENCH.unit.components_filled:
+                        for component in WORKBENCH.unit.components_units:
+                            await MongoDbWrapper().update_unit(component)
+
                         WORKBENCH.state = states.UNIT_ASSIGNED_IDLING_STATE
                 else:
                     logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
@@ -328,6 +334,9 @@ async def handle_hid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
 
     except StateForbiddenError as e:
         return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+    except Exception as e:
+        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import os
+from copy import copy
 from time import sleep
 
 from app import app
@@ -218,7 +219,7 @@ def test_end_operation() -> None:
     wait()
 
 
-def test_upload_unit() -> None:  # TODO: False positive when GW is offline
+def test_upload_unit() -> None:  # FIXME: False positive when GW is offline
     check_state(UNIT_ASSIGNED_IDLING_STATE.name)
     response = CLIENT.post("/unit/upload")
     check_status(response, 200)
@@ -263,8 +264,13 @@ def test_hid_event_login() -> None:
     wait()
 
 
+old_simple_unit_int_id = ""
+
+
 def prepare_new_units() -> None:
     test_create_new_composite_unit()
+    global old_simple_unit_int_id
+    old_simple_unit_int_id = copy(simple_unit_internal_id)
     test_create_new_simple_unit()
 
 
@@ -273,6 +279,15 @@ def test_hid_event_assign_unit() -> None:
     global composite_unit_internal_id
     response = send_hid_event(composite_unit_internal_id, VALID_HID_BARCODE_DEVICE_NAME)
     check_status(response, 200)
+    check_state(GATHER_COMPONENTS_STATE.name)
+    wait()
+
+
+def test_hid_event_assign_component_already_featured_in_another_composite() -> None:
+    check_state(GATHER_COMPONENTS_STATE.name)
+    global old_simple_unit_int_id
+    response = send_hid_event(old_simple_unit_int_id, VALID_HID_BARCODE_DEVICE_NAME)
+    check_status(response, 500)
     check_state(GATHER_COMPONENTS_STATE.name)
     wait()
 

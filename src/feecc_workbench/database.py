@@ -168,6 +168,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 ]
                 or None,
                 passport_short_url=unit_dict.get("passport_short_url", None),
+                featured_in_int_id=unit_dict.get("featured_in_int_id", None),
             )
 
         except Exception as E:

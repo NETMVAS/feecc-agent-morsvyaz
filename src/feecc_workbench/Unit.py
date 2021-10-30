@@ -53,6 +53,7 @@ class Unit:
         is_in_db: tp.Optional[bool] = None,
         biography: tp.Optional[tp.List[ProductionStage]] = None,
         components_units: tp.Optional[tp.List[Unit]] = None,
+        featured_in_int_id: tp.Optional[str] = None,
         passport_short_url: tp.Optional[str] = None,
     ) -> None:
         self.schema: ProductionSchema = schema
@@ -61,6 +62,7 @@ class Unit:
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
         self.components_units: tp.List[Unit] = components_units or []
+        self.featured_in_int_id: tp.Optional[str] = featured_in_int_id
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
@@ -121,8 +123,17 @@ class Unit:
             if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
                 if not component.is_completed:
                     raise ValueError(f"Component {component.model} assembly is not completed")
-                self.components_units.append(component)
-                logger.info(f"Component {component.model} has been assigned to a composite Unit {self.model}")
+
+                elif component.featured_in_int_id is not None:
+                    raise ValueError(
+                        f"Component {component.model} has already been used in unit {component.featured_in_int_id}"
+                    )
+
+                else:
+                    self.components_units.append(component)
+                    component.featured_in_int_id = self.internal_id
+                    logger.info(f"Component {component.model} has been assigned to a composite Unit {self.model}")
+
             else:
                 message = f"Component {component.model} is already assigned to a composite Unit {self.model}"
                 logger.error(message)
@@ -141,6 +152,7 @@ class Unit:
             "is_in_db": self.is_in_db,
             "passport_short_url": self.passport_short_url,
             "components_internal_ids": self.components_internal_ids,
+            "featured_in_int_id": self.featured_in_int_id,
         }
 
     def start_session(
