@@ -288,8 +288,6 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                     employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
                 except EmployeeNotFoundError as e:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-                except Exception as e:
-                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
                 WORKBENCH.log_in(employee)
 
@@ -303,8 +301,6 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                     unit = await get_unit_by_internal_id(event.string)
                 except UnitNotFoundError as e:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-                except Exception as e:
-                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
                 if WORKBENCH.state is states.AUTHORIZED_IDLING_STATE:
                     WORKBENCH.assign_unit(unit)
