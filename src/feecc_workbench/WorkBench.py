@@ -55,7 +55,13 @@ class WorkBench(metaclass=SingletonMeta):
         await self._database.upload_unit(unit)
 
         if config.printer.print_barcode and not config.feecc_io_gateway.autonomous_mode:
-            await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=unit.model)  # type: ignore
+            if unit.schema.parent_schema_id is None:
+                annotation = unit.schema.unit_name
+            else:
+                parent_schema = await self._database.get_schema_by_id(unit.schema.parent_schema_id)
+                annotation = f"{parent_schema.unit_name}. {unit.model}."
+
+            await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)  # type: ignore
 
         return unit
 
