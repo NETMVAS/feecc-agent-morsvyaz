@@ -7,10 +7,11 @@ from loguru import logger
 
 from .Camera import Camera
 from .Employee import Employee
-from .IO_gateway import print_image, publish_file
+from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
 from .Unit import Unit
+from ._image_generation import create_seal_tag
 from .config import config
 from .database import MongoDbWrapper
 from .exceptions import StateForbiddenError
@@ -18,11 +19,11 @@ from .models import ProductionSchema
 from .states import (
     AUTHORIZED_IDLING_STATE,
     AWAIT_LOGIN_STATE,
+    GATHER_COMPONENTS_STATE,
     PRODUCTION_STAGE_ONGOING_STATE,
     STATE_TRANSITION_MAP,
     State,
     UNIT_ASSIGNED_IDLING_STATE,
-    GATHER_COMPONENTS_STATE,
 )
 
 
@@ -126,7 +127,7 @@ class WorkBench(metaclass=SingletonMeta):
         """begin work on the provided unit"""
         self._validate_state_transition(PRODUCTION_STAGE_ONGOING_STATE)
 
-        self.unit.start_session(self.employee, production_stage_name, additional_info)  # type: ignore
+        self.unit.start_operation(self.employee, production_stage_name, additional_info)  # type: ignore
 
         if self.camera is not None and self.employee is not None:
             await self.camera.start(self.employee.rfid_card_id)
@@ -154,6 +155,7 @@ class WorkBench(metaclass=SingletonMeta):
     async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(UNIT_ASSIGNED_IDLING_STATE)
+        assert self.unit is not None, "Unit not assigned"
 
         logger.info("Trying to end operation")
 
@@ -170,6 +172,40 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        await self.unit.end_session(self._database, ipfs_hashes, additional_info)  # type: ignore
+        await self.unit.end_operation(self._database, ipfs_hashes, additional_info)  # type: ignore
+        await self._database.update_unit(self.unit)
 
         self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
+
+    async def upload_unit_passport(self) -> None:
+        """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
+        assert self.unit is not None, "Unit not assigned"
+        assert self.employee is not None, "Employee not logged in"
+
+        passport_file_path = await self.unit.construct_unit_passport()
+
+        if not config.feecc_io_gateway.autonomous_mode:
+            res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
+            cid, link = res or ("", "")
+
+            if config.printer.print_qr and (
+                not config.printer.print_qr_only_for_composite or self.unit.schema.is_composite
+            ):
+                short_url, qrcode_path = generate_qr_code(link)
+                await print_image(
+                    qrcode_path,
+                    self.employee.rfid_card_id,
+                    annotation=f"{self.unit.model} (ID: {self.unit.internal_id}). {short_url}",
+                )
+
+            if config.printer.print_security_tag:
+                seal_tag_img: str = create_seal_tag()
+                await print_image(seal_tag_img, self.employee.rfid_card_id)
+
+            if config.robonomics_network.enable_datalog and res is not None:
+                post_to_datalog(cid)
+
+        if self.unit.is_in_db:
+            await self._database.update_unit(self.unit)
+        else:
+            await self._database.upload_unit(self.unit)

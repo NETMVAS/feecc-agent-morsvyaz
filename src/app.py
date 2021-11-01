@@ -75,9 +75,10 @@ async def unit_upload_record() -> mdl.GenericResponse:
         if WORKBENCH.employee is None:
             raise StateForbiddenError("Employee is not authorized on the workbench")
 
-        unit = WORKBENCH.unit
-        await unit.upload(MongoDbWrapper(), WORKBENCH.employee.rfid_card_id)
-        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {unit.internal_id}")
+        await WORKBENCH.upload_unit_passport()
+        return mdl.GenericResponse(
+            status_code=status.HTTP_200_OK, detail=f"Uploaded data for unit {WORKBENCH.unit.internal_id}"
+        )
 
     except Exception as e:
         message: str = f"Can't handle unit upload. An error occurred: {e}"

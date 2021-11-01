@@ -5,22 +5,15 @@ import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime as dt
-from pathlib import Path
 from uuid import uuid4
 
 import yaml
 from loguru import logger
 
 from .Employee import Employee
-from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Types import AdditionalInfo
 from ._Barcode import Barcode
-from ._image_generation import create_seal_tag
-from .config import config
 from .models import ProductionSchema
-
-if tp.TYPE_CHECKING:
-    from .database import MongoDbWrapper
 
 
 def timestamp() -> str:
@@ -155,7 +148,7 @@ class Unit:
             "featured_in_int_id": self.featured_in_int_id,
         }
 
-    def start_session(
+    def start_operation(
         self,
         employee: Employee,
         production_stage_name: str,
@@ -176,9 +169,8 @@ class Unit:
 
         logger.debug(f"Started production stage {production_stage_name} for {str(operation)}")
 
-    async def end_session(
+    async def end_operation(
         self,
-        database: MongoDbWrapper,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[AdditionalInfo] = None,
     ) -> None:
@@ -208,7 +200,6 @@ class Unit:
         self.biography[-1] = operation
         logger.debug(f"Unit biography stage count is now {len(self.biography)}")
         self.employee = None
-        await database.update_unit(self)
 
     @staticmethod
     def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
@@ -256,30 +247,9 @@ class Unit:
         logger.info(f"Unit passport with UUID {self.uuid} has been dumped successfully")
 
     @logger.catch(reraise=True)
-    async def upload(self, database: MongoDbWrapper, rfid_card_id: str) -> None:
-        """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
+    async def construct_unit_passport(self) -> str:
+        """construct own passport, dump it as .yaml file and return a path to it"""
         passport = self.get_passport_dict()
         path = f"unit-passports/unit-passport-{self.uuid}.yaml"
         self._save_passport(passport, path)
-
-        if not config.feecc_io_gateway.autonomous_mode:
-            res = await publish_file(file_path=Path(path), rfid_card_id=rfid_card_id)
-            cid, link = res or ("", "")
-
-            if config.printer.print_qr and (not config.printer.print_qr_only_for_composite or self.schema.is_composite):
-                short_url, qrcode_path = generate_qr_code(link)
-                await print_image(
-                    qrcode_path, rfid_card_id, annotation=f"{self.model} (ID: {self.internal_id}). {short_url}"
-                )
-
-            if config.printer.print_security_tag:
-                seal_tag_img: str = create_seal_tag()
-                await print_image(seal_tag_img, rfid_card_id)
-
-            if config.robonomics_network.enable_datalog and res is not None:
-                post_to_datalog(cid)
-
-        if self.is_in_db:
-            await database.update_unit(self)
-        else:
-            await database.upload_unit(self)
+        return path
