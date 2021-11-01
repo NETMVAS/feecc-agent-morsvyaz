@@ -70,6 +70,13 @@ class WorkBench(metaclass=SingletonMeta):
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
             raise StateForbiddenError(f"State transition from {self.state.name} to {new_state.name} is not allowed.")
 
+    def switch_state(self, new_state: State) -> None:
+        """apply new state to the workbench"""
+        assert isinstance(new_state, State)
+        self._validate_state_transition(new_state)
+        logger.info(f"Workbench no.{self.number} state changed: {self.state.name} -> {new_state.name}")
+        self.state = new_state
+
     def log_in(self, employee: Employee) -> None:
         """authorize employee"""
         self._validate_state_transition(AUTHORIZED_IDLING_STATE)
@@ -77,7 +84,7 @@ class WorkBench(metaclass=SingletonMeta):
         self.employee = employee
         logger.info(f"Employee {employee.name} is logged in at the workbench no. {self.number}")
 
-        self.state = AUTHORIZED_IDLING_STATE
+        self.switch_state(AUTHORIZED_IDLING_STATE)
 
     def log_out(self) -> None:
         """log out the employee"""
@@ -89,7 +96,7 @@ class WorkBench(metaclass=SingletonMeta):
         logger.info(f"Employee {self.employee.name} was logged out the Workbench {self.number}")  # type: ignore
         self.employee = None
 
-        self.state = AWAIT_LOGIN_STATE
+        self.switch_state(AWAIT_LOGIN_STATE)
 
     def assign_unit(self, unit: Unit) -> None:
         """assign a unit to the workbench"""
@@ -102,9 +109,9 @@ class WorkBench(metaclass=SingletonMeta):
             logger.info(
                 f"Unit {unit.internal_id} is a composition with unsatisfied component requirements. Entering component gathering state."
             )
-            self.state = GATHER_COMPONENTS_STATE
+            self.switch_state(GATHER_COMPONENTS_STATE)
         else:
-            self.state = UNIT_ASSIGNED_IDLING_STATE
+            self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
 
     def remove_unit(self) -> None:
         """remove a unit from the workbench"""
@@ -113,7 +120,7 @@ class WorkBench(metaclass=SingletonMeta):
         logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")  # type: ignore
         self.unit = None
 
-        self.state = AUTHORIZED_IDLING_STATE
+        self.switch_state(AUTHORIZED_IDLING_STATE)
 
     async def start_operation(self, production_stage_name: str, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
@@ -128,7 +135,21 @@ class WorkBench(metaclass=SingletonMeta):
             f"Started operation {production_stage_name} on the unit {self.unit.internal_id} at the workbench no. {self.number}"  # type: ignore
         )
 
-        self.state = PRODUCTION_STAGE_ONGOING_STATE
+        self.switch_state(PRODUCTION_STAGE_ONGOING_STATE)
+
+    async def assign_component_to_unit(self, component: Unit) -> None:
+        """assign provided component to a composite unit"""
+        assert (
+            self.state is GATHER_COMPONENTS_STATE and self.unit is not None
+        ), f"Cannot assign components unless WB is in state {GATHER_COMPONENTS_STATE.name}"
+
+        self.unit.assign_component(component)
+
+        if self.unit.components_filled:
+            for component in self.unit.components_units:
+                await self._database.update_unit(component)
+
+            self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
 
     async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
         """end work on the provided unit"""
@@ -149,6 +170,6 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        await self.unit.end_session(MongoDbWrapper(), ipfs_hashes, additional_info)  # type: ignore
+        await self.unit.end_session(self._database, ipfs_hashes, additional_info)  # type: ignore
 
-        self.state = UNIT_ASSIGNED_IDLING_STATE
+        self.switch_state(UNIT_ASSIGNED_IDLING_STATE)

@@ -95,14 +95,7 @@ async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl
         )
 
     try:
-        WORKBENCH.unit.assign_component(unit)
-
-        if WORKBENCH.unit.components_filled:
-            for component in WORKBENCH.unit.components_units:
-                await MongoDbWrapper().update_unit(component)
-
-            WORKBENCH.state = states.UNIT_ASSIGNED_IDLING_STATE
-
+        await WORKBENCH.assign_component_to_unit(unit)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Component has been assigned")
 
     except Exception as e:
@@ -308,12 +301,7 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                     WORKBENCH.remove_unit()
                     WORKBENCH.assign_unit(unit)
                 elif WORKBENCH.state is states.GATHER_COMPONENTS_STATE:
-                    WORKBENCH.unit.assign_component(unit)
-                    if WORKBENCH.unit.components_filled:
-                        for component in WORKBENCH.unit.components_units:
-                            await MongoDbWrapper().update_unit(component)
-
-                        WORKBENCH.state = states.UNIT_ASSIGNED_IDLING_STATE
+                    await WORKBENCH.assign_component_to_unit(unit)
                 else:
                     logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
 
