@@ -172,7 +172,7 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        await self.unit.end_operation(self._database, ipfs_hashes, additional_info)  # type: ignore
+        await self.unit.end_operation(ipfs_hashes, additional_info)
         await self._database.update_unit(self.unit)
 
         self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
