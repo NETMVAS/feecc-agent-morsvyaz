@@ -9,3 +9,5 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
       - "./src/config/config.yaml:/code/src/config/config.yaml"
+    network_mode: host
+    restart: always
