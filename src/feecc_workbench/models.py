@@ -87,6 +87,10 @@ class ProductionSchema(BaseModel):
     def is_composite(self) -> bool:
         return self.required_components_schema_ids is not None
 
+    @property
+    def is_a_component(self) -> bool:
+        return self.parent_schema_id is not None
+
 
 class ProductionSchemaResponse(GenericResponse):
     production_schema: ProductionSchema

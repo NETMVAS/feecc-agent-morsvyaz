@@ -189,7 +189,9 @@ class WorkBench(metaclass=SingletonMeta):
             cid, link = res or ("", "")
 
             if config.printer.print_qr and (
-                not config.printer.print_qr_only_for_composite or self.unit.schema.is_composite
+                not config.printer.print_qr_only_for_composite
+                or self.unit.schema.is_composite
+                or not self.unit.schema.is_a_component
             ):
                 short_url, qrcode_path = generate_qr_code(link)
                 await print_image(
