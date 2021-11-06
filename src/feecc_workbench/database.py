@@ -16,18 +16,20 @@ from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
 
 
-def _get_database_credentials() -> str:
+def _get_database_client() -> AsyncIOMotorClient:
     """Get MongoDB connection url"""
-    try:
-        mongo_connection_url_env: tp.Optional[str] = os.getenv("MONGO_CONNECTION_URL")
+    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
 
-        if mongo_connection_url_env is not None:
-            return mongo_connection_url_env
-        else:
-            return config.mongo_db.mongo_connection_url
+    try:
+        db_client = AsyncIOMotorClient(mongo_connection_url, serverSelectionTimeoutMS=3000)
+        db_client.server_info()
+        return db_client
 
     except Exception as E:
-        message: str = f"Failed to establish database connection: {E}. Exiting."
+        message = (
+            f"Failed to establish database connection: {E}. "
+            f"Is the provided URI correct? {mongo_connection_url=} Exiting."
+        )
         logger.critical(message)
         sys.exit(1)
 
@@ -39,7 +41,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        self._client: AsyncIOMotorClient = AsyncIOMotorClient(_get_database_credentials())
+        self._client: AsyncIOMotorClient = _get_database_client()
         self._database: AsyncIOMotorDatabase = self._client["Feecc-Hub"]
 
         # collections
