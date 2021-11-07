@@ -6,7 +6,8 @@ import typing as tp
 
 import httpx
 from loguru import logger
-from robonomicsinterface import RobonomicsInterface
+
+# from robonomicsinterface import RobonomicsInterface
 
 from ._image_generation import create_qr
 from ._short_url_generator import generate_short_url
@@ -14,9 +15,9 @@ from .config import config
 from .utils import get_headers, time_execution
 
 IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
-ROBONOMICS_CLIENT = RobonomicsInterface(
-    seed=config.robonomics_network.account_seed, remote_ws=config.robonomics_network.substrate_node_url
-)
+# ROBONOMICS_CLIENT = RobonomicsInterface(
+#     seed=config.robonomics_network.account_seed, remote_ws=config.robonomics_network.substrate_node_url
+# )
 
 
 def control_flag(func: tp.Any) -> tp.Any:
@@ -60,12 +61,12 @@ def generate_qr_code(target_link: tp.Optional[str] = None) -> tp.Tuple[str, str]
     return short_url, qrcode_path
 
 
-@time_execution
-def post_to_datalog(content: str) -> None:
-    """echo provided string to the Robonomics datalog"""
-    logger.info(f"Posting data '{content}' to Robonomics datalog")
-    txn_hash: str = ROBONOMICS_CLIENT.record_datalog(content)
-    logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
+# @time_execution
+# def post_to_datalog(content: str) -> None:
+#     """echo provided string to the Robonomics datalog"""
+#     logger.info(f"Posting data '{content}' to Robonomics datalog")
+#     txn_hash: str = ROBONOMICS_CLIENT.record_datalog(content)
+#     logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
 
 
 @control_flag
