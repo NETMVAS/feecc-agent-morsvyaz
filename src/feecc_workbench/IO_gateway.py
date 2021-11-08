@@ -6,7 +6,6 @@ import typing as tp
 
 import httpx
 from loguru import logger
-
 from robonomicsinterface import RobonomicsInterface
 
 from ._image_generation import create_qr

@@ -7,7 +7,7 @@ from loguru import logger
 
 from .Camera import Camera
 from .Employee import Employee
-from .IO_gateway import generate_qr_code, print_image, publish_file, post_to_datalog
+from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
 from .Unit import Unit

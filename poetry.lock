@@ -1093,6 +1093,7 @@ base58 = [
 black = [
     {file = "black-21.10b0-py3-none-any.whl", hash = "sha256:6eb7448da9143ee65b856a5f3676b7dda98ad9abe0f87fce8c59291f15e82a5b"},
     {file = "black-21.10b0.tar.gz", hash = "sha256:a9952229092e325fe5f3dae56d81f639b23f7131eb840781947e4b2886030f33"},
+
 ]
 brother-ql = [
     {file = "brother_ql-0.9.4-py2.py3-none-any.whl", hash = "sha256:1a7a3faa56924c4e7670da82016486fc310af339acb2ffb98bd863a2667ab2c2"},
