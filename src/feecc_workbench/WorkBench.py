@@ -7,7 +7,7 @@ from loguru import logger
 
 from .Camera import Camera
 from .Employee import Employee
-from .IO_gateway import generate_qr_code, print_image, publish_file
+from .IO_gateway import generate_qr_code, print_image, publish_file, post_to_datalog
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
 from .Unit import Unit
@@ -204,8 +204,8 @@ class WorkBench(metaclass=SingletonMeta):
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, self.employee.rfid_card_id)
 
-            # if config.robonomics_network.enable_datalog and res is not None:
-            #     post_to_datalog(cid)
+            if config.robonomics_network.enable_datalog and res is not None:
+                post_to_datalog(cid)
 
         if self.unit.is_in_db:
             await self._database.update_unit(self.unit)
