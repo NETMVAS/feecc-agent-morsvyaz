@@ -28,6 +28,7 @@ class ProductionStage:
     parent_unit_uuid: str
     session_start_time: str = field(default_factory=timestamp)
     session_end_time: tp.Optional[str] = None
+    ended_prematurely: bool = False
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[AdditionalInfo] = None
     id: str = field(default_factory=lambda: uuid4().hex)
@@ -173,6 +174,7 @@ class Unit:
         self,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[AdditionalInfo] = None,
+        premature: bool = False,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data
@@ -184,6 +186,10 @@ class Unit:
         logger.info(f"Ending production stage {self.current_operation.name}")
         operation = deepcopy(self.current_operation)
         operation.session_end_time = timestamp()
+
+        if premature:
+            operation.name += " (неокончен.)"
+            operation.ended_prematurely = True
 
         if video_hashes:
             operation.video_hashes = video_hashes

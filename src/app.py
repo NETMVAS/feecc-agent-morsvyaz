@@ -205,7 +205,7 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
 async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        await WORKBENCH.end_operation(workbench_data.additional_info)
+        await WORKBENCH.end_operation(workbench_data.additional_info, workbench_data.premature_ending)
         unit = WORKBENCH.unit
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
