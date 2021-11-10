@@ -211,7 +211,7 @@ def test_end_operation_prematurely() -> None:
     response = CLIENT.post(
         "/workbench/end-operation",
         json={
-            "premature": True,
+            "premature_ending": True,
             "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
         },
     )
