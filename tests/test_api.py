@@ -206,6 +206,34 @@ def test_start_operation() -> None:
     wait()
 
 
+def test_end_operation_prematurely() -> None:
+    check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+    response = CLIENT.post(
+        "/workbench/end-operation",
+        json={
+            "premature": True,
+            "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
+        },
+    )
+    check_status(response, 200)
+    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    wait()
+
+
+def test_start_operation_again() -> None:
+    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    response = CLIENT.post(
+        "/workbench/start-operation",
+        json={
+            "production_stage_name": "Sample stage 1",
+            "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
+        },
+    )
+    check_status(response, 200)
+    check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+    wait()
+
+
 def test_end_operation() -> None:
     check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
     response = CLIENT.post(
@@ -217,6 +245,12 @@ def test_end_operation() -> None:
     check_status(response, 200)
     check_state(UNIT_ASSIGNED_IDLING_STATE.name)
     wait()
+
+
+def test_biography_stage_count_correct() -> None:
+    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    response = CLIENT.get("/workbench/status")
+    assert len(response.json().get("unit_biography", [])) == 2, "Expected 2 stages in unit biography"
 
 
 def test_upload_unit() -> None:  # FIXME: False positive when GW is offline
