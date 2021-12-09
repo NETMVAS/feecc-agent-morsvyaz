@@ -1,9 +1,9 @@
 name: Deploy in dev-k8s
 on:
   push:
-    branches: [ dev ]
+    branches: [ development ]
   pull_request:
-    branches: [ dev ]
+    branches: [ development ]
     
 jobs:
   Build-and-push-DockerCont:
