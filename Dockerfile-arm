@@ -11,9 +11,9 @@ RUN pip install --upgrade pip
 RUN . /root/.cargo/env && pip install py-bip39-bindings
 RUN . /root/.cargo/env && pip install py-ed25519-bindings
 RUN . /root/.cargo/env && pip install py-sr25519-bindings
-RUN pip install cryptography
+RUN . /root/.cargo/env && pip install cryptography
 RUN pip install poetry
-COPY ./pyproject.toml ./poetry.lock* /tmp/
+COPY ./pyproject.toml /tmp/
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 FROM python:3.9

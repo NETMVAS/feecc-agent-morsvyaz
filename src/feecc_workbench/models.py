@@ -20,6 +20,7 @@ class WorkbenchExtraDetails(WorkbenchStageDetails):
 
 class WorkbenchExtraDetailsWithoutStage(BaseModel):
     additional_info: tp.Optional[tp.Dict[str, str]] = None
+    premature_ending: bool = False
 
 
 class EmployeeModel(BaseModel):

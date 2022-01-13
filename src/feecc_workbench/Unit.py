@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import datetime as dt
 import os
 import typing as tp
 from copy import deepcopy
 from dataclasses import dataclass, field
-from datetime import datetime as dt
+from functools import reduce
+from operator import add
 from uuid import uuid4
 
 import yaml
@@ -15,10 +17,12 @@ from .Types import AdditionalInfo
 from ._Barcode import Barcode
 from .models import ProductionSchema
 
+TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M:%S"
+
 
 def timestamp() -> str:
     """generate formatted timestamp for the invocation moment"""
-    return dt.now().strftime("%d-%m-%Y %H:%M:%S")
+    return dt.datetime.now().strftime(TIMESTAMP_FORMAT)
 
 
 @dataclass
@@ -28,11 +32,12 @@ class ProductionStage:
     parent_unit_uuid: str
     session_start_time: str = field(default_factory=timestamp)
     session_end_time: tp.Optional[str] = None
+    ended_prematurely: bool = False
     video_hashes: tp.Optional[tp.List[str]] = None
     additional_info: tp.Optional[AdditionalInfo] = None
     id: str = field(default_factory=lambda: uuid4().hex)
     is_in_db: bool = False
-    creation_time: dt = field(default_factory=lambda: dt.utcnow())
+    creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.utcnow())
 
 
 class Unit:
@@ -95,6 +100,21 @@ class Unit:
         if self.schema.production_stages is None:
             return True
         return len(self.schema.production_stages) == len(self.biography)
+
+    @property
+    def total_assembly_time(self) -> dt.timedelta:
+        """calculate total time spent during all production stages"""
+
+        def stage_len(stage: ProductionStage) -> dt.timedelta:
+            start_time: dt.datetime = dt.datetime.strptime(stage.session_start_time, TIMESTAMP_FORMAT)
+            end_time: dt.datetime = (
+                dt.datetime.strptime(stage.session_end_time, TIMESTAMP_FORMAT)
+                if stage.session_end_time is not None
+                else dt.datetime.now()
+            )
+            return end_time - start_time
+
+        return reduce(add, (stage_len(stage) for stage in self.biography)) if self.biography else dt.timedelta(0)
 
     @tp.no_type_check
     def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
@@ -173,6 +193,7 @@ class Unit:
         self,
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[AdditionalInfo] = None,
+        premature: bool = False,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data
@@ -184,6 +205,10 @@ class Unit:
         logger.info(f"Ending production stage {self.current_operation.name}")
         operation = deepcopy(self.current_operation)
         operation.session_end_time = timestamp()
+
+        if premature:
+            operation.name += " (неокончен.)"
+            operation.ended_prematurely = True
 
         if video_hashes:
             operation.video_hashes = video_hashes
@@ -229,6 +254,11 @@ class Unit:
             "Уникальный номер паспорта изделия": self.uuid,
             "Модель изделия": self.model,
         }
+
+        try:
+            passport_dict["Общая продолжительность сборки"] = str(self.total_assembly_time)
+        except Exception as e:
+            logger.error(str(e))
 
         if self.biography:
             passport_dict["Этапы производства"] = [self._construct_stage_dict(stage) for stage in self.biography]

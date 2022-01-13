@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import typing as tp
 from pathlib import Path
 
@@ -152,7 +153,7 @@ class WorkBench(metaclass=SingletonMeta):
 
             self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
 
-    async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None) -> None:
+    async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(UNIT_ASSIGNED_IDLING_STATE)
         assert self.unit is not None, "Unit not assigned"
@@ -172,7 +173,7 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        await self.unit.end_operation(ipfs_hashes, additional_info)
+        await self.unit.end_operation(ipfs_hashes, additional_info, premature)
         await self._database.update_unit(self.unit)
 
         self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
@@ -205,7 +206,11 @@ class WorkBench(metaclass=SingletonMeta):
                 await print_image(seal_tag_img, self.employee.rfid_card_id)
 
             if config.robonomics_network.enable_datalog and res is not None:
-                post_to_datalog(cid)
+                # for now Robonomics interface library doesn't support async io.
+                # This operation requires waiting for the block to be written in the blockchain,
+                # which takes 15 seconds on average, so it's done in another thread
+                thread = threading.Thread(target=post_to_datalog, args=(cid,))
+                thread.start()
 
         if self.unit.is_in_db:
             await self._database.update_unit(self.unit)
