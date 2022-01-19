@@ -78,8 +78,9 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> 
 
     is_local_path: bool = os.path.exists(file_path)
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
+    base_url = f"{IO_GATEWAY_ADDRESS}/io-gateway/publish-to-ipfs"
 
-    async with httpx.AsyncClient(base_url=f"{IO_GATEWAY_ADDRESS}/io-gateway/publish-to-ipfs") as client:
+    async with httpx.AsyncClient(base_url=base_url, timeout=None) as client:
         if is_local_path:
             files = {"file_data": open(file_path, "rb")}
             response: httpx.Response = await client.post(url="/upload-file", headers=headers, files=files)
