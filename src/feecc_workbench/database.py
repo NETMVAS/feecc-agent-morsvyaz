@@ -16,6 +16,17 @@ from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
 
 
+def _get_database_name() -> str:
+    """Get DB name in cluster from a MongoDB connection url"""
+    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
+    db_name: str = mongo_connection_url.split("/")[-1]
+
+    if "?" in db_name:
+        db_name = db_name.split("?")[0]
+
+    return db_name
+
+
 def _get_database_client() -> AsyncIOMotorClient:
     """Get MongoDB connection url"""
     mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
@@ -42,7 +53,8 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.info("Trying to connect to MongoDB")
 
         self._client: AsyncIOMotorClient = _get_database_client()
-        self._database: AsyncIOMotorDatabase = self._client["Feecc-Hub"]
+        db_name: str = _get_database_name()
+        self._database: AsyncIOMotorDatabase = self._client[db_name]
 
         # collections
         self._employee_collection: AsyncIOMotorCollection = self._database["Employee-data"]
