@@ -9,7 +9,6 @@ from loguru import logger
 from robonomicsinterface import RobonomicsInterface
 
 from ._image_generation import create_qr
-from ._short_url_generator import generate_short_url
 from .config import config
 from .utils import get_headers, time_execution
 
@@ -55,11 +54,9 @@ def gateway_is_up() -> None:
 
 
 @time_execution
-def generate_qr_code(target_link: tp.Optional[str] = None) -> tp.Tuple[str, str]:
-    """generate a QR code with the short link"""
-    short_url: str = generate_short_url(target_link)
-    qrcode_path: str = create_qr(short_url)
-    return short_url, qrcode_path
+def generate_qr_code(target_link: str) -> str:
+    """generate a QR code"""
+    return create_qr(target_link)
 
 
 @time_execution

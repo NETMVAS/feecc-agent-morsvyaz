@@ -53,12 +53,14 @@ class Unit:
         components_units: tp.Optional[tp.List[Unit]] = None,
         featured_in_int_id: tp.Optional[str] = None,
         passport_short_url: tp.Optional[str] = None,
+        passport_ipfs_cid: tp.Optional[str] = None,
     ) -> None:
         self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
+        self.passport_ipfs_cid: tp.Optional[str] = passport_ipfs_cid
         self.components_units: tp.List[Unit] = components_units or []
         self.featured_in_int_id: tp.Optional[str] = featured_in_int_id
         self.employee: tp.Optional[Employee] = None
@@ -164,6 +166,7 @@ class Unit:
             "internal_id": self.internal_id,
             "is_in_db": self.is_in_db,
             "passport_short_url": self.passport_short_url,
+            "passport_ipfs_cid": self.passport_ipfs_cid,
             "components_internal_ids": self.components_internal_ids,
             "featured_in_int_id": self.featured_in_int_id,
         }

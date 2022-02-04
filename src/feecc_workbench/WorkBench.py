@@ -13,6 +13,7 @@ from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
 from .Unit import Unit
 from ._image_generation import create_seal_tag
+from ._short_url_generator import generate_short_url
 from .config import config
 from .database import MongoDbWrapper
 from .exceptions import StateForbiddenError
@@ -188,14 +189,17 @@ class WorkBench(metaclass=SingletonMeta):
         if not config.feecc_io_gateway.autonomous_mode:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
             cid, link = res or ("", "")
-            self.unit.passport_short_url = cid
+            short_url: str = generate_short_url(link)
+
+            self.unit.passport_ipfs_cid = cid
+            self.unit.passport_short_url = short_url
 
             if config.printer.print_qr and (
                 not config.printer.print_qr_only_for_composite
                 or self.unit.schema.is_composite
                 or not self.unit.schema.is_a_component
             ):
-                short_url, qrcode_path = generate_qr_code(link)
+                qrcode_path = generate_qr_code(short_url)
                 await print_image(
                     qrcode_path,
                     self.employee.rfid_card_id,
