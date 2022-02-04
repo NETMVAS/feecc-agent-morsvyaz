@@ -188,6 +188,7 @@ class WorkBench(metaclass=SingletonMeta):
         if not config.feecc_io_gateway.autonomous_mode:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
             cid, link = res or ("", "")
+            self.unit.passport_short_url = cid
 
             if config.printer.print_qr and (
                 not config.printer.print_qr_only_for_composite
