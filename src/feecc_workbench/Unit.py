@@ -54,6 +54,7 @@ class Unit:
         featured_in_int_id: tp.Optional[str] = None,
         passport_short_url: tp.Optional[str] = None,
         passport_ipfs_cid: tp.Optional[str] = None,
+        creation_time: tp.Optional[dt.datetime] = None,
     ) -> None:
         self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
@@ -66,6 +67,7 @@ class Unit:
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or []
         self.is_in_db: bool = is_in_db or False
+        self.creation_time: dt.datetime = creation_time or dt.datetime.utcnow()
 
     @property
     def components_schema_ids(self) -> tp.List[str]:
@@ -159,7 +161,7 @@ class Unit:
             logger.error(message)
             raise ValueError(message)
 
-    def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None, tp.List[str]]]:
+    def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None, tp.List[str], dt.datetime]]:
         return {
             "schema_id": self.schema.schema_id,
             "uuid": self.uuid,
@@ -169,6 +171,7 @@ class Unit:
             "passport_ipfs_cid": self.passport_ipfs_cid,
             "components_internal_ids": self.components_internal_ids,
             "featured_in_int_id": self.featured_in_int_id,
+            "creation_time": self.creation_time,
         }
 
     def start_operation(
