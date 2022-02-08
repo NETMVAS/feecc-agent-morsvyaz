@@ -83,6 +83,7 @@ class ProductionSchema(BaseModel):
     production_stages: tp.Optional[tp.List[ProductionSchemaStage]] = None
     required_components_schema_ids: tp.Optional[tp.List[str]] = None
     parent_schema_id: tp.Optional[str] = None
+    schema_type: tp.Optional[str] = None
 
     @property
     def is_composite(self) -> bool:
