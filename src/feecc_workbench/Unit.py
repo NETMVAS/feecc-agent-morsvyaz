@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import enum
 import os
 import typing as tp
 from copy import deepcopy
@@ -40,6 +41,15 @@ class ProductionStage:
     creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.utcnow())
 
 
+class UnitStatus(enum.Enum):
+    """supported Unit status descriptors"""
+
+    production = "production"
+    built = "built"
+    revision = "revision"
+    finalized = "finalized"
+
+
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
@@ -55,7 +65,9 @@ class Unit:
         passport_short_url: tp.Optional[str] = None,
         passport_ipfs_cid: tp.Optional[str] = None,
         creation_time: tp.Optional[dt.datetime] = None,
+        status: UnitStatus = UnitStatus.production,
     ) -> None:
+        self.status: UnitStatus = status
         self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
