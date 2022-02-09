@@ -117,18 +117,14 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
-    async def start_operation(self, production_stage_name: str, additional_info: AdditionalInfo) -> None:
+    async def start_operation(self, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
-
-        self.unit.start_operation(self.employee, production_stage_name, additional_info)  # type: ignore
+        assert self.unit and self.employee, "Either no unit or no employee is assigned to the workbench"
+        self.unit.start_operation(self.employee, additional_info)
 
         if self.camera is not None and self.employee is not None:
             await self.camera.start(self.employee.rfid_card_id)
-
-        logger.info(
-            f"Started operation {production_stage_name} on the unit {self.unit.internal_id} at the workbench no. {self.number}"  # type: ignore
-        )
 
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 

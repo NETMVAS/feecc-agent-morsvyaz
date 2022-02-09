@@ -189,9 +189,9 @@ def remove_unit() -> mdl.GenericResponse:
 async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
-        await WORKBENCH.start_operation(workbench_details.production_stage_name, workbench_details.additional_info)
+        await WORKBENCH.start_operation(workbench_details.additional_info)
         unit = WORKBENCH.unit
-        message: str = f"Started operation '{workbench_details.production_stage_name}' on Unit {unit.internal_id}"
+        message: str = f"Started operation '{unit.next_pending_operation.name}' on Unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
 

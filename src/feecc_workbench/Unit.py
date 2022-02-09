@@ -4,7 +4,6 @@ import datetime as dt
 import enum
 import os
 import typing as tp
-from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import reduce
 from operator import add
@@ -32,7 +31,7 @@ class ProductionStage:
     parent_unit_uuid: str
     number: int
     employee_name: tp.Optional[str] = None
-    session_start_time: str = field(default_factory=timestamp)
+    session_start_time: tp.Optional[str] = None
     session_end_time: tp.Optional[str] = None
     ended_prematurely: bool = False
     video_hashes: tp.Optional[tp.List[str]] = None
@@ -120,21 +119,13 @@ class Unit:
         return True
 
     @property
-    def pending_operation(self) -> tp.Optional[ProductionStage]:
+    def next_pending_operation(self) -> tp.Optional[ProductionStage]:
         """get next pending operation if any"""
         for operation in self.biography:
             if not operation.completed:
                 return operation
 
         return None
-
-    @property
-    def current_operation(self) -> tp.Optional[ProductionStage]:
-        return self.biography[-1] if self.biography else None
-
-    @current_operation.setter
-    def current_operation(self, current_operation: ProductionStage) -> None:
-        self.biography.append(current_operation)
 
     @property
     def is_completed(self) -> bool:
@@ -147,6 +138,9 @@ class Unit:
         """calculate total time spent during all production stages"""
 
         def stage_len(stage: ProductionStage) -> dt.timedelta:
+            if stage.session_start_time is None:
+                return dt.timedelta(0)
+
             start_time: dt.datetime = dt.datetime.strptime(stage.session_start_time, TIMESTAMP_FORMAT)
             end_time: dt.datetime = (
                 dt.datetime.strptime(stage.session_end_time, TIMESTAMP_FORMAT)
@@ -215,23 +209,16 @@ class Unit:
     def start_operation(
         self,
         employee: Employee,
-        production_stage_name: str,
         additional_info: tp.Optional[AdditionalInfo] = None,
-    ) -> None:  # sourcery skip: simplify-fstring-formatting
+    ) -> None:
         """begin the provided operation and save data about it"""
-        logger.info(f"Starting production stage {production_stage_name} for unit with int_id {self.internal_id}")
-        logger.debug(f"additional info for {self.internal_id} {additional_info or 'is empty'}")
-
-        operation = ProductionStage(
-            name=production_stage_name,
-            employee_name=employee.get_passport_code(),
-            parent_unit_uuid=self.uuid,
-            additional_info=additional_info,
-        )
-
-        self.current_operation = operation
-
-        logger.debug(f"Started production stage {production_stage_name} for {str(operation)}")
+        operation = self.next_pending_operation
+        assert operation is not None, f"Unit {self.uuid} has no pending operations ({self.status=})"
+        operation.session_start_time = timestamp()
+        operation.additional_info = additional_info
+        operation.employee_name = employee.passport_code
+        self.biography[operation.number] = operation
+        logger.debug(f"Started production stage {operation.name} for unit {self.uuid}")
 
     async def end_operation(
         self,
@@ -244,11 +231,12 @@ class Unit:
         wrap up the session when video recording stops and save video data
         as well as session end timestamp
         """
-        if self.current_operation is None:
-            raise ValueError("No ongoing operations found")
+        operation = self.next_pending_operation
 
-        logger.info(f"Ending production stage {self.current_operation.name}")
-        operation = deepcopy(self.current_operation)
+        if operation is None:
+            raise ValueError("No pending operations found")
+
+        logger.info(f"Ending production stage {operation.name} on unit {self.uuid}")
         operation.session_end_time = override_timestamp or timestamp()
 
         if premature:
@@ -268,8 +256,7 @@ class Unit:
                 operation.additional_info = additional_info
 
         operation.completed = True
-        self.biography[-1] = operation
-        logger.debug(f"Unit biography stage count is now {len(self.biography)}")
+        self.biography[operation.number] = operation
 
         if all(stage.completed for stage in self.biography):
             prev_status = self.status

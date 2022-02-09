@@ -12,11 +12,7 @@ class GenericResponse(BaseModel):
     detail: tp.Optional[str]
 
 
-class WorkbenchStageDetails(BaseModel):
-    production_stage_name: str
-
-
-class WorkbenchExtraDetails(WorkbenchStageDetails):
+class WorkbenchExtraDetails(BaseModel):
     additional_info: tp.Dict[str, str]
 
 
