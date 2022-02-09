@@ -184,6 +184,7 @@ class Unit:
             "components_internal_ids": self.components_internal_ids,
             "featured_in_int_id": self.featured_in_int_id,
             "creation_time": self.creation_time,
+            "status": str(self.status),
         }
 
     def start_operation(
@@ -243,6 +244,14 @@ class Unit:
 
         self.biography[-1] = operation
         logger.debug(f"Unit biography stage count is now {len(self.biography)}")
+
+        if all(stage.completed for stage in self.biography):
+            prev_status = self.status
+            self.status = UnitStatus.built
+            logger.info(
+                f"Unit has no more pending production stages. Unit status chnged: {prev_status} -> {self.status}"
+            )
+
         self.employee = None
 
     @staticmethod
