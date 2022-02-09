@@ -200,6 +200,7 @@ class Unit:
         video_hashes: tp.Optional[tp.List[str]] = None,
         additional_info: tp.Optional[AdditionalInfo] = None,
         premature: bool = False,
+        override_timestamp: tp.Optional[str] = None,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data
@@ -210,7 +211,7 @@ class Unit:
 
         logger.info(f"Ending production stage {self.current_operation.name}")
         operation = deepcopy(self.current_operation)
-        operation.session_end_time = timestamp()
+        operation.session_end_time = override_timestamp or timestamp()
 
         if premature:
             operation.name += " (неокончен.)"

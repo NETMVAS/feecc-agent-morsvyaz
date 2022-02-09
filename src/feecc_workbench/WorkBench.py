@@ -11,7 +11,7 @@ from .Employee import Employee
 from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
-from .Unit import Unit
+from .Unit import Unit, timestamp
 from ._image_generation import create_seal_tag
 from ._short_url_generator import generate_short_url
 from .config import config
@@ -160,10 +160,12 @@ class WorkBench(metaclass=SingletonMeta):
         assert self.unit is not None, "Unit not assigned"
 
         logger.info("Trying to end operation")
+        override_timestamp = timestamp()
 
         ipfs_hashes: tp.List[str] = []
         if self.camera is not None and self.employee is not None:
             await self.camera.end(self.employee.rfid_card_id)
+            override_timestamp = timestamp()
 
             file: tp.Optional[str] = self.camera.record.remote_file_path  # type: ignore
 
@@ -174,7 +176,12 @@ class WorkBench(metaclass=SingletonMeta):
                     cid, link = data
                     ipfs_hashes.append(cid)
 
-        await self.unit.end_operation(ipfs_hashes, additional_info, premature)
+        await self.unit.end_operation(
+            video_hashes=ipfs_hashes,
+            additional_info=additional_info,
+            premature=premature,
+            override_timestamp=override_timestamp,
+        )
         await self._database.update_unit(self.unit)
 
         self.switch_state(UNIT_ASSIGNED_IDLING_STATE)
