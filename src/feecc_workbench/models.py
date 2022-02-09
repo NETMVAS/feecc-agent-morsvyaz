@@ -4,6 +4,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from .states import State
+
 
 class GenericResponse(BaseModel):
     status_code: int
@@ -33,8 +35,7 @@ class EmployeeWCardModel(EmployeeModel):
 
 
 class WorkbenchOut(BaseModel):
-    state: str
-    state_description: tp.Optional[str]
+    state: State
     employee_logged_in: bool
     employee: tp.Optional[EmployeeModel]
     operation_ongoing: bool

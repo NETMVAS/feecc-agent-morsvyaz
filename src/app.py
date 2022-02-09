@@ -7,12 +7,13 @@ from loguru import logger
 
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
 from dependencies import get_employee_by_card_id, get_schema_by_id, get_unit_by_internal_id, identify_sender
-from feecc_workbench import models as mdl, states
+from feecc_workbench import models as mdl
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
 from feecc_workbench.WorkBench import WorkBench
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, StateForbiddenError, UnitNotFoundError
+from feecc_workbench.states import State
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -89,7 +90,7 @@ async def unit_upload_record() -> mdl.GenericResponse:
 @app.post("/unit/assign-component/{unit_internal_id}", response_model=mdl.GenericResponse, tags=["unit"])
 async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
     """assign a unit as a component to the composite unit"""
-    if WORKBENCH.state is not states.GATHER_COMPONENTS_STATE:
+    if WORKBENCH.state != State.GATHER_COMPONENTS_STATE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Component assignment can only be done while the workbench is in state 'GatherComponents'",
@@ -148,11 +149,10 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
     unit = WORKBENCH.unit
     return mdl.WorkbenchOut(
-        state=WORKBENCH.state.name,
-        state_description=WORKBENCH.state.description,
+        state=WORKBENCH.state,
         employee_logged_in=bool(WORKBENCH.employee),
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
-        operation_ongoing=WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE,
+        operation_ongoing=WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE,
         unit_internal_id=unit.internal_id if unit else None,
         unit_biography=[stage.name for stage in unit.biography] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
@@ -288,7 +288,7 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
         elif event.name == "barcode_reader":
             logger.debug(f"Handling barcode event. String: {event.string}")
 
-            if WORKBENCH.state is states.PRODUCTION_STAGE_ONGOING_STATE:
+            if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
                 await WORKBENCH.end_operation()
             else:
                 try:
@@ -296,12 +296,12 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                 except UnitNotFoundError as e:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-                if WORKBENCH.state is states.AUTHORIZED_IDLING_STATE:
+                if WORKBENCH.state == State.AUTHORIZED_IDLING_STATE:
                     WORKBENCH.assign_unit(unit)
-                elif WORKBENCH.state is states.UNIT_ASSIGNED_IDLING_STATE:
+                elif WORKBENCH.state == State.UNIT_ASSIGNED_IDLING_STATE:
                     WORKBENCH.remove_unit()
                     WORKBENCH.assign_unit(unit)
-                elif WORKBENCH.state is states.GATHER_COMPONENTS_STATE:
+                elif WORKBENCH.state == State.GATHER_COMPONENTS_STATE:
                     await WORKBENCH.assign_component_to_unit(unit)
                 else:
                     logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
