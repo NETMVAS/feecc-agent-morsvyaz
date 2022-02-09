@@ -77,7 +77,7 @@ class ProductionSchemaStage(BaseModel):
 class ProductionSchema(BaseModel):
     schema_id: str = Field(default_factory=lambda: uuid4().hex)
     unit_name: str
-    production_stages: tp.List[ProductionSchemaStage] = []
+    production_stages: tp.Optional[tp.List[ProductionSchemaStage]] = None
     required_components_schema_ids: tp.Optional[tp.List[str]] = None
     parent_schema_id: tp.Optional[str] = None
     schema_type: tp.Optional[str] = None

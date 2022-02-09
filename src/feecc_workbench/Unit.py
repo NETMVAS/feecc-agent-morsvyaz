@@ -45,13 +45,14 @@ class ProductionStage:
 def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> tp.List[ProductionStage]:
     biography = []
 
-    for i, stage in enumerate(production_schema.production_stages):
-        operation = ProductionStage(
-            name=stage.name,
-            parent_unit_uuid=parent_unit_uuid,
-            number=i,
-        )
-        biography.append(operation)
+    if production_schema.production_stages is not None:
+        for i, stage in enumerate(production_schema.production_stages):
+            operation = ProductionStage(
+                name=stage.name,
+                parent_unit_uuid=parent_unit_uuid,
+                number=i,
+            )
+            biography.append(operation)
 
     return biography
 
