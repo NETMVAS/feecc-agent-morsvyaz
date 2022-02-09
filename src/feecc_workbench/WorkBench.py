@@ -11,7 +11,7 @@ from .Employee import Employee
 from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
-from .Unit import Unit, timestamp
+from .Unit import Unit, UnitStatus, timestamp
 from ._image_generation import create_seal_tag
 from ._short_url_generator import generate_short_url
 from .config import config
@@ -96,6 +96,9 @@ class WorkBench(metaclass=SingletonMeta):
     def assign_unit(self, unit: Unit) -> None:
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
+
+        allowed = (UnitStatus.production, UnitStatus.revision)
+        assert unit.status in allowed, f"Can only assign unit with status: {allowed}. {unit.status=}. Forbidden."
 
         self.unit = unit
         logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
