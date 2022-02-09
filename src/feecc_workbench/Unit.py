@@ -120,6 +120,15 @@ class Unit:
         return True
 
     @property
+    def pending_operation(self) -> tp.Optional[ProductionStage]:
+        """get next pending operation if any"""
+        for operation in self.biography:
+            if not operation.completed:
+                return operation
+
+        return None
+
+    @property
     def current_operation(self) -> tp.Optional[ProductionStage]:
         return self.biography[-1] if self.biography else None
 
