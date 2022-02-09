@@ -29,8 +29,9 @@ def timestamp() -> str:
 @dataclass
 class ProductionStage:
     name: str
-    employee_name: str
     parent_unit_uuid: str
+    number: int
+    employee_name: tp.Optional[str] = None
     session_start_time: str = field(default_factory=timestamp)
     session_end_time: tp.Optional[str] = None
     ended_prematurely: bool = False
@@ -39,6 +40,21 @@ class ProductionStage:
     id: str = field(default_factory=lambda: uuid4().hex)
     is_in_db: bool = False
     creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.utcnow())
+    completed: bool = False
+
+
+def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> tp.List[ProductionStage]:
+    biography = []
+
+    for i, stage in enumerate(production_schema.production_stages):
+        operation = ProductionStage(
+            name=stage.name,
+            parent_unit_uuid=parent_unit_uuid,
+            number=i,
+        )
+        biography.append(operation)
+
+    return biography
 
 
 class UnitStatus(enum.Enum):
@@ -77,7 +93,7 @@ class Unit:
         self.components_units: tp.List[Unit] = components_units or []
         self.featured_in_int_id: tp.Optional[str] = featured_in_int_id
         self.employee: tp.Optional[Employee] = None
-        self.biography: tp.List[ProductionStage] = biography or []
+        self.biography: tp.List[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.utcnow()
 
@@ -242,6 +258,7 @@ class Unit:
             else:
                 operation.additional_info = additional_info
 
+        operation.completed = True
         self.biography[-1] = operation
         logger.debug(f"Unit biography stage count is now {len(self.biography)}")
 
