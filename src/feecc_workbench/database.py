@@ -170,8 +170,12 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             if unit_dict is None:
                 raise ValueError("Unit not found")
-            prod_stage_dicts = await self._find_many("parent_unit_uuid", unit_dict["uuid"], self._prod_stage_collection)
-            prod_stage_dicts.sort(key=lambda d: d.get("number", 0))
+
+            query = {"parent_unit_uuid": unit_dict["uuid"]}
+            prod_stage_dicts = (
+                await self._prod_stage_collection.find(query, {"_id": 0}).sort("number", 1).to_list(length=None)
+            )
+
             return Unit(
                 schema=await self.get_schema_by_id(unit_dict["schema_id"]),
                 uuid=unit_dict.get("uuid", None),
