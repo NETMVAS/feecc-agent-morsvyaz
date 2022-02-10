@@ -69,7 +69,7 @@ class WorkBench(metaclass=SingletonMeta):
         """apply new state to the workbench"""
         assert isinstance(new_state, State)
         self._validate_state_transition(new_state)
-        logger.info(f"Workbench no.{self.number} state changed: {self.state} -> {new_state}")
+        logger.info(f"Workbench no.{self.number} state changed: {self.state.value} -> {new_state.value}")
         self.state = new_state
 
     def log_in(self, employee: Employee) -> None:

@@ -263,7 +263,8 @@ class Unit:
             prev_status = self.status
             self.status = UnitStatus.built
             logger.info(
-                f"Unit has no more pending production stages. Unit status changed: {prev_status} -> {self.status}"
+                f"Unit has no more pending production stages. Unit status changed: {prev_status.value} -> "
+                f"{self.status.value}"
             )
 
         self.employee = None

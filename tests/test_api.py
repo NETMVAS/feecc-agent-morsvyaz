@@ -28,10 +28,12 @@ def check_status(response, target_status: int = 200) -> None:
         assert response.json()["status_code"] == target_status
 
 
-def check_state(target_state: str) -> None:
+def check_state(target_state: State) -> None:
     response = CLIENT.get("/workbench/status")
     assert response.status_code == 200, f"Request status code was {response.status_code}"
-    assert response.json()["state"] == target_state, f"Expected state {target_state}, got {response.json()['state']}"
+    assert (
+        response.json()["state"] == target_state.value
+    ), f"Expected state {target_state.value}, got {response.json()['state']}"
 
 
 def login(card: str) -> None:

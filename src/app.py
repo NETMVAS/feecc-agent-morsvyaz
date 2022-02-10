@@ -149,10 +149,10 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     """handle providing status of the given Workbench"""
     unit = WORKBENCH.unit
     return mdl.WorkbenchOut(
-        state=WORKBENCH.state,
+        state=WORKBENCH.state.value,
         employee_logged_in=bool(WORKBENCH.employee),
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
-        operation_ongoing=WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE,
+        operation_ongoing=WORKBENCH.state.value == State.PRODUCTION_STAGE_ONGOING_STATE.value,
         unit_internal_id=unit.internal_id if unit else None,
         unit_biography=[stage.name for stage in unit.biography] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
