@@ -221,6 +221,20 @@ class Unit:
         self.biography[operation.number] = operation
         logger.debug(f"Started production stage {operation.name} for unit {self.uuid}")
 
+    def _duplicate_current_operation(self) -> None:
+        cur_stage = self.next_pending_operation
+        assert cur_stage is not None, "No pending stages to duplicate"
+        target_pos = cur_stage.number + 1
+        dup_operation = ProductionStage(
+            name=cur_stage.name,
+            parent_unit_uuid=cur_stage.parent_unit_uuid,
+            number=target_pos,
+        )
+        self.biography.insert(target_pos, dup_operation)
+
+        for i in range(target_pos + 1, len(self.biography)):
+            self.biography[i].number += 1
+
     async def end_operation(
         self,
         video_hashes: tp.Optional[tp.List[str]] = None,
@@ -241,6 +255,7 @@ class Unit:
         operation.session_end_time = override_timestamp or timestamp()
 
         if premature:
+            self._duplicate_current_operation()
             operation.name += " (неокончен.)"
             operation.ended_prematurely = True
 
