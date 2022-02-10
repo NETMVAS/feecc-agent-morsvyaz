@@ -81,9 +81,9 @@ class Unit:
         passport_short_url: tp.Optional[str] = None,
         passport_ipfs_cid: tp.Optional[str] = None,
         creation_time: tp.Optional[dt.datetime] = None,
-        status: UnitStatus = UnitStatus.production,
+        status: tp.Union[UnitStatus, str] = UnitStatus.production,
     ) -> None:
-        self.status: UnitStatus = status
+        self.status: UnitStatus = UnitStatus(status) if isinstance(status, str) else status
         self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
@@ -204,7 +204,7 @@ class Unit:
             "components_internal_ids": self.components_internal_ids,
             "featured_in_int_id": self.featured_in_int_id,
             "creation_time": self.creation_time,
-            "status": str(self.status),
+            "status": self.status.value,
         }
 
     def start_operation(
