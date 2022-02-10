@@ -6,7 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
-from dependencies import get_employee_by_card_id, get_schema_by_id, get_unit_by_internal_id, identify_sender
+from dependencies import (
+    get_employee_by_card_id,
+    get_revision_pending_units,
+    get_schema_by_id,
+    get_unit_by_internal_id,
+    identify_sender,
+)
 from feecc_workbench import models as mdl
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
@@ -66,6 +72,19 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         unit_biography=[stage.name for stage in unit.biography if stage.completed],
         unit_components=unit.components_schema_ids or None,
         schema_id=unit.schema.schema_id,
+    )
+
+
+@app.get("/unit/pending_revision", response_model=mdl.UnitOutPending, tags=["unit"])
+def get_revision_pending(units: tp.List[Unit] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
+    """return all units staged for revision"""
+    return mdl.UnitOutPending(
+        status_code=status.HTTP_200_OK,
+        detail=f"{len(units)} units awaiting revision.",
+        units=[
+            mdl.UnitOutPendingEntry(unit_internal_id=unit.internal_id, unit_name=unit.schema.unit_name)
+            for unit in units
+        ],
     )
 
 

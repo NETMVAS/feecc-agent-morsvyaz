@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, Asyn
 from .Employee import Employee
 from .Singleton import SingletonMeta
 from .Types import Document
-from .Unit import ProductionStage, Unit
+from .Unit import ProductionStage, Unit, UnitStatus
 from .config import config
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
@@ -125,6 +125,9 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         unit_dict = unit.dict_data()
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
+
+    async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
+        return [Unit(**data) for data in await self._find_many("status", status.value, self._unit_collection)]
 
     async def upload_unit(self, unit: Unit) -> None:
         """

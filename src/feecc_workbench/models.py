@@ -52,6 +52,15 @@ class UnitOut(GenericResponse):
     unit_internal_id: tp.Optional[str]
 
 
+class UnitOutPendingEntry(BaseModel):
+    unit_internal_id: str
+    unit_name: str
+
+
+class UnitOutPending(GenericResponse):
+    units: tp.List[UnitOutPendingEntry]
+
+
 class UnitInfo(UnitOut):
     unit_biography: tp.List[str]
     unit_components: tp.Optional[tp.List[str]] = None
