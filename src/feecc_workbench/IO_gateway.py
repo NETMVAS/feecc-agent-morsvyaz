@@ -16,7 +16,6 @@ IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
 ROBONOMICS_CLIENT = RobonomicsInterface(
     seed=config.robonomics_network.account_seed,
     remote_ws=config.robonomics_network.substrate_node_url,
-    keep_alive=True,
 )
 
 
