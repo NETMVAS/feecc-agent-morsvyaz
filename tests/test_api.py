@@ -193,7 +193,6 @@ def test_start_operation() -> None:
     response = CLIENT.post(
         "/workbench/start-operation",
         json={
-            "production_stage_name": "Sample stage 1",
             "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
         },
     )
@@ -221,7 +220,6 @@ def test_start_operation_again() -> None:
     response = CLIENT.post(
         "/workbench/start-operation",
         json={
-            "production_stage_name": "Sample stage 1",
             "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
         },
     )
