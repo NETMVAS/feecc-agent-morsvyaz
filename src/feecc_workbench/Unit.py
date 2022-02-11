@@ -84,6 +84,10 @@ class Unit:
         status: tp.Union[UnitStatus, str] = UnitStatus.production,
     ) -> None:
         self.status: UnitStatus = UnitStatus(status) if isinstance(status, str) else status
+
+        if not schema.production_stages and self.status is UnitStatus.production:
+            self.status = UnitStatus.built
+
         self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
