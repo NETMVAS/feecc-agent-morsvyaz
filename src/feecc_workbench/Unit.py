@@ -129,12 +129,6 @@ class Unit:
         return None
 
     @property
-    def is_completed(self) -> bool:
-        if self.schema.production_stages is None:
-            return True
-        return len(self.schema.production_stages) == len(self.biography)
-
-    @property
     def total_assembly_time(self) -> dt.timedelta:
         """calculate total time spent during all production stages"""
 
@@ -170,8 +164,8 @@ class Unit:
 
         elif component.schema.schema_id in self.components_schema_ids:
             if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
-                if not component.is_completed:
-                    raise ValueError(f"Component {component.model} assembly is not completed")
+                if component.status is not UnitStatus.built:
+                    raise ValueError(f"Component {component.model} assembly is not completed. {component.status=}")
 
                 elif component.featured_in_int_id is not None:
                     raise ValueError(
