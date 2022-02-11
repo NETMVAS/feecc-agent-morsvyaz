@@ -63,7 +63,7 @@ class UnitStatus(enum.Enum):
     production = "production"
     built = "built"
     revision = "revision"
-    accepted = "accepted"
+    approved = "approved"
     finalized = "finalized"
 
 
