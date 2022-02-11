@@ -1,4 +1,5 @@
 import httpx
+import pytest
 
 from feecc_workbench._short_url_generator import generate_short_url, update_short_url
 
@@ -11,6 +12,7 @@ def get_underlying_url(target_short_url: str) -> str:
     return str(httpx.get(target_short_url).url)
 
 
+@pytest.mark.short_url
 def test_create_short_url() -> None:
     global short_url
     short_url = generate_short_url(FIRST_URL)
@@ -18,6 +20,7 @@ def test_create_short_url() -> None:
     assert underlying_url == FIRST_URL, f"Underlying URL does not match target. {underlying_url=} {short_url=}"
 
 
+@pytest.mark.short_url
 def test_update_short_url() -> None:
     global short_url
     update_short_url(short_url, SECOND_URL)
