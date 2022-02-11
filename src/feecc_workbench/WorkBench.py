@@ -97,7 +97,7 @@ class WorkBench(metaclass=SingletonMeta):
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
-        allowed = (UnitStatus.production, UnitStatus.revision)
+        allowed = (UnitStatus.production, UnitStatus.revision, UnitStatus.built)
         assert unit.status in allowed, f"Can only assign unit with status: {allowed}. {unit.status=}. Forbidden."
 
         self.unit = unit
