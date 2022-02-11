@@ -110,7 +110,7 @@ def test_get_simple_unit_data_valid() -> None:
     check_status(response, 200)
     data = response.json()
     assert data.get("unit_internal_id") == simple_unit_internal_id, "Internal ID mismatch"
-    assert data.get("unit_biography") == [], "Unexpected biography entries"
+    assert data.get("unit_biography_completed") == [], "Unexpected biography entries"
     assert data.get("unit_components") is None, "Components found in a simple unit"
 
 
@@ -128,7 +128,7 @@ def test_get_composite_unit_data_valid() -> None:
     check_status(response, 200)
     data = response.json()
     assert data.get("unit_internal_id") == composite_unit_internal_id, "Internal ID mismatch"
-    assert data.get("unit_biography") == [], "Unexpected biography entries"
+    assert data.get("unit_biography_completed") == [], "Unexpected biography entries"
     assert data.get("unit_components") == [
         VALID_SIMPLE_SCHEMA_ID
     ], f"Components not found for {composite_unit_internal_id}"
