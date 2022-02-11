@@ -62,7 +62,9 @@ class UnitOutPending(GenericResponse):
 
 
 class UnitInfo(UnitOut):
-    unit_biography: tp.List[str]
+    unit_status: str
+    unit_biography_completed: tp.List[str]
+    unit_biography_pending: tp.List[str]
     unit_components: tp.Optional[tp.List[str]] = None
     schema_id: str
 

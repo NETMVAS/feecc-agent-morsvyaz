@@ -69,7 +69,9 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         status_code=status.HTTP_200_OK,
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
-        unit_biography=[stage.name for stage in unit.biography if stage.completed],
+        unit_status=unit.status.value,
+        unit_biography_completed=[stage.name for stage in unit.biography if stage.completed],
+        unit_biography_pending=[stage.name for stage in unit.biography if not stage.completed],
         unit_components=unit.components_schema_ids or None,
         schema_id=unit.schema.schema_id,
     )
