@@ -36,6 +36,7 @@ class WorkbenchOut(BaseModel):
     employee: tp.Optional[EmployeeModel]
     operation_ongoing: bool
     unit_internal_id: tp.Optional[str]
+    unit_status: tp.Optional[str]
     unit_biography: tp.Optional[tp.List[str]]
     unit_components: tp.Optional[tp.Dict[str, tp.Optional[str]]]
 

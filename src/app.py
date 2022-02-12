@@ -175,6 +175,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
         operation_ongoing=WORKBENCH.state.value == State.PRODUCTION_STAGE_ONGOING_STATE.value,
         unit_internal_id=unit.internal_id if unit else None,
+        unit_status=unit.status.value if unit else None,
         unit_biography=[stage.name for stage in unit.biography] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
     )
