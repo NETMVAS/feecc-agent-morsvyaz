@@ -4,17 +4,15 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from .states import State
+
 
 class GenericResponse(BaseModel):
     status_code: int
     detail: tp.Optional[str]
 
 
-class WorkbenchStageDetails(BaseModel):
-    production_stage_name: str
-
-
-class WorkbenchExtraDetails(WorkbenchStageDetails):
+class WorkbenchExtraDetails(BaseModel):
     additional_info: tp.Dict[str, str]
 
 
@@ -33,12 +31,12 @@ class EmployeeWCardModel(EmployeeModel):
 
 
 class WorkbenchOut(BaseModel):
-    state: str
-    state_description: tp.Optional[str]
+    state: State
     employee_logged_in: bool
     employee: tp.Optional[EmployeeModel]
     operation_ongoing: bool
     unit_internal_id: tp.Optional[str]
+    unit_status: tp.Optional[str]
     unit_biography: tp.Optional[tp.List[str]]
     unit_components: tp.Optional[tp.Dict[str, tp.Optional[str]]]
 
@@ -55,8 +53,24 @@ class UnitOut(GenericResponse):
     unit_internal_id: tp.Optional[str]
 
 
+class UnitOutPendingEntry(BaseModel):
+    unit_internal_id: str
+    unit_name: str
+
+
+class UnitOutPending(GenericResponse):
+    units: tp.List[UnitOutPendingEntry]
+
+
+class BiographyStage(BaseModel):
+    stage_name: str
+    stage_schema_entry_id: str
+
+
 class UnitInfo(UnitOut):
-    unit_biography: tp.List[str]
+    unit_status: str
+    unit_biography_completed: tp.List[BiographyStage]
+    unit_biography_pending: tp.List[BiographyStage]
     unit_components: tp.Optional[tp.List[str]] = None
     schema_id: str
 
@@ -70,6 +84,7 @@ class HidEvent(BaseModel):
 
 class ProductionSchemaStage(BaseModel):
     name: str
+    stage_id: str
     type: tp.Optional[str] = None
     description: tp.Optional[str] = None
     equipment: tp.Optional[tp.List[str]] = None

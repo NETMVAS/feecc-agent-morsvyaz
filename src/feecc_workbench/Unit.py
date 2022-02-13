@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import enum
 import os
 import typing as tp
-from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import reduce
 from operator import add
@@ -28,9 +28,11 @@ def timestamp() -> str:
 @dataclass
 class ProductionStage:
     name: str
-    employee_name: str
     parent_unit_uuid: str
-    session_start_time: str = field(default_factory=timestamp)
+    number: int
+    schema_stage_id: str
+    employee_name: tp.Optional[str] = None
+    session_start_time: tp.Optional[str] = None
     session_end_time: tp.Optional[str] = None
     ended_prematurely: bool = False
     video_hashes: tp.Optional[tp.List[str]] = None
@@ -38,6 +40,33 @@ class ProductionStage:
     id: str = field(default_factory=lambda: uuid4().hex)
     is_in_db: bool = False
     creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.utcnow())
+    completed: bool = False
+
+
+def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> tp.List[ProductionStage]:
+    biography = []
+
+    if production_schema.production_stages is not None:
+        for i, stage in enumerate(production_schema.production_stages):
+            operation = ProductionStage(
+                name=stage.name,
+                parent_unit_uuid=parent_unit_uuid,
+                number=i,
+                schema_stage_id=stage.stage_id,
+            )
+            biography.append(operation)
+
+    return biography
+
+
+class UnitStatus(enum.Enum):
+    """supported Unit status descriptors"""
+
+    production = "production"
+    built = "built"
+    revision = "revision"
+    approved = "approved"
+    finalized = "finalized"
 
 
 class Unit:
@@ -54,9 +83,15 @@ class Unit:
         featured_in_int_id: tp.Optional[str] = None,
         passport_short_url: tp.Optional[str] = None,
         passport_ipfs_cid: tp.Optional[str] = None,
-        creation_time: tp.Optional[dt.datetime] = None,
         serial_number: tp.Optional[str] = None,
+        creation_time: tp.Optional[dt.datetime] = None,
+        status: tp.Union[UnitStatus, str] = UnitStatus.production,
     ) -> None:
+        self.status: UnitStatus = UnitStatus(status) if isinstance(status, str) else status
+
+        if not schema.production_stages and self.status is UnitStatus.production:
+            self.status = UnitStatus.built
+
         self.schema: ProductionSchema = schema
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
@@ -67,7 +102,7 @@ class Unit:
         self.components_units: tp.List[Unit] = components_units or []
         self.featured_in_int_id: tp.Optional[str] = featured_in_int_id
         self.employee: tp.Optional[Employee] = None
-        self.biography: tp.List[ProductionStage] = biography or []
+        self.biography: tp.List[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.utcnow()
 
@@ -94,24 +129,22 @@ class Unit:
         return True
 
     @property
-    def current_operation(self) -> tp.Optional[ProductionStage]:
-        return self.biography[-1] if self.biography else None
+    def next_pending_operation(self) -> tp.Optional[ProductionStage]:
+        """get next pending operation if any"""
+        for operation in self.biography:
+            if not operation.completed:
+                return operation
 
-    @current_operation.setter
-    def current_operation(self, current_operation: ProductionStage) -> None:
-        self.biography.append(current_operation)
-
-    @property
-    def is_completed(self) -> bool:
-        if self.schema.production_stages is None:
-            return True
-        return len(self.schema.production_stages) == len(self.biography)
+        return None
 
     @property
     def total_assembly_time(self) -> dt.timedelta:
         """calculate total time spent during all production stages"""
 
         def stage_len(stage: ProductionStage) -> dt.timedelta:
+            if stage.session_start_time is None:
+                return dt.timedelta(0)
+
             start_time: dt.datetime = dt.datetime.strptime(stage.session_start_time, TIMESTAMP_FORMAT)
             end_time: dt.datetime = (
                 dt.datetime.strptime(stage.session_end_time, TIMESTAMP_FORMAT)
@@ -140,8 +173,8 @@ class Unit:
 
         elif component.schema.schema_id in self.components_schema_ids:
             if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
-                if not component.is_completed:
-                    raise ValueError(f"Component {component.model} assembly is not completed")
+                if component.status is not UnitStatus.built:
+                    raise ValueError(f"Component {component.model} assembly is not completed. {component.status=}")
 
                 elif component.featured_in_int_id is not None:
                     raise ValueError(
@@ -174,29 +207,37 @@ class Unit:
             "components_internal_ids": self.components_internal_ids,
             "featured_in_int_id": self.featured_in_int_id,
             "creation_time": self.creation_time,
-            "serial_number": self.serial_number,
+            "status": self.status.value,
         }
 
     def start_operation(
         self,
         employee: Employee,
-        production_stage_name: str,
         additional_info: tp.Optional[AdditionalInfo] = None,
-    ) -> None:  # sourcery skip: simplify-fstring-formatting
+    ) -> None:
         """begin the provided operation and save data about it"""
-        logger.info(f"Starting production stage {production_stage_name} for unit with int_id {self.internal_id}")
-        logger.debug(f"additional info for {self.internal_id} {additional_info or 'is empty'}")
+        operation = self.next_pending_operation
+        assert operation is not None, f"Unit {self.uuid} has no pending operations ({self.status=})"
+        operation.session_start_time = timestamp()
+        operation.additional_info = additional_info
+        operation.employee_name = employee.passport_code
+        self.biography[operation.number] = operation
+        logger.debug(f"Started production stage {operation.name} for unit {self.uuid}")
 
-        operation = ProductionStage(
-            name=production_stage_name,
-            employee_name=employee.get_passport_code(),
-            parent_unit_uuid=self.uuid,
-            additional_info=additional_info,
+    def _duplicate_current_operation(self) -> None:
+        cur_stage = self.next_pending_operation
+        assert cur_stage is not None, "No pending stages to duplicate"
+        target_pos = cur_stage.number + 1
+        dup_operation = ProductionStage(
+            name=cur_stage.name,
+            parent_unit_uuid=cur_stage.parent_unit_uuid,
+            number=target_pos,
+            schema_stage_id=cur_stage.schema_stage_id,
         )
+        self.biography.insert(target_pos, dup_operation)
 
-        self.current_operation = operation
-
-        logger.debug(f"Started production stage {production_stage_name} for {str(operation)}")
+        for i in range(target_pos + 1, len(self.biography)):
+            self.biography[i].number += 1
 
     async def end_operation(
         self,
@@ -209,14 +250,16 @@ class Unit:
         wrap up the session when video recording stops and save video data
         as well as session end timestamp
         """
-        if self.current_operation is None:
-            raise ValueError("No ongoing operations found")
+        operation = self.next_pending_operation
 
-        logger.info(f"Ending production stage {self.current_operation.name}")
-        operation = deepcopy(self.current_operation)
+        if operation is None:
+            raise ValueError("No pending operations found")
+
+        logger.info(f"Ending production stage {operation.name} on unit {self.uuid}")
         operation.session_end_time = override_timestamp or timestamp()
 
         if premature:
+            self._duplicate_current_operation()
             operation.name += " (неокончен.)"
             operation.ended_prematurely = True
 
@@ -232,8 +275,17 @@ class Unit:
             else:
                 operation.additional_info = additional_info
 
-        self.biography[-1] = operation
-        logger.debug(f"Unit biography stage count is now {len(self.biography)}")
+        operation.completed = True
+        self.biography[operation.number] = operation
+
+        if all(stage.completed for stage in self.biography):
+            prev_status = self.status
+            self.status = UnitStatus.built
+            logger.info(
+                f"Unit has no more pending production stages. Unit status changed: {prev_status.value} -> "
+                f"{self.status.value}"
+            )
+
         self.employee = None
 
     @staticmethod
@@ -275,6 +327,9 @@ class Unit:
 
         if self.components_units:
             passport_dict["Компоненты в составе изделия"] = [c.get_passport_dict() for c in self.components_units]
+
+        if self.serial_number:
+            passport_dict["Серийный номер изделия"] = self.serial_number
 
         return passport_dict
 

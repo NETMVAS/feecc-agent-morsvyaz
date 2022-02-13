@@ -4,20 +4,14 @@ from time import sleep
 
 from app import app
 from fastapi.testclient import TestClient
-from feecc_workbench.states import (
-    AUTHORIZED_IDLING_STATE,
-    AWAIT_LOGIN_STATE,
-    GATHER_COMPONENTS_STATE,
-    PRODUCTION_STAGE_ONGOING_STATE,
-    UNIT_ASSIGNED_IDLING_STATE,
-)
+from feecc_workbench.states import State
 
 CLIENT = TestClient(base_url="http://127.0.0.1:5000", app=app)
 VALID_TEST_CARD = "1111111111"
 VALID_SIMPLE_SCHEMA_ID = "test_simple_unit_1"
 VALID_COMPOSITE_SCHEMA_ID = "test_composite_unit_1"
-VALID_HID_RFID_DEVICE_NAME = "Sycreader RFID Technology Co., Ltd SYC ID&IC USB Reader"
-VALID_HID_BARCODE_DEVICE_NAME = "HENEX 2D Barcode Scanner"
+VALID_HID_RFID_DEVICE_NAME = "IC Reader IC Reader"
+VALID_HID_BARCODE_DEVICE_NAME = "Newtologic  NT1640S"
 SLOW_MODE = bool(os.environ.get("SLOW_MODE", None))
 SLOW_MODE_DELAY = int(os.environ.get("SLOW_MODE_DELAY", 3))
 
@@ -34,10 +28,12 @@ def check_status(response, target_status: int = 200) -> None:
         assert response.json()["status_code"] == target_status
 
 
-def check_state(target_state: str) -> None:
+def check_state(target_state: State) -> None:
     response = CLIENT.get("/workbench/status")
     assert response.status_code == 200, f"Request status code was {response.status_code}"
-    assert response.json()["state"] == target_state, f"Expected state {target_state}, got {response.json()['state']}"
+    assert (
+        response.json()["state"] == target_state.value
+    ), f"Expected state {target_state.value}, got {response.json()['state']}"
 
 
 def login(card: str) -> None:
@@ -60,28 +56,28 @@ def test_invalid_get_info() -> None:
 
 
 def test_invalid_login() -> None:
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
     login("42")
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
 
 
 def test_invalid_logout() -> None:
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
     response = CLIENT.post("/employee/log-out")
     check_status(response, 500)
 
 
 def test_valid_login() -> None:
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
     login(VALID_TEST_CARD)
-    check_state(target_state=AUTHORIZED_IDLING_STATE.name)
+    check_state(target_state=State.AUTHORIZED_IDLING_STATE)
     wait()
 
 
 def test_valid_logout() -> None:
-    check_state(target_state=AUTHORIZED_IDLING_STATE.name)
+    check_state(target_state=State.AUTHORIZED_IDLING_STATE)
     CLIENT.post("/employee/log-out")
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
     wait()
 
 
@@ -114,7 +110,7 @@ def test_get_simple_unit_data_valid() -> None:
     check_status(response, 200)
     data = response.json()
     assert data.get("unit_internal_id") == simple_unit_internal_id, "Internal ID mismatch"
-    assert data.get("unit_biography") == [], "Unexpected biography entries"
+    assert data.get("unit_biography_completed") == [], "Unexpected biography entries"
     assert data.get("unit_components") is None, "Components found in a simple unit"
 
 
@@ -132,7 +128,7 @@ def test_get_composite_unit_data_valid() -> None:
     check_status(response, 200)
     data = response.json()
     assert data.get("unit_internal_id") == composite_unit_internal_id, "Internal ID mismatch"
-    assert data.get("unit_biography") == [], "Unexpected biography entries"
+    assert data.get("unit_biography_completed") == [], "Unexpected biography entries"
     assert data.get("unit_components") == [
         VALID_SIMPLE_SCHEMA_ID
     ], f"Components not found for {composite_unit_internal_id}"
@@ -147,15 +143,41 @@ def test_assign_simple_unit() -> None:
     global simple_unit_internal_id
     response = CLIENT.post(f"/workbench/assign-unit/{simple_unit_internal_id}")
     check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
+    wait()
+
+
+def test_start_operation_simple_unit() -> None:
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
+    response = CLIENT.post(
+        "/workbench/start-operation",
+        json={
+            "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
+        },
+    )
+    check_status(response, 200)
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
+    wait()
+
+
+def test_end_operation_simple_unit() -> None:
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
+    response = CLIENT.post(
+        "/workbench/end-operation",
+        json={
+            "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"}
+        },
+    )
+    check_status(response, 200)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     wait()
 
 
 def test_remove_unit() -> None:
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.post("/workbench/remove-unit")
     check_status(response, 200)
-    check_state(AUTHORIZED_IDLING_STATE.name)
+    check_state(State.AUTHORIZED_IDLING_STATE)
     wait()
 
 
@@ -163,51 +185,50 @@ def test_assign_composite_unit() -> None:
     global composite_unit_internal_id
     response = CLIENT.post(f"/workbench/assign-unit/{composite_unit_internal_id}")
     check_status(response, 200)
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     wait()
 
 
 def test_remove_unit_while_gathering() -> None:
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     response = CLIENT.post("/workbench/remove-unit")
     check_status(response, 200)
-    check_state(AUTHORIZED_IDLING_STATE.name)
+    check_state(State.AUTHORIZED_IDLING_STATE)
     wait()
 
 
 def test_assign_invalid_component() -> None:
     test_assign_composite_unit()
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     response = CLIENT.post("/unit/assign-component/3050673369727")
     check_status(response, 404)
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
 
 
 def test_assign_valid_component() -> None:
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     global simple_unit_internal_id
     response = CLIENT.post(f"/unit/assign-component/{simple_unit_internal_id}")
     check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     wait()
 
 
-def test_start_operation() -> None:
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+def test_start_operation_composite_unit() -> None:
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.post(
         "/workbench/start-operation",
         json={
-            "production_stage_name": "Sample stage 1",
             "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
         },
     )
     check_status(response, 200)
-    check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
     wait()
 
 
 def test_end_operation_prematurely() -> None:
-    check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
     response = CLIENT.post(
         "/workbench/end-operation",
         json={
@@ -216,26 +237,25 @@ def test_end_operation_prematurely() -> None:
         },
     )
     check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     wait()
 
 
 def test_start_operation_again() -> None:
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.post(
         "/workbench/start-operation",
         json={
-            "production_stage_name": "Sample stage 1",
             "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
         },
     )
     check_status(response, 200)
-    check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
     wait()
 
 
-def test_end_operation() -> None:
-    check_state(PRODUCTION_STAGE_ONGOING_STATE.name)
+def test_end_operation_composite_unit() -> None:
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
     response = CLIENT.post(
         "/workbench/end-operation",
         json={
@@ -243,21 +263,21 @@ def test_end_operation() -> None:
         },
     )
     check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     wait()
 
 
 def test_biography_stage_count_correct() -> None:
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.get("/workbench/status")
     assert len(response.json().get("unit_biography", [])) == 2, "Expected 2 stages in unit biography"
 
 
 def test_upload_unit() -> None:  # FIXME: False positive when GW is offline
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.post("/unit/upload")
     check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
 
 def test_get_schemas_list() -> None:
@@ -292,9 +312,9 @@ def test_hid_event_known_sender() -> None:
 
 
 def test_hid_event_login() -> None:
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
     send_hid_event(VALID_TEST_CARD, VALID_HID_RFID_DEVICE_NAME)
-    check_state(target_state=AUTHORIZED_IDLING_STATE.name)
+    check_state(target_state=State.AUTHORIZED_IDLING_STATE)
     wait()
 
 
@@ -306,6 +326,9 @@ def prepare_new_units() -> None:
     global old_simple_unit_int_id
     old_simple_unit_int_id = copy(simple_unit_internal_id)
     test_create_new_simple_unit()
+    test_assign_simple_unit()
+    test_start_operation_simple_unit()
+    test_end_operation_simple_unit()
 
 
 def test_hid_event_assign_unit() -> None:
@@ -313,39 +336,39 @@ def test_hid_event_assign_unit() -> None:
     global composite_unit_internal_id
     response = send_hid_event(composite_unit_internal_id, VALID_HID_BARCODE_DEVICE_NAME)
     check_status(response, 200)
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     wait()
 
 
 def test_hid_event_assign_component_already_featured_in_another_composite() -> None:
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     global old_simple_unit_int_id
     response = send_hid_event(old_simple_unit_int_id, VALID_HID_BARCODE_DEVICE_NAME)
     check_status(response, 500)
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     wait()
 
 
 def test_hid_event_assign_component() -> None:
-    check_state(GATHER_COMPONENTS_STATE.name)
+    check_state(State.GATHER_COMPONENTS_STATE)
     global simple_unit_internal_id
     response = send_hid_event(simple_unit_internal_id, VALID_HID_BARCODE_DEVICE_NAME)
     check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     wait()
 
 
 def test_hid_event_assign_another_unit() -> None:
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     global simple_unit_internal_id
     response = send_hid_event(simple_unit_internal_id, VALID_HID_BARCODE_DEVICE_NAME)
-    check_status(response, 200)
-    check_state(UNIT_ASSIGNED_IDLING_STATE.name)
+    check_status(response, 500)
+    check_state(State.AUTHORIZED_IDLING_STATE)
     wait()
 
 
 def test_hid_event_logout() -> None:
-    check_state(target_state=UNIT_ASSIGNED_IDLING_STATE.name)
+    check_state(target_state=State.AUTHORIZED_IDLING_STATE)
     send_hid_event(VALID_TEST_CARD, VALID_HID_RFID_DEVICE_NAME)
-    check_state(target_state=AWAIT_LOGIN_STATE.name)
+    check_state(target_state=State.AWAIT_LOGIN_STATE)
     wait()
