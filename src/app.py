@@ -331,9 +331,11 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
 
     except StateForbiddenError as e:
+        logger.error(e)
         return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
     except Exception as e:
+        logger.error(e)
         return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
