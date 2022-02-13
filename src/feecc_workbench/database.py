@@ -127,7 +127,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
     async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
-        return [Unit(**data) for data in await self._find_many("status", status.value, self._unit_collection)]
+        return [
+            await self._get_unit_from_raw_db_data(entry)
+            for entry in await self._find_many("status", status.value, self._unit_collection)
+        ]
 
     async def upload_unit(self, unit: Unit) -> None:
         """
@@ -168,34 +171,36 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         return Employee(**employee_data)
 
+    async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
+        query = {"parent_unit_uuid": unit_dict["uuid"]}
+        prod_stage_dicts = (
+            await self._prod_stage_collection.find(query, {"_id": 0}).sort("number", 1).to_list(length=None)
+        )
+
+        return Unit(
+            schema=await self.get_schema_by_id(unit_dict["schema_id"]),
+            uuid=unit_dict.get("uuid", None),
+            internal_id=unit_dict.get("internal_id", None),
+            is_in_db=unit_dict.get("is_in_db", None),
+            biography=[ProductionStage(**stage) for stage in prod_stage_dicts] or None,
+            components_units=[
+                await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
+            ]
+            or None,
+            passport_short_url=unit_dict.get("passport_short_url", None),
+            featured_in_int_id=unit_dict.get("featured_in_int_id", None),
+            passport_ipfs_cid=unit_dict.get("passport_ipfs_cid", None),
+            serial_number=unit_dict.get("serial_number", None),
+            creation_time=unit_dict.get("creation_time", None),
+            status=unit_dict.get("status", None),
+        )
+
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         try:
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             if unit_dict is None:
                 raise ValueError("Unit not found")
-
-            query = {"parent_unit_uuid": unit_dict["uuid"]}
-            prod_stage_dicts = (
-                await self._prod_stage_collection.find(query, {"_id": 0}).sort("number", 1).to_list(length=None)
-            )
-
-            return Unit(
-                schema=await self.get_schema_by_id(unit_dict["schema_id"]),
-                uuid=unit_dict.get("uuid", None),
-                internal_id=unit_dict.get("internal_id", None),
-                is_in_db=unit_dict.get("is_in_db", None),
-                biography=[ProductionStage(**stage) for stage in prod_stage_dicts] or None,
-                components_units=[
-                    await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
-                ]
-                or None,
-                passport_short_url=unit_dict.get("passport_short_url", None),
-                featured_in_int_id=unit_dict.get("featured_in_int_id", None),
-                passport_ipfs_cid=unit_dict.get("passport_ipfs_cid", None),
-                serial_number=unit_dict.get("serial_number", None),
-                creation_time=unit_dict.get("creation_time", None),
-                status=unit_dict.get("status", None),
-            )
+            return await self._get_unit_from_raw_db_data(unit_dict)
 
         except Exception as E:
             logger.error(E)
