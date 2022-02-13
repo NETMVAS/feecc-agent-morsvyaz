@@ -10,8 +10,8 @@ CLIENT = TestClient(base_url="http://127.0.0.1:5000", app=app)
 VALID_TEST_CARD = "1111111111"
 VALID_SIMPLE_SCHEMA_ID = "test_simple_unit_1"
 VALID_COMPOSITE_SCHEMA_ID = "test_composite_unit_1"
-VALID_HID_RFID_DEVICE_NAME = "Sycreader RFID Technology Co., Ltd SYC ID&IC USB Reader"
-VALID_HID_BARCODE_DEVICE_NAME = "HENEX 2D Barcode Scanner"
+VALID_HID_RFID_DEVICE_NAME = "IC Reader IC Reader"
+VALID_HID_BARCODE_DEVICE_NAME = "Newtologic  NT1640S"
 SLOW_MODE = bool(os.environ.get("SLOW_MODE", None))
 SLOW_MODE_DELAY = int(os.environ.get("SLOW_MODE_DELAY", 3))
 
@@ -147,6 +147,32 @@ def test_assign_simple_unit() -> None:
     wait()
 
 
+def test_start_operation_simple_unit() -> None:
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
+    response = CLIENT.post(
+        "/workbench/start-operation",
+        json={
+            "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"},
+        },
+    )
+    check_status(response, 200)
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
+    wait()
+
+
+def test_end_operation_simple_unit() -> None:
+    check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
+    response = CLIENT.post(
+        "/workbench/end-operation",
+        json={
+            "additional_info": {"additionalProp1": "string", "additionalProp2": "string", "additionalProp3": "string"}
+        },
+    )
+    check_status(response, 200)
+    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
+    wait()
+
+
 def test_remove_unit() -> None:
     check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.post("/workbench/remove-unit")
@@ -188,7 +214,7 @@ def test_assign_valid_component() -> None:
     wait()
 
 
-def test_start_operation() -> None:
+def test_start_operation_composite_unit() -> None:
     check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     response = CLIENT.post(
         "/workbench/start-operation",
@@ -228,7 +254,7 @@ def test_start_operation_again() -> None:
     wait()
 
 
-def test_end_operation() -> None:
+def test_end_operation_composite_unit() -> None:
     check_state(State.PRODUCTION_STAGE_ONGOING_STATE)
     response = CLIENT.post(
         "/workbench/end-operation",
@@ -300,6 +326,9 @@ def prepare_new_units() -> None:
     global old_simple_unit_int_id
     old_simple_unit_int_id = copy(simple_unit_internal_id)
     test_create_new_simple_unit()
+    test_assign_simple_unit()
+    test_start_operation_simple_unit()
+    test_end_operation_simple_unit()
 
 
 def test_hid_event_assign_unit() -> None:
@@ -333,13 +362,13 @@ def test_hid_event_assign_another_unit() -> None:
     check_state(State.UNIT_ASSIGNED_IDLING_STATE)
     global simple_unit_internal_id
     response = send_hid_event(simple_unit_internal_id, VALID_HID_BARCODE_DEVICE_NAME)
-    check_status(response, 200)
-    check_state(State.UNIT_ASSIGNED_IDLING_STATE)
+    check_status(response, 500)
+    check_state(State.AUTHORIZED_IDLING_STATE)
     wait()
 
 
 def test_hid_event_logout() -> None:
-    check_state(target_state=State.UNIT_ASSIGNED_IDLING_STATE)
+    check_state(target_state=State.AUTHORIZED_IDLING_STATE)
     send_hid_event(VALID_TEST_CARD, VALID_HID_RFID_DEVICE_NAME)
     check_state(target_state=State.AWAIT_LOGIN_STATE)
     wait()
