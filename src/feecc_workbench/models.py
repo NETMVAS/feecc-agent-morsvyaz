@@ -62,10 +62,15 @@ class UnitOutPending(GenericResponse):
     units: tp.List[UnitOutPendingEntry]
 
 
+class BiographyStage(BaseModel):
+    stage_name: str
+    stage_schema_entry_id: str
+
+
 class UnitInfo(UnitOut):
     unit_status: str
-    unit_biography_completed: tp.List[str]
-    unit_biography_pending: tp.List[str]
+    unit_biography_completed: tp.List[BiographyStage]
+    unit_biography_pending: tp.List[BiographyStage]
     unit_components: tp.Optional[tp.List[str]] = None
     schema_id: str
 
@@ -79,6 +84,7 @@ class HidEvent(BaseModel):
 
 class ProductionSchemaStage(BaseModel):
     name: str
+    stage_id: str
     type: tp.Optional[str] = None
     description: tp.Optional[str] = None
     equipment: tp.Optional[tp.List[str]] = None

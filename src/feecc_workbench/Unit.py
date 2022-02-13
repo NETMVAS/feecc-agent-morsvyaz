@@ -30,6 +30,7 @@ class ProductionStage:
     name: str
     parent_unit_uuid: str
     number: int
+    schema_stage_id: str
     employee_name: tp.Optional[str] = None
     session_start_time: tp.Optional[str] = None
     session_end_time: tp.Optional[str] = None
@@ -51,6 +52,7 @@ def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str
                 name=stage.name,
                 parent_unit_uuid=parent_unit_uuid,
                 number=i,
+                schema_stage_id=stage.stage_id,
             )
             biography.append(operation)
 
@@ -230,6 +232,7 @@ class Unit:
             name=cur_stage.name,
             parent_unit_uuid=cur_stage.parent_unit_uuid,
             number=target_pos,
+            schema_stage_id=cur_stage.schema_stage_id,
         )
         self.biography.insert(target_pos, dup_operation)
 

@@ -70,8 +70,22 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
         unit_status=unit.status.value,
-        unit_biography_completed=[stage.name for stage in unit.biography if stage.completed],
-        unit_biography_pending=[stage.name for stage in unit.biography if not stage.completed],
+        unit_biography_completed=[
+            mdl.BiographyStage(
+                stage_name=stage.name,
+                stage_schema_entry_id=stage.schema_stage_id,
+            )
+            for stage in unit.biography
+            if stage.completed
+        ],
+        unit_biography_pending=[
+            mdl.BiographyStage(
+                stage_name=stage.name,
+                stage_schema_entry_id=stage.schema_stage_id,
+            )
+            for stage in unit.biography
+            if not stage.completed
+        ],
         unit_components=unit.components_schema_ids or None,
         schema_id=unit.schema.schema_id,
     )
@@ -262,7 +276,7 @@ async def get_schemas() -> mdl.SchemasList:
     available_schemas = [
         get_schema_list_entry(schema)
         for schema in sorted(all_schemas.values(), key=lambda s: bool(s.is_composite), reverse=True)
-        if schema.schema_id not in handled_schemas
+        if schema.schema_stage_id not in handled_schemas
     ]
 
     return mdl.SchemasList(
