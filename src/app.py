@@ -276,7 +276,7 @@ async def get_schemas() -> mdl.SchemasList:
     available_schemas = [
         get_schema_list_entry(schema)
         for schema in sorted(all_schemas.values(), key=lambda s: bool(s.is_composite), reverse=True)
-        if schema.schema_stage_id not in handled_schemas
+        if schema.schema_id not in handled_schemas
     ]
 
     return mdl.SchemasList(
