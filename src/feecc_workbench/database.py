@@ -191,6 +191,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 or None,
                 passport_short_url=unit_dict.get("passport_short_url", None),
                 featured_in_int_id=unit_dict.get("featured_in_int_id", None),
+                passport_ipfs_cid=unit_dict.get("passport_ipfs_cid", None),
+                serial_number=unit_dict.get("serial_number", None),
+                creation_time=unit_dict.get("creation_time", None),
+                status=unit_dict.get("status", None),
             )
 
         except Exception as E:
