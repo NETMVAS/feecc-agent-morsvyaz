@@ -39,7 +39,7 @@ class ProductionStage:
     additional_info: tp.Optional[AdditionalInfo] = None
     id: str = field(default_factory=lambda: uuid4().hex)
     is_in_db: bool = False
-    creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.utcnow())
+    creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.now())
     completed: bool = False
 
 
@@ -104,7 +104,7 @@ class Unit:
         self.employee: tp.Optional[Employee] = None
         self.biography: tp.List[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
-        self.creation_time: dt.datetime = creation_time or dt.datetime.utcnow()
+        self.creation_time: dt.datetime = creation_time or dt.datetime.now()
 
     @property
     def components_schema_ids(self) -> tp.List[str]:
