@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "Feecc-Hub"
+name = "Feecc-Workbench-Daemon"
 version = "0.1.0"
-description = "Hub software for the Feecc QA system"
+description = "Workbench software for the Feecc QA system"
 authors = ["arseniiarsenii <arseniivelichko2@gmail.com>"]
 license = "Apache 2.0"
 
