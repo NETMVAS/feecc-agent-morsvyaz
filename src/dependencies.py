@@ -6,7 +6,8 @@ from loguru import logger
 
 from feecc_workbench import models
 from feecc_workbench.Employee import Employee
-from feecc_workbench.Unit import Unit, UnitStatus
+from feecc_workbench.Unit import Unit
+from feecc_workbench.unit_utils import UnitStatus
 from feecc_workbench.config import config
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError

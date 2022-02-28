@@ -1,5 +1,3 @@
-import os
-import sys
 import typing as tp
 from dataclasses import asdict
 
@@ -8,41 +6,14 @@ from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
 from .Employee import Employee
+from .ProductionStage import ProductionStage
 from .Singleton import SingletonMeta
 from .Types import Document
-from .Unit import ProductionStage, Unit, UnitStatus
-from .config import config
+from .Unit import Unit
+from ._db_utils import _get_database_client, _get_database_name, _get_unit_dict_data
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
-
-
-def _get_database_name() -> str:
-    """Get DB name in cluster from a MongoDB connection url"""
-    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
-    db_name: str = mongo_connection_url.split("/")[-1]
-
-    if "?" in db_name:
-        db_name = db_name.split("?")[0]
-
-    return db_name
-
-
-def _get_database_client() -> AsyncIOMotorClient:
-    """Get MongoDB connection url"""
-    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
-
-    try:
-        db_client = AsyncIOMotorClient(mongo_connection_url, serverSelectionTimeoutMS=3000)
-        db_client.server_info()
-        return db_client
-
-    except Exception as E:
-        message = (
-            f"Failed to establish database connection: {E}. "
-            f"Is the provided URI correct? {mongo_connection_url=} Exiting."
-        )
-        logger.critical(message)
-        sys.exit(1)
+from .unit_utils import UnitStatus
 
 
 class MongoDbWrapper(metaclass=SingletonMeta):
@@ -123,7 +94,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             else:
                 await self.upload_production_stage(stage)
 
-        unit_dict = unit.dict_data()
+        unit_dict = _get_unit_dict_data(unit)
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
     async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
@@ -145,7 +116,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         else:
             unit.is_in_db = True
 
-        unit_dict = unit.dict_data()
+        unit_dict = _get_unit_dict_data(unit)
 
         # upload nested dataclasses
         for stage in unit.biography:

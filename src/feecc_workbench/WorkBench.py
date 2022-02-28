@@ -11,7 +11,10 @@ from .Employee import Employee
 from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
-from .Unit import Unit, UnitStatus, timestamp
+from .Unit import Unit
+from .passport_generator import construct_unit_passport
+from .unit_utils import UnitStatus
+from .utils import timestamp
 from ._image_generation import create_seal_tag
 from ._short_url_generator import generate_short_url
 from .config import config
@@ -54,7 +57,7 @@ class WorkBench(metaclass=SingletonMeta):
                 annotation = unit.schema.unit_name
             else:
                 parent_schema = await self._database.get_schema_by_id(unit.schema.parent_schema_id)
-                annotation = f"{parent_schema.unit_name}. {unit.model}."
+                annotation = f"{parent_schema.unit_name}. {unit.model_name}."
 
             await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)  # type: ignore
 
@@ -182,7 +185,7 @@ class WorkBench(metaclass=SingletonMeta):
         assert self.unit is not None, "Unit not assigned"
         assert self.employee is not None, "Employee not logged in"
 
-        passport_file_path = await self.unit.construct_unit_passport()
+        passport_file_path = await construct_unit_passport(self.unit)
 
         if not config.feecc_io_gateway.autonomous_mode:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
@@ -201,7 +204,7 @@ class WorkBench(metaclass=SingletonMeta):
                 await print_image(
                     qrcode_path,
                     self.employee.rfid_card_id,
-                    annotation=f"{self.unit.model} (ID: {self.unit.internal_id}). {short_url}",
+                    annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
                 )
 
             if config.printer.print_security_tag:
