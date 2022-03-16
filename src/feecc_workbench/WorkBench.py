@@ -66,7 +66,7 @@ class WorkBench(metaclass=SingletonMeta):
     def _validate_state_transition(self, new_state: State) -> None:
         """check if state transition can be performed using the map"""
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
-            raise StateForbiddenError(f"State transition from {self.state} to {new_state} is not allowed.")
+            raise StateForbiddenError(f"State transition from {self.state.value} to {new_state.value} is not allowed.")
 
     def switch_state(self, new_state: State) -> None:
         """apply new state to the workbench"""

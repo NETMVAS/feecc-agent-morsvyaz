@@ -170,7 +170,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         try:
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             if unit_dict is None:
-                raise ValueError("Unit not found")
+                raise ValueError(f"Unit with {unit_internal_id=} not found")
             return await self._get_unit_from_raw_db_data(unit_dict)
 
         except Exception as E:
