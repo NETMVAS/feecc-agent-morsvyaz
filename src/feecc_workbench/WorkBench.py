@@ -117,6 +117,7 @@ class WorkBench(metaclass=SingletonMeta):
     def remove_unit(self) -> None:
         """remove a unit from the workbench"""
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
+        assert self.unit is not None, "Cannot remove unit. No unit is currently assigned to the workbench."
 
         logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")  # type: ignore
         self.unit = None
@@ -126,7 +127,9 @@ class WorkBench(metaclass=SingletonMeta):
     async def start_operation(self, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
-        assert self.unit and self.employee, "Either no unit or no employee is assigned to the workbench"
+        assert self.unit is not None, "No unit is assigned to the workbench"
+        assert self.employee is not None, "No employee is assigned to the workbench"
+
         self.unit.start_operation(self.employee, additional_info)
 
         if self.camera is not None and self.employee is not None:
@@ -151,7 +154,7 @@ class WorkBench(metaclass=SingletonMeta):
     async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
-        assert self.unit is not None, "Unit not assigned"
+        assert self.unit is not None, "No unit is assigned to the workbench"
 
         logger.info("Trying to end operation")
         override_timestamp = timestamp()
@@ -182,8 +185,8 @@ class WorkBench(metaclass=SingletonMeta):
 
     async def upload_unit_passport(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        assert self.unit is not None, "Unit not assigned"
-        assert self.employee is not None, "Employee not logged in"
+        assert self.unit is not None, "No unit is assigned to the workbench"
+        assert self.employee is not None, "No employee is assigned to the workbench"
 
         passport_file_path = await construct_unit_passport(self.unit)
 
