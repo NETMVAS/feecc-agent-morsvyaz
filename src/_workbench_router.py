@@ -146,8 +146,6 @@ async def get_schema(
 @router.post("/hid-event", response_model=mdl.GenericResponse)
 async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:
     """Parse the event dict JSON"""
-    logger.debug(f"Received event dict:\n{event.json()}")
-
     try:
         if event.name == "rfid_reader":
             logger.debug(f"Handling RFID event. String: {event.string}")
