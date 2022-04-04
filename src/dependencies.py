@@ -6,7 +6,8 @@ from loguru import logger
 
 from feecc_workbench import models
 from feecc_workbench.Employee import Employee
-from feecc_workbench.Unit import Unit, UnitStatus
+from feecc_workbench.Unit import Unit
+from feecc_workbench.unit_utils import UnitStatus
 from feecc_workbench.config import config
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
@@ -45,6 +46,8 @@ async def get_revision_pending_units() -> tp.List[Unit]:
 
 def identify_sender(event: models.HidEvent) -> models.HidEvent:
     """identify, which device the input is coming from and if it is known return it's role"""
+    logger.debug(f"Received event dict: {event.dict(include={'string', 'name'})}")
+
     known_hid_devices: tp.Dict[str, str] = config.hid_devices_names.dict()
 
     for sender_name, device_name in known_hid_devices.items():

@@ -1,5 +1,3 @@
-import os
-import sys
 import typing as tp
 from dataclasses import asdict
 
@@ -8,41 +6,14 @@ from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
 from .Employee import Employee
+from .ProductionStage import ProductionStage
 from .Singleton import SingletonMeta
 from .Types import Document
-from .Unit import ProductionStage, Unit, UnitStatus
-from .config import config
+from .Unit import Unit
+from ._db_utils import _get_database_client, _get_database_name, _get_unit_dict_data
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
-
-
-def _get_database_name() -> str:
-    """Get DB name in cluster from a MongoDB connection url"""
-    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
-    db_name: str = mongo_connection_url.split("/")[-1]
-
-    if "?" in db_name:
-        db_name = db_name.split("?")[0]
-
-    return db_name
-
-
-def _get_database_client() -> AsyncIOMotorClient:
-    """Get MongoDB connection url"""
-    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
-
-    try:
-        db_client = AsyncIOMotorClient(mongo_connection_url, serverSelectionTimeoutMS=3000)
-        db_client.server_info()
-        return db_client
-
-    except Exception as E:
-        message = (
-            f"Failed to establish database connection: {E}. "
-            f"Is the provided URI correct? {mongo_connection_url=} Exiting."
-        )
-        logger.critical(message)
-        sys.exit(1)
+from .unit_utils import UnitStatus
 
 
 class MongoDbWrapper(metaclass=SingletonMeta):
@@ -123,53 +94,8 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             else:
                 await self.upload_production_stage(stage)
 
-        unit_dict = unit.dict_data()
+        unit_dict = _get_unit_dict_data(unit)
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
-
-    async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
-        return [
-            await self._get_unit_from_raw_db_data(entry)
-            for entry in await self._find_many("status", status.value, self._unit_collection)
-        ]
-
-    async def upload_unit(self, unit: Unit) -> None:
-        """
-        convert a unit instance into a dictionary suitable for future reassembly while
-        converting nested structures and uploading them
-        """
-        for component in unit.components_units:
-            await self.upload_unit(component)
-
-        if unit.is_in_db:
-            return
-        else:
-            unit.is_in_db = True
-
-        unit_dict = unit.dict_data()
-
-        # upload nested dataclasses
-        for stage in unit.biography:
-            await self.upload_production_stage(stage)
-
-        await self._upload_dict(unit_dict, self._unit_collection)
-
-    async def upload_production_stage(self, production_stage: ProductionStage) -> None:
-        if production_stage.is_in_db:
-            return
-
-        production_stage.is_in_db = True
-        await self._upload_dataclass(production_stage, self._prod_stage_collection)
-
-    async def get_employee_by_card_id(self, card_id: str) -> Employee:
-        """find the employee with the provided RFID card id"""
-        employee_data: tp.Optional[Document] = await self._find_item("rfid_card_id", card_id, self._employee_collection)
-
-        if employee_data is None:
-            message = f"No employee with card ID {card_id}"
-            logger.error(message)
-            raise EmployeeNotFoundError(message)
-
-        return Employee(**employee_data)
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         query = {"parent_unit_uuid": unit_dict["uuid"]}
@@ -195,11 +121,56 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             status=unit_dict.get("status", None),
         )
 
+    async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
+        return [
+            await self._get_unit_from_raw_db_data(entry)
+            for entry in await self._find_many("status", status.value, self._unit_collection)
+        ]
+
+    async def upload_unit(self, unit: Unit) -> None:
+        """
+        convert a unit instance into a dictionary suitable for future reassembly while
+        converting nested structures and uploading them
+        """
+        for component in unit.components_units:
+            await self.upload_unit(component)
+
+        if unit.is_in_db:
+            return
+        else:
+            unit.is_in_db = True
+
+        unit_dict = _get_unit_dict_data(unit)
+
+        # upload nested dataclasses
+        for stage in unit.biography:
+            await self.upload_production_stage(stage)
+
+        await self._upload_dict(unit_dict, self._unit_collection)
+
+    async def upload_production_stage(self, production_stage: ProductionStage) -> None:
+        if production_stage.is_in_db:
+            return
+
+        production_stage.is_in_db = True
+        await self._upload_dataclass(production_stage, self._prod_stage_collection)
+
+    async def get_employee_by_card_id(self, card_id: str) -> Employee:
+        """find the employee with the provided RFID card id"""
+        employee_data: tp.Optional[Document] = await self._find_item("rfid_card_id", card_id, self._employee_collection)
+
+        if employee_data is None:
+            message = f"No employee with card ID {card_id}"
+            logger.error(message)
+            raise EmployeeNotFoundError(message)
+
+        return Employee(**employee_data)
+
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         try:
             unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
             if unit_dict is None:
-                raise ValueError("Unit not found")
+                raise ValueError(f"Unit with {unit_internal_id=} not found")
             return await self._get_unit_from_raw_db_data(unit_dict)
 
         except Exception as E:

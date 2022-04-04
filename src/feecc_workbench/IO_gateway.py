@@ -23,11 +23,8 @@ def control_flag(func: tp.Any) -> tp.Any:
     """This ensures autonomous mode is handled properly"""
 
     def wrap_func(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
-        if config.feecc_io_gateway.autonomous_mode:
-            return
-
-        result = func(*args, **kwargs)
-        return result
+        if not config.feecc_io_gateway.autonomous_mode:
+            return func(*args, **kwargs)
 
     return wrap_func
 

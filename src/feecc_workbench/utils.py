@@ -1,8 +1,11 @@
+import datetime as dt
 import re
 import typing as tp
 from time import time
 
 from loguru import logger
+
+TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M:%S"
 
 
 def time_execution(func: tp.Any) -> tp.Any:
@@ -26,3 +29,8 @@ def get_headers(rfid_card_id: str) -> tp.Dict[str, str]:
 def is_a_ean13_barcode(string: str) -> bool:
     """define if the barcode scanner input is a valid EAN13 barcode"""
     return bool(re.fullmatch("\d{13}", string))
+
+
+def timestamp() -> str:
+    """generate formatted timestamp for the invocation moment"""
+    return dt.datetime.now().strftime(TIMESTAMP_FORMAT)

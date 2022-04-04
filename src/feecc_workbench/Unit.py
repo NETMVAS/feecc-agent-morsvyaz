@@ -1,72 +1,20 @@
 from __future__ import annotations
 
 import datetime as dt
-import enum
-import os
 import typing as tp
-from dataclasses import dataclass, field
 from functools import reduce
 from operator import add
 from uuid import uuid4
 
-import yaml
 from loguru import logger
 
 from .Employee import Employee
+from .ProductionStage import ProductionStage
 from .Types import AdditionalInfo
 from ._Barcode import Barcode
 from .models import ProductionSchema
-
-TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M:%S"
-
-
-def timestamp() -> str:
-    """generate formatted timestamp for the invocation moment"""
-    return dt.datetime.now().strftime(TIMESTAMP_FORMAT)
-
-
-@dataclass
-class ProductionStage:
-    name: str
-    parent_unit_uuid: str
-    number: int
-    schema_stage_id: str
-    employee_name: tp.Optional[str] = None
-    session_start_time: tp.Optional[str] = None
-    session_end_time: tp.Optional[str] = None
-    ended_prematurely: bool = False
-    video_hashes: tp.Optional[tp.List[str]] = None
-    additional_info: tp.Optional[AdditionalInfo] = None
-    id: str = field(default_factory=lambda: uuid4().hex)
-    is_in_db: bool = False
-    creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.now())
-    completed: bool = False
-
-
-def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> tp.List[ProductionStage]:
-    biography = []
-
-    if production_schema.production_stages is not None:
-        for i, stage in enumerate(production_schema.production_stages):
-            operation = ProductionStage(
-                name=stage.name,
-                parent_unit_uuid=parent_unit_uuid,
-                number=i,
-                schema_stage_id=stage.stage_id,
-            )
-            biography.append(operation)
-
-    return biography
-
-
-class UnitStatus(enum.Enum):
-    """supported Unit status descriptors"""
-
-    production = "production"
-    built = "built"
-    revision = "revision"
-    approved = "approved"
-    finalized = "finalized"
+from .unit_utils import UnitStatus, biography_factory
+from .utils import TIMESTAMP_FORMAT, timestamp
 
 
 class Unit:
@@ -115,7 +63,7 @@ class Unit:
         return [c.internal_id for c in self.components_units]
 
     @property
-    def model(self) -> str:
+    def model_name(self) -> str:
         return self.schema.unit_name
 
     @property
@@ -169,46 +117,36 @@ class Unit:
     def assign_component(self, component: Unit) -> None:
         """acquire one of the composite unit's components"""
         if self.components_filled:
-            logger.error(f"Unit {self.model} component requirements have already been satisfied")
+            logger.error(f"Unit {self.model_name} component requirements have already been satisfied")
 
         elif component.schema.schema_id in self.components_schema_ids:
             if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
                 if component.status is not UnitStatus.built:
-                    raise ValueError(f"Component {component.model} assembly is not completed. {component.status=}")
+                    raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
 
                 elif component.featured_in_int_id is not None:
                     raise ValueError(
-                        f"Component {component.model} has already been used in unit {component.featured_in_int_id}"
+                        f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
                     )
 
                 else:
                     self.components_units.append(component)
                     component.featured_in_int_id = self.internal_id
-                    logger.info(f"Component {component.model} has been assigned to a composite Unit {self.model}")
+                    logger.info(
+                        f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}"
+                    )
 
             else:
-                message = f"Component {component.model} is already assigned to a composite Unit {self.model}"
+                message = f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
                 logger.error(message)
                 raise ValueError(message)
 
         else:
-            message = f"Cannot assign component {component.model} to {self.model} as it's not a component of it"
+            message = (
+                f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
+            )
             logger.error(message)
             raise ValueError(message)
-
-    def dict_data(self) -> tp.Dict[str, tp.Union[str, bool, None, tp.List[str], dt.datetime]]:
-        return {
-            "schema_id": self.schema.schema_id,
-            "uuid": self.uuid,
-            "internal_id": self.internal_id,
-            "is_in_db": self.is_in_db,
-            "passport_short_url": self.passport_short_url,
-            "passport_ipfs_cid": self.passport_ipfs_cid,
-            "components_internal_ids": self.components_internal_ids,
-            "featured_in_int_id": self.featured_in_int_id,
-            "creation_time": self.creation_time,
-            "status": self.status.value,
-        }
 
     def start_operation(
         self,
@@ -287,64 +225,3 @@ class Unit:
             )
 
         self.employee = None
-
-    @staticmethod
-    def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
-        stage: tp.Dict[str, tp.Any] = {
-            "Наименование": prod_stage.name,
-            "Код сотрудника": prod_stage.employee_name,
-            "Время начала": prod_stage.session_start_time,
-            "Время окончания": prod_stage.session_end_time,
-        }
-
-        if prod_stage.video_hashes is not None:
-            stage["Видеозаписи процесса сборки в IPFS"] = [
-                "https://gateway.ipfs.io/ipfs/" + cid for cid in prod_stage.video_hashes
-            ]
-
-        if prod_stage.additional_info:
-            stage["Дополнительная информация"] = prod_stage.additional_info
-
-        return stage
-
-    def get_passport_dict(self) -> tp.Dict[str, tp.Any]:
-        """
-        form a nested dictionary containing all the unit
-        data to dump it into a in a human friendly passport
-        """
-        passport_dict: tp.Dict[str, tp.Any] = {
-            "Уникальный номер паспорта изделия": self.uuid,
-            "Модель изделия": self.model,
-        }
-
-        try:
-            passport_dict["Общая продолжительность сборки"] = str(self.total_assembly_time)
-        except Exception as e:
-            logger.error(str(e))
-
-        if self.biography:
-            passport_dict["Этапы производства"] = [self._construct_stage_dict(stage) for stage in self.biography]
-
-        if self.components_units:
-            passport_dict["Компоненты в составе изделия"] = [c.get_passport_dict() for c in self.components_units]
-
-        if self.serial_number:
-            passport_dict["Серийный номер изделия"] = self.serial_number
-
-        return passport_dict
-
-    def _save_passport(self, passport_dict: tp.Dict[str, tp.Any], path: str) -> None:
-        """makes a unit passport and dumps it in a form of a YAML file"""
-        if not os.path.isdir("unit-passports"):
-            os.mkdir("unit-passports")
-        with open(path, "w") as passport_file:
-            yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
-        logger.info(f"Unit passport with UUID {self.uuid} has been dumped successfully")
-
-    @logger.catch(reraise=True)
-    async def construct_unit_passport(self) -> str:
-        """construct own passport, dump it as .yaml file and return a path to it"""
-        passport = self.get_passport_dict()
-        path = f"unit-passports/unit-passport-{self.uuid}.yaml"
-        self._save_passport(passport, path)
-        return path
