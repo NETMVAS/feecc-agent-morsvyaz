@@ -3,9 +3,9 @@ import typing as tp
 import httpx
 from loguru import logger
 
-from .config import config
+from .config import Config
 
-YOURLS_CONFIG = config.yourls
+YOURLS_CONFIG = Config.yourls
 
 
 def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:

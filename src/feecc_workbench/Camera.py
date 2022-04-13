@@ -5,10 +5,10 @@ from datetime import datetime
 import httpx
 from loguru import logger
 
-from .config import config
+from .config import Config
 from .utils import get_headers
 
-IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
+CAMERAMAN_ADDRESS: str = Config.camera.cameraman_uri
 
 
 @dataclass
@@ -34,7 +34,7 @@ class Camera:
     def _check_presence(self) -> None:
         """check if self is registered on the backend"""
         try:
-            response = httpx.get(f"{IO_GATEWAY_ADDRESS}/video/cameras")
+            response = httpx.get(f"{CAMERAMAN_ADDRESS}/cameras")
         except httpx.ConnectError:
             logger.critical("GW connection has been refused. Is it up?")
             return
@@ -52,7 +52,7 @@ class Camera:
         """start the provided record"""
         async with httpx.AsyncClient() as client:
             response: httpx.Response = await client.post(
-                url=f"{IO_GATEWAY_ADDRESS}/video/camera/{self.number}/start", headers=get_headers(rfid_card_id)
+                url=f"{CAMERAMAN_ADDRESS}/camera/{self.number}/start", headers=get_headers(rfid_card_id)
             )
 
         if response.is_error:
@@ -70,7 +70,7 @@ class Camera:
 
         async with httpx.AsyncClient() as client:
             response: httpx.Response = await client.post(
-                url=f"{IO_GATEWAY_ADDRESS}/video/record/{self.record.rec_id}/stop",
+                url=f"{CAMERAMAN_ADDRESS}/record/{self.record.rec_id}/stop",
                 headers=get_headers(rfid_card_id),
             )
 

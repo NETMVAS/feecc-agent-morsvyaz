@@ -7,7 +7,7 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from loguru import logger
 
-from .config import config
+from .config import Config
 
 # color values
 color = tp.Tuple[int, int, int]
@@ -45,7 +45,7 @@ def create_qr(link: str) -> str:
     img_qr_pos = 0, border_s - 2, qr_size + border_s * 2, border_s + qr_size + 2
     img_qr_big = img_qr_big.crop(img_qr_pos)
 
-    if config.printer.qr_add_logos:
+    if Config.printer.qr_add_logos:
         left_pic = Image.open("media/left_pic.jpg").resize((qr_size, qr_size))
         posl = (24, 2)
         img_qr_big.paste(left_pic, posl)
@@ -71,7 +71,7 @@ def create_seal_tag() -> str:
     """generate a custom seal tag with required parameters"""
     logger.info("Generating seal tag")
 
-    timestamp_enabled: bool = config.printer.security_tag_add_timestamp
+    timestamp_enabled: bool = Config.printer.security_tag_add_timestamp
     tag_timestamp: str = dt.now().strftime("%d.%m.%Y")
     dir_: str = "output/seal_tags"
 

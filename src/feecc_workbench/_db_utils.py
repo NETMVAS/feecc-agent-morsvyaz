@@ -1,5 +1,4 @@
 import datetime as dt
-import os
 import sys
 import typing as tp
 
@@ -7,13 +6,11 @@ from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from feecc_workbench.Unit import Unit
-from feecc_workbench.config import config
 
 
-def _get_database_name() -> str:
+def _get_database_name(mongo_connection_uri: str) -> str:
     """Get DB name in cluster from a MongoDB connection url"""
-    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
-    db_name: str = mongo_connection_url.split("/")[-1]
+    db_name: str = mongo_connection_uri.split("/")[-1]
 
     if "?" in db_name:
         db_name = db_name.split("?")[0]
@@ -21,19 +18,17 @@ def _get_database_name() -> str:
     return db_name
 
 
-def _get_database_client() -> AsyncIOMotorClient:
+def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:
     """Get MongoDB connection url"""
-    mongo_connection_url: str = os.getenv("MONGO_CONNECTION_URL", "") or config.mongo_db.mongo_connection_url
-
     try:
-        db_client = AsyncIOMotorClient(mongo_connection_url, serverSelectionTimeoutMS=3000)
+        db_client = AsyncIOMotorClient(mongo_connection_uri, serverSelectionTimeoutMS=3000)
         db_client.server_info()
         return db_client
 
     except Exception as E:
         message = (
             f"Failed to establish database connection: {E}. "
-            f"Is the provided URI correct? {mongo_connection_url=} Exiting."
+            f"Is the provided URI correct? {mongo_connection_uri=} Exiting."
         )
         logger.critical(message)
         sys.exit(1)

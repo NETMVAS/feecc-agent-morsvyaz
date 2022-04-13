@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import socket
 import typing as tp
 
 import httpx
@@ -9,45 +8,16 @@ from loguru import logger
 from robonomicsinterface import RobonomicsInterface
 
 from ._image_generation import create_qr
-from .config import config
+from .config import Config
 from .database import MongoDbWrapper
 from .utils import get_headers, time_execution
 
-IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
+PRINT_SERVER_ADDRESS: str = Config.printer.print_server_uri
+IPFS_GATEWAY_ADDRESS: str = Config.ipfs_gateway.ipfs_server_uri
 ROBONOMICS_CLIENT = RobonomicsInterface(
-    seed=config.robonomics_network.account_seed,
-    remote_ws=config.robonomics_network.substrate_node_url,
+    seed=Config.robonomics.account_seed or None,
+    remote_ws=Config.robonomics.substrate_node_uri or None,
 )
-
-
-def control_flag(func: tp.Any) -> tp.Any:
-    """This ensures autonomous mode is handled properly"""
-
-    def wrap_func(*args: tp.Any, **kwargs: tp.Any) -> tp.Any:
-        if not config.feecc_io_gateway.autonomous_mode:
-            return func(*args, **kwargs)
-
-    return wrap_func
-
-
-@control_flag
-def gateway_is_up() -> None:
-    """check if camera is reachable on the specified port and ip"""
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(0.25)
-
-    try:
-        gw_socket_no_proto = IO_GATEWAY_ADDRESS.split("//")[1]
-        ip, port = gw_socket_no_proto.split(":")
-        s.connect((ip, int(port)))
-        logger.debug(f"{IO_GATEWAY_ADDRESS} is up")
-        s.close()
-
-    except socket.error:
-        raise BrokenPipeError(f"{IO_GATEWAY_ADDRESS} is unreachable")
-
-    except Exception as e:
-        logger.error(e)
 
 
 @time_execution
@@ -70,15 +40,15 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     logger.info(f"{unit_internal_id} data has been updated")
 
 
-@control_flag
 @time_execution
 async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
-    gateway_is_up()
+    if not Config.ipfs_gateway.enable:
+        raise ValueError("IPFS Gateway disabled in config")
 
     is_local_path: bool = os.path.exists(file_path)
     headers: tp.Dict[str, str] = get_headers(rfid_card_id)
-    base_url = f"{IO_GATEWAY_ADDRESS}/io-gateway/publish-to-ipfs"
+    base_url = f"{IPFS_GATEWAY_ADDRESS}/publish-to-ipfs"
 
     async with httpx.AsyncClient(base_url=base_url, timeout=None) as client:
         if is_local_path:
@@ -101,18 +71,15 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> 
     return cid, link
 
 
-@control_flag
 @time_execution
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
-    if not config.printer.enable:
+    if not Config.printer.enable:
         logger.warning("Printer disabled, task dropped")
         return
 
-    gateway_is_up()
-
     async with httpx.AsyncClient() as client:
-        url = f"{IO_GATEWAY_ADDRESS}/printing/print_image"
+        url = f"{PRINT_SERVER_ADDRESS}/print_image"
         headers: tp.Dict[str, str] = get_headers(rfid_card_id)
         data = {"annotation": annotation}
         files = {"image_file": open(file_path, "rb")}

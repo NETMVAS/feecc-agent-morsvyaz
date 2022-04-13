@@ -17,8 +17,35 @@
 
 ### Развертывание Feecc Workbench Daemon
 
-Клонируйте данный репозиторий с GitHub с помощью команды `git clone`. Перейдите в папку репозитория и поменяйте файл
-конфигурации `src/config/config.yaml` в соответствии со своими нуждами.
+Клонируйте данный репозиторий с GitHub с помощью команды `git clone`.
+
+Перейдите в папку репозитория и поменяйте файл `docker-compose.yml` в соответствии со своими нуждами. Конфигурация
+определяется рядом переменных окружения:
+
+- **DB_MONGO_CONNECTION_URL** (Required): Your MongoDB connection URI
+- **ROBONOMICS_ENABLE_DATALOG** (Optional): Whether to enable datalog posting or not
+- **ROBONOMICS_ACCOUNT_SEED** (Optional): Your Robonomics network account seed phrase
+- **ROBONOMICS_SUBSTRATE_NODE_URL** (Optional): Robonomics network node URI
+- **YOURLS_SERVER** (Required): Your Yourls server URL
+- **YOURLS_USERNAME** (Required): Your Yourls server username
+- **YOURLS_PASSWORD** (Required): Your Yourls server password
+- **IPFS_GATEWAY_ENABLE** (Optional): Whether to enable IPFS posting or not
+- **IPFS_GATEWAY_IPFS_SERVER_URI** (Optional): Your IPFS gateway deployment URI
+- **PRINTER_ENABLE** (Optional): Whether to enable printing or not
+- **PRINTER_PRINT_SERVER_URI** (Optional): Your Print-server deployment URI
+- **PRINTER_PRINT_BARCODE** (Optional): Whether to print barcodes or not
+- **PRINTER_PRINT_QR** (Optional): Whether to print QR codes or not
+- **PRINTER_PRINT_QR_ONLY_FOR_COMPOSITE** (Optional): Whether to enable QR code printing for non-composite units or note
+  or not
+- **PRINTER_QR_ADD_LOGOS** (Optional): Whether to add logos to the QR code or not
+- **PRINTER_PRINT_SECURITY_TAG** (Optional): Whether to enable printing security tags or not
+- **PRINTER_SECURITY_TAG_ADD_TIMESTAMP** (Optional): Whether to enable timestamps on security tags or not
+- **CAMERA_ENABLE** (Optional): Whether to enable Cameraman or not
+- **CAMERA_CAMERAMAN_URI** (Optional): Your Cameraman deployment URI
+- **CAMERA_CAMERA_NO** (Optional): Camera number
+- **WORKBENCH_NUMBER** (Required): Workbench number
+- **HID_DEVICES_RFID_READER** (Optional): RFID reader device name
+- **HID_DEVICES_BARCODE_READER** (Optional): Barcode reader device name
 
 Разверните Feecc Workbench Daemon при помощи Docker-compose: находясь в корне репозитория введите команду
 `sudo docker-compose up -d --build`.
