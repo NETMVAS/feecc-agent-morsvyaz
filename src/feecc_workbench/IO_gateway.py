@@ -10,6 +10,7 @@ from robonomicsinterface import RobonomicsInterface
 
 from ._image_generation import create_qr
 from .config import config
+from .database import MongoDbWrapper
 from .utils import get_headers, time_execution
 
 IO_GATEWAY_ADDRESS: str = config.feecc_io_gateway.gateway_address
@@ -56,11 +57,17 @@ def generate_qr_code(target_link: str) -> str:
 
 
 @time_execution
-def post_to_datalog(content: str) -> None:
+async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     """echo provided string to the Robonomics datalog"""
     logger.info(f"Posting data '{content}' to Robonomics datalog")
     txn_hash: str = ROBONOMICS_CLIENT.record_datalog(content)
     logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
+
+    logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
+    unit = await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
+    unit.txn_hash = txn_hash
+    await MongoDbWrapper().update_unit(unit)
+    logger.info(f"{unit_internal_id} data has been updated")
 
 
 @control_flag
