@@ -3,10 +3,10 @@ services:
   feecc_workbench_daemon:
     environment:
       # Use these environment variables to configure your deployment
-      DB_MONGO_CONNECTION_URL: ""  # Your MongoDB connection URI
+      DB_MONGO_CONNECTION_URI: ""  # Your MongoDB connection URI
       ROBONOMICS_ENABLE_DATALOG: false  # Whether to enable datalog posting or not
       ROBONOMICS_ACCOUNT_SEED: ""  # Your Robonomics network account seed phrase
-      ROBONOMICS_SUBSTRATE_NODE_URL: null  # Robonomics network node URI
+      ROBONOMICS_SUBSTRATE_NODE_URI: null  # Robonomics network node URI
       YOURLS_SERVER: ""  # Your Yourls server URL
       YOURLS_USERNAME: ""  # Your Yourls server username
       YOURLS_PASSWORD: ""  # Your Yourls server password
