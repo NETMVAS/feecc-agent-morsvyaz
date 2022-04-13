@@ -28,10 +28,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._database: AsyncIOMotorDatabase = self._client[db_name]
 
         # collections
-        self._employee_collection: AsyncIOMotorCollection = self._database["Employee-data"]
-        self._unit_collection: AsyncIOMotorCollection = self._database["Unit-data"]
-        self._prod_stage_collection: AsyncIOMotorCollection = self._database["Production-stages-data"]
-        self._schemas_collection: AsyncIOMotorCollection = self._database["Production-schemas"]
+        self._employee_collection: AsyncIOMotorCollection = self._database["employeeData"]
+        self._unit_collection: AsyncIOMotorCollection = self._database["unitData"]
+        self._prod_stage_collection: AsyncIOMotorCollection = self._database["productionStagesData"]
+        self._schemas_collection: AsyncIOMotorCollection = self._database["productionSchemas"]
 
         logger.info("Successfully connected to MongoDB")
 
