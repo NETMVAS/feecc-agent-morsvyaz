@@ -3,7 +3,7 @@ import typing as tp
 import environ
 
 
-@environ.config(frozen=True)
+@environ.config(prefix="", frozen=True)
 class Config:
 
     @environ.config(frozen=True)
