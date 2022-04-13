@@ -8,16 +8,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from feecc_workbench.Unit import Unit
 
 
-def _get_database_name(mongo_connection_uri: str) -> str:
-    """Get DB name in cluster from a MongoDB connection url"""
-    db_name: str = mongo_connection_uri.split("/")[-1]
-
-    if "?" in db_name:
-        db_name = db_name.split("?")[0]
-
-    return db_name
-
-
 def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:
     """Get MongoDB connection url"""
     try:

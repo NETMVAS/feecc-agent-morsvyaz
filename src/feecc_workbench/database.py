@@ -4,13 +4,14 @@ from dataclasses import asdict
 import pydantic
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
+from yarl import URL
 
 from .Employee import Employee
 from .ProductionStage import ProductionStage
 from .Singleton import SingletonMeta
 from .Types import Document
 from .Unit import Unit
-from ._db_utils import _get_database_client, _get_database_name, _get_unit_dict_data
+from ._db_utils import _get_database_client, _get_unit_dict_data
 from .config import Config
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
@@ -27,7 +28,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         uri = Config.MongoDB.mongo_connection_uri
 
         self._client: AsyncIOMotorClient = _get_database_client(uri)
-        db_name: str = _get_database_name(uri)
+        db_name: str = URL(uri).path
         self._database: AsyncIOMotorDatabase = self._client[db_name]
 
         # collections
