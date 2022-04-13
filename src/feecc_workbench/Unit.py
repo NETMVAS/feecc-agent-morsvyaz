@@ -31,6 +31,7 @@ class Unit:
         featured_in_int_id: tp.Optional[str] = None,
         passport_short_url: tp.Optional[str] = None,
         passport_ipfs_cid: tp.Optional[str] = None,
+        txn_hash: tp.Optional[str] = None,
         serial_number: tp.Optional[str] = None,
         creation_time: tp.Optional[dt.datetime] = None,
         status: tp.Union[UnitStatus, str] = UnitStatus.production,
@@ -46,6 +47,7 @@ class Unit:
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_short_url: tp.Optional[str] = passport_short_url
         self.passport_ipfs_cid: tp.Optional[str] = passport_ipfs_cid
+        self.txn_hash: tp.Optional[str] = txn_hash
         self.serial_number: tp.Optional[str] = serial_number
         self.components_units: tp.List[Unit] = components_units or []
         self.featured_in_int_id: tp.Optional[str] = featured_in_int_id

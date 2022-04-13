@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import threading
+import asyncio
 import typing as tp
 from pathlib import Path
 
@@ -119,7 +119,7 @@ class WorkBench(metaclass=SingletonMeta):
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
         assert self.unit is not None, "Cannot remove unit. No unit is currently assigned to the workbench."
 
-        logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")  # type: ignore
+        logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")
         self.unit = None
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
@@ -218,8 +218,7 @@ class WorkBench(metaclass=SingletonMeta):
                 # for now Robonomics interface library doesn't support async io.
                 # This operation requires waiting for the block to be written in the blockchain,
                 # which takes 15 seconds on average, so it's done in another thread
-                thread = threading.Thread(target=post_to_datalog, args=(cid,))
-                thread.start()
+                asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         if self.unit.is_in_db:
             await self._database.update_unit(self.unit)
