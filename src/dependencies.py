@@ -44,7 +44,7 @@ async def get_revision_pending_units() -> tp.List[Unit]:
     return await MongoDbWrapper().get_all_units_by_status(UnitStatus.revision)  # type: ignore
 
 
-def identify_sender(event: models.HidEvent) -> models.HidEvent:
+def identifrfid_readery_sender(event: models.HidEvent) -> models.HidEvent:
     """identify, which device the input is coming from and if it is known return it's role"""
     logger.debug(f"Received event dict: {event.dict(include={'string', 'name'})}")
 
