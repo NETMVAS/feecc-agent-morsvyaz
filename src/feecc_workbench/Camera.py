@@ -5,10 +5,10 @@ from datetime import datetime
 import httpx
 from loguru import logger
 
-from .config import Config
+from .config import CONFIG
 from .utils import get_headers
 
-CAMERAMAN_ADDRESS: str = Config.camera.cameraman_uri
+CAMERAMAN_ADDRESS: str = CONFIG.camera.cameraman_uri
 
 
 @dataclass

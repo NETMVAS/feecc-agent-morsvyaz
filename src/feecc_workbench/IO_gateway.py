@@ -8,15 +8,15 @@ from loguru import logger
 from robonomicsinterface import RobonomicsInterface
 
 from ._image_generation import create_qr
-from .config import Config
+from .config import CONFIG
 from .database import MongoDbWrapper
 from .utils import get_headers, time_execution
 
-PRINT_SERVER_ADDRESS: str = Config.printer.print_server_uri
-IPFS_GATEWAY_ADDRESS: str = Config.ipfs_gateway.ipfs_server_uri
+PRINT_SERVER_ADDRESS: str = CONFIG.printer.print_server_uri
+IPFS_GATEWAY_ADDRESS: str = CONFIG.ipfs_gateway.ipfs_server_uri
 ROBONOMICS_CLIENT = RobonomicsInterface(
-    seed=Config.robonomics.account_seed or None,
-    remote_ws=Config.robonomics.substrate_node_uri or None,
+    seed=CONFIG.robonomics.account_seed or None,
+    remote_ws=CONFIG.robonomics.substrate_node_uri or None,
 )
 
 
@@ -43,7 +43,7 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
 @time_execution
 async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
-    if not Config.ipfs_gateway.enable:
+    if not CONFIG.ipfs_gateway.enable:
         raise ValueError("IPFS Gateway disabled in config")
 
     is_local_path: bool = os.path.exists(file_path)
@@ -74,7 +74,7 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> 
 @time_execution
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
-    if not Config.printer.enable:
+    if not CONFIG.printer.enable:
         logger.warning("Printer disabled, task dropped")
         return
 

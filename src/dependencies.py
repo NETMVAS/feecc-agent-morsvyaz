@@ -8,7 +8,7 @@ from feecc_workbench import models
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
 from feecc_workbench.unit_utils import UnitStatus
-from feecc_workbench.config import Config
+from feecc_workbench.config import CONFIG
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.utils import is_a_ean13_barcode
@@ -49,8 +49,8 @@ def identifrfid_readery_sender(event: models.HidEvent) -> models.HidEvent:
     logger.debug(f"Received event dict: {event.dict(include={'string', 'name'})}")
 
     known_hid_devices: tp.Dict[str, str] = {
-        "rfid_reader": Config.hid_devices.rfid_reader,
-        "barcode_reader": Config.hid_devices.barcode_reader,
+        "rfid_reader": CONFIG.hid_devices.rfid_reader,
+        "barcode_reader": CONFIG.hid_devices.barcode_reader,
     }
 
     for sender_name, device_name in known_hid_devices.items():

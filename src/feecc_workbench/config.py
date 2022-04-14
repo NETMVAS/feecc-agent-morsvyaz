@@ -75,7 +75,7 @@ if __name__ == "__main__":
     print(environ.generate_help(AppConfig))
 
 try:
-    Config = environ.to_config(AppConfig)
+    CONFIG = environ.to_config(AppConfig)
 except environ.MissingEnvValueError as e:
     logger.critical(f"Missing required environment variable '{e}'. Exiting.")
     sys.exit(1)

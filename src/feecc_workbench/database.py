@@ -12,7 +12,7 @@ from .Singleton import SingletonMeta
 from .Types import Document
 from .Unit import Unit
 from ._db_utils import _get_database_client, _get_unit_dict_data
-from .config import Config
+from .config import CONFIG
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
 from .unit_utils import UnitStatus
@@ -25,7 +25,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        uri = Config.db.mongo_connection_uri
+        uri = CONFIG.db.mongo_connection_uri
 
         self._client: AsyncIOMotorClient = _get_database_client(uri)
         db_name: str = URL(uri).path
