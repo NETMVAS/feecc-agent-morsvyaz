@@ -25,7 +25,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        uri = Config.MongoDB.mongo_connection_uri
+        uri = Config.db.mongo_connection_uri
 
         self._client: AsyncIOMotorClient = _get_database_client(uri)
         db_name: str = URL(uri).path
