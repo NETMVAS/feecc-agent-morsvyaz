@@ -4,13 +4,15 @@ from dataclasses import asdict
 import pydantic
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
+from yarl import URL
 
 from .Employee import Employee
 from .ProductionStage import ProductionStage
 from .Singleton import SingletonMeta
 from .Types import Document
 from .Unit import Unit
-from ._db_utils import _get_database_client, _get_database_name, _get_unit_dict_data
+from ._db_utils import _get_database_client, _get_unit_dict_data
+from .config import CONFIG
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
 from .unit_utils import UnitStatus
@@ -23,8 +25,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        self._client: AsyncIOMotorClient = _get_database_client()
-        db_name: str = _get_database_name()
+        uri = CONFIG.db.mongo_connection_uri
+
+        self._client: AsyncIOMotorClient = _get_database_client(uri)
+        db_name: str = URL(uri).path
         self._database: AsyncIOMotorDatabase = self._client[db_name]
 
         # collections
@@ -86,7 +90,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         stage_id: str = updated_production_stage.id
         await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
-    async def update_unit(self, unit: Unit) -> None:
+    async def update_unit(self, unit: Unit, include_keys: tp.Optional[tp.List[str]] = None) -> None:
         """update data about the unit in the DB"""
         for stage in unit.biography:
             if stage.is_in_db:
@@ -95,6 +99,13 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 await self.upload_production_stage(stage)
 
         unit_dict = _get_unit_dict_data(unit)
+
+        if include_keys is not None:
+            unit_dict = {
+                key: unit_dict.get(key)
+                for key in include_keys
+            }
+
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
@@ -113,9 +124,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
             ]
             or None,
-            passport_short_url=unit_dict.get("passport_short_url", None),
             featured_in_int_id=unit_dict.get("featured_in_int_id", None),
+            passport_short_url=unit_dict.get("passport_short_url", None),
             passport_ipfs_cid=unit_dict.get("passport_ipfs_cid", None),
+            txn_hash=unit_dict.get("txn_hash", None),
             serial_number=unit_dict.get("serial_number", None),
             creation_time=unit_dict.get("creation_time", None),
             status=unit_dict.get("status", None),

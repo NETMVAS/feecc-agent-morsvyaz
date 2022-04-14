@@ -17,7 +17,7 @@ from .unit_utils import UnitStatus
 from .utils import timestamp
 from ._image_generation import create_seal_tag
 from ._short_url_generator import generate_short_url
-from .config import config
+from .config import CONFIG
 from .database import MongoDbWrapper
 from .exceptions import StateForbiddenError
 from .models import ProductionSchema
@@ -33,11 +33,9 @@ class WorkBench(metaclass=SingletonMeta):
     @logger.catch
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
-        self.number: int = config.workbench_config.number
-        camera_number: tp.Optional[int] = config.hardware.camera_no
-        self.camera: tp.Optional[Camera] = (
-            Camera(camera_number) if camera_number and not config.feecc_io_gateway.autonomous_mode else None
-        )
+        self.number: int = CONFIG.workbench.number
+        camera_number: tp.Optional[int] = CONFIG.camera.camera_no
+        self.camera: tp.Optional[Camera] = Camera(camera_number) if camera_number and CONFIG.camera.enable else None
         self.employee: tp.Optional[Employee] = None
         self.unit: tp.Optional[Unit] = None
         self.state: State = State.AWAIT_LOGIN_STATE
@@ -52,7 +50,7 @@ class WorkBench(metaclass=SingletonMeta):
         unit = Unit(schema)
         await self._database.upload_unit(unit)
 
-        if config.printer.print_barcode and not config.feecc_io_gateway.autonomous_mode:
+        if CONFIG.printer.print_barcode and CONFIG.printer.enable:
             if unit.schema.parent_schema_id is None:
                 annotation = unit.schema.unit_name
             else:
@@ -190,7 +188,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         passport_file_path = await construct_unit_passport(self.unit)
 
-        if not config.feecc_io_gateway.autonomous_mode:
+        if CONFIG.ipfs_gateway.enable:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
             cid, link = res or ("", "")
             short_url: str = generate_short_url(link)
@@ -198,8 +196,8 @@ class WorkBench(metaclass=SingletonMeta):
             self.unit.passport_ipfs_cid = cid
             self.unit.passport_short_url = short_url
 
-            if config.printer.print_qr and (
-                not config.printer.print_qr_only_for_composite
+            if CONFIG.printer.print_qr and (
+                not CONFIG.printer.print_qr_only_for_composite
                 or self.unit.schema.is_composite
                 or not self.unit.schema.is_a_component
             ):
@@ -210,11 +208,11 @@ class WorkBench(metaclass=SingletonMeta):
                     annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
                 )
 
-            if config.printer.print_security_tag:
+            if CONFIG.printer.print_security_tag:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, self.employee.rfid_card_id)
 
-            if config.robonomics_network.enable_datalog and res is not None:
+            if CONFIG.robonomics.enable_datalog and res is not None:
                 # for now Robonomics interface library doesn't support async io.
                 # This operation requires waiting for the block to be written in the blockchain,
                 # which takes 15 seconds on average, so it's done in another thread
