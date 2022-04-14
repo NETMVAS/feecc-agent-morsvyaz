@@ -90,7 +90,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         stage_id: str = updated_production_stage.id
         await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
-    async def update_unit(self, unit: Unit) -> None:
+    async def update_unit(self, unit: Unit, include_keys: tp.Optional[tp.List[str]] = None) -> None:
         """update data about the unit in the DB"""
         for stage in unit.biography:
             if stage.is_in_db:
@@ -99,6 +99,13 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 await self.upload_production_stage(stage)
 
         unit_dict = _get_unit_dict_data(unit)
+
+        if include_keys is not None:
+            unit_dict = {
+                key: unit_dict.get(key)
+                for key in include_keys
+            }
+
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
