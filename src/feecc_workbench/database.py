@@ -28,7 +28,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         uri = CONFIG.db.mongo_connection_uri
 
         self._client: AsyncIOMotorClient = _get_database_client(uri)
-        db_name: str = URL(uri).path
+        db_name: str = URL(uri).path.lstrip("/")
         self._database: AsyncIOMotorDatabase = self._client[db_name]
 
         # collections
