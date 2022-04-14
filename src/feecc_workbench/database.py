@@ -117,9 +117,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
             ]
             or None,
-            passport_short_url=unit_dict.get("passport_short_url", None),
             featured_in_int_id=unit_dict.get("featured_in_int_id", None),
+            passport_short_url=unit_dict.get("passport_short_url", None),
             passport_ipfs_cid=unit_dict.get("passport_ipfs_cid", None),
+            txn_hash=unit_dict.get("txn_hash", None),
             serial_number=unit_dict.get("serial_number", None),
             creation_time=unit_dict.get("creation_time", None),
             status=unit_dict.get("status", None),
