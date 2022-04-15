@@ -42,6 +42,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
+    @logger.catch(reraise=True)
     async def create_new_unit(self, schema: ProductionSchema) -> Unit:
         """initialize a new instance of the Unit class"""
         if self.state != State.AUTHORIZED_IDLING_STATE:
