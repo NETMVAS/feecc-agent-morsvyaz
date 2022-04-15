@@ -78,7 +78,7 @@ async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional
         logger.warning("Printer disabled, task dropped")
         return
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         url = f"{PRINT_SERVER_ADDRESS}/print_image"
         headers: tp.Dict[str, str] = get_headers(rfid_card_id)
         data = {"annotation": annotation}
