@@ -101,10 +101,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         unit_dict = _get_unit_dict_data(unit)
 
         if include_keys is not None:
-            unit_dict = {
-                key: unit_dict.get(key)
-                for key in include_keys
-            }
+            unit_dict = {key: unit_dict.get(key) for key in include_keys}
 
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 

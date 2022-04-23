@@ -5,7 +5,7 @@ import typing as tp
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from feecc_workbench.Unit import Unit
+from .Unit import Unit
 
 
 def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:

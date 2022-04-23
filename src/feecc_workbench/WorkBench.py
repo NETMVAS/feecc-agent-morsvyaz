@@ -8,20 +8,22 @@ from loguru import logger
 
 from .Camera import Camera
 from .Employee import Employee
-from .IO_gateway import generate_qr_code, post_to_datalog, print_image, publish_file
 from .Singleton import SingletonMeta
 from .Types import AdditionalInfo
 from .Unit import Unit
-from .passport_generator import construct_unit_passport
-from .unit_utils import UnitStatus
-from .utils import timestamp
-from ._image_generation import create_seal_tag
+from ._image_generation import create_qr, create_seal_tag
 from ._short_url_generator import generate_short_url
 from .config import CONFIG
 from .database import MongoDbWrapper
 from .exceptions import StateForbiddenError
+from .ipfs import publish_file
 from .models import ProductionSchema
+from .passport_generator import construct_unit_passport
+from .printer import print_image
+from .robonomics import post_to_datalog
 from .states import STATE_TRANSITION_MAP, State
+from .unit_utils import UnitStatus
+from .utils import timestamp
 
 
 class WorkBench(metaclass=SingletonMeta):
@@ -210,7 +212,7 @@ class WorkBench(metaclass=SingletonMeta):
                 or self.unit.schema.is_composite
                 or not self.unit.schema.is_a_component
             ):
-                qrcode_path = generate_qr_code(short_url)
+                qrcode_path = create_qr(short_url)
                 await print_image(
                     qrcode_path,
                     self.employee.rfid_card_id,

@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from loguru import logger
 
 from .config import CONFIG
+from .utils import time_execution
 
 # color values
 color = tp.Tuple[int, int, int]
@@ -15,6 +16,7 @@ WHITE: color = (255, 255, 255)
 BLACK: color = (0, 0, 0)
 
 
+@time_execution
 def create_qr(link: str) -> str:
     """
     :param link: full yourls url. E.g. https://url.today/6b
@@ -47,12 +49,12 @@ def create_qr(link: str) -> str:
 
     if CONFIG.printer.qr_add_logos:
         left_pic = Image.open("media/left_pic.jpg").resize((qr_size, qr_size))
-        posl = (24, 2)
-        img_qr_big.paste(left_pic, posl)
+        pos_l = (24, 2)
+        img_qr_big.paste(left_pic, pos_l)
 
         right_pic = Image.open("media/right_pic.jpg").resize((qr_size, qr_size))
-        posr = (696 - qr_size - 24, 2)
-        img_qr_big.paste(right_pic, posr)
+        pos_r = (696 - qr_size - 24, 2)
+        img_qr_big.paste(right_pic, pos_r)
     # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
     dir_ = "output/qr_codes"
 
@@ -67,6 +69,7 @@ def create_qr(link: str) -> str:
     return path_to_qr
 
 
+@time_execution
 def create_seal_tag() -> str:
     """generate a custom seal tag with required parameters"""
     logger.info("Generating seal tag")
