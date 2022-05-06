@@ -106,17 +106,12 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
-        query = {"parent_unit_uuid": unit_dict["uuid"]}
-        prod_stage_dicts = (
-            await self._prod_stage_collection.find(query, {"_id": 0}).sort("number", 1).to_list(length=None)
-        )
-
         return Unit(
             schema=await self.get_schema_by_id(unit_dict["schema_id"]),
             uuid=unit_dict.get("uuid", None),
             internal_id=unit_dict.get("internal_id", None),
             is_in_db=unit_dict.get("is_in_db", None),
-            biography=[ProductionStage(**stage) for stage in prod_stage_dicts] or None,
+            biography=[ProductionStage(**stage) for stage in unit_dict.get("prod_stage_dicts", [])] or None,
             components_units=[
                 await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
             ]
@@ -176,16 +171,37 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         return Employee(**employee_data)
 
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
-        try:
-            unit_dict: Document = await self._find_item("internal_id", unit_internal_id, self._unit_collection)  # type: ignore
-            if unit_dict is None:
-                raise ValueError(f"Unit with {unit_internal_id=} not found")
-            return await self._get_unit_from_raw_db_data(unit_dict)
+        pipeline = [
+            {"$match": {"internal_id": unit_internal_id}},
+            {
+                "$lookup": {
+                    "from": "productionStagesData",
+                    "let": {"parent_uuid": "$uuid"},
+                    "pipeline": [
+                        {"$match": {"$expr": {"$eq": ["$parent_unit_uuid", "$$parent_uuid"]}}},
+                        {"$project": {"_id": 0}},
+                        {"$sort": {"number": 1}},
+                    ],
+                    "as": "prod_stage_dicts",
+                }
+            },
+            {"$project": {"_id": 0}},
+        ]
 
+        try:
+            result: tp.List[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=1)
         except Exception as E:
             logger.error(E)
-            message: str = f"Could not find the Unit with int. id {unit_internal_id}. Does it exist?"
+            raise E
+
+        if not result:
+            message = f"Unit with {unit_internal_id=} not found"
+            logger.warning(message)
             raise UnitNotFoundError(message)
+
+        unit_dict: Document = result[0]
+
+        return await self._get_unit_from_raw_db_data(unit_dict)
 
     async def get_all_schemas(self) -> tp.List[ProductionSchema]:
         """get all production schemas"""
