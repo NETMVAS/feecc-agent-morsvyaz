@@ -5,12 +5,12 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import get_headers, time_execution
+from .utils import async_time_execution, get_headers
 
 IPFS_GATEWAY_ADDRESS: str = CONFIG.ipfs_gateway.ipfs_server_uri
 
 
-@time_execution
+@async_time_execution
 async def publish_file(rfid_card_id: str, file_path: os.PathLike[tp.AnyStr]) -> tp.Tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
     if not CONFIG.ipfs_gateway.enable:
