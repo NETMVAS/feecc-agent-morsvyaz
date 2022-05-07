@@ -16,6 +16,7 @@ from .config import CONFIG
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
 from .unit_utils import UnitStatus
+from .utils import time_execution
 
 
 class MongoDbWrapper(metaclass=SingletonMeta):
@@ -84,19 +85,20 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.debug(f"Updating key {key} with value {value}")
         await collection_.find_one_and_update({key: value}, {"$set": new_document})
 
-    async def update_production_stage(self, updated_production_stage: ProductionStage) -> None:
+    async def _update_production_stage(self, updated_production_stage: ProductionStage) -> None:
         """update data about the production stage in the DB"""
         stage_dict: Document = asdict(updated_production_stage)
         stage_id: str = updated_production_stage.id
         await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
 
+    @time_execution
     async def update_unit(self, unit: Unit, include_keys: tp.Optional[tp.List[str]] = None) -> None:
         """update data about the unit in the DB"""
         for stage in unit.biography:
             if stage.is_in_db:
-                await self.update_production_stage(stage)
+                await self._update_production_stage(stage)
             else:
-                await self.upload_production_stage(stage)
+                await self._upload_production_stage(stage)
 
         unit_dict = _get_unit_dict_data(unit)
 
@@ -125,12 +127,14 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             status=unit_dict.get("status", None),
         )
 
+    @time_execution
     async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
         return [
             await self._get_unit_from_raw_db_data(entry)
             for entry in await self._find_many("status", status.value, self._unit_collection)
         ]
 
+    @time_execution
     async def upload_unit(self, unit: Unit) -> None:
         """
         convert a unit instance into a dictionary suitable for future reassembly while
@@ -148,17 +152,18 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         # upload nested dataclasses
         for stage in unit.biography:
-            await self.upload_production_stage(stage)
+            await self._upload_production_stage(stage)
 
         await self._upload_dict(unit_dict, self._unit_collection)
 
-    async def upload_production_stage(self, production_stage: ProductionStage) -> None:
+    async def _upload_production_stage(self, production_stage: ProductionStage) -> None:
         if production_stage.is_in_db:
             return
 
         production_stage.is_in_db = True
         await self._upload_dataclass(production_stage, self._prod_stage_collection)
 
+    @time_execution
     async def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
         employee_data: tp.Optional[Document] = await self._find_item("rfid_card_id", card_id, self._employee_collection)
@@ -170,6 +175,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         return Employee(**employee_data)
 
+    @time_execution
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         pipeline = [
             {"$match": {"internal_id": unit_internal_id}},
@@ -203,11 +209,13 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         return await self._get_unit_from_raw_db_data(unit_dict)
 
+    @time_execution
     async def get_all_schemas(self) -> tp.List[ProductionSchema]:
         """get all production schemas"""
         schema_data = await self._get_all_items_in_collection(self._schemas_collection)
         return [pydantic.parse_obj_as(ProductionSchema, schema) for schema in schema_data]
 
+    @time_execution
     async def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
         """get the specified production schema"""
         target_schema = await self._find_item("schema_id", schema_id, self._schemas_collection)
