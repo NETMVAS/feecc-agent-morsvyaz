@@ -5,13 +5,13 @@ import typing as tp
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from feecc_workbench.Unit import Unit
+from .Unit import Unit
 
 
 def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:
     """Get MongoDB connection url"""
     try:
-        db_client = AsyncIOMotorClient(mongo_connection_uri, serverSelectionTimeoutMS=3000)
+        db_client = AsyncIOMotorClient(mongo_connection_uri, serverSelectionTimeoutMS=10000)
         db_client.server_info()
         return db_client
 

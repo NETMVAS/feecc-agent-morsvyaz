@@ -7,7 +7,6 @@ from loguru import logger
 
 @environ.config(prefix="", frozen=True)
 class AppConfig:
-
     @environ.config(frozen=True)
     class MongoDB:
         mongo_connection_uri: str = environ.var(help="Your MongoDB connection URI")
