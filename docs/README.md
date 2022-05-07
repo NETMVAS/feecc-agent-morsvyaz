@@ -7,28 +7,28 @@
     <img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000.svg">
 </p>
 
-> "Feecc Workbench Daemon - это сердце системы контроля качества Feecc. Он устанавливается на клиентские устройства,
-> расположенные на рабочих местах сотрудников, предоставляя пользователям
-> доступ ко всем возможностям Feecc и гибкую систему конфигурации для быстрого начала работы."
+> "The Feecc Workbench Daemon is the heart of the Feecc QA system. It is installed on client devices,
+> located on employees' workbenches, providing users with
+> access to all Feecc features and a flexible configuration system to get you up and running quickly."
 
-<h2 align="center">Установка и запуск</h2>
+<h2 align="center">Installation and startup</h2
 
-> Предполагаем, что вы уже установили Ubuntu (или другой дистрибутив Linux), Docker и Docker-compose.
+> Assuming you have already installed Ubuntu (or another Linux distribution), Docker and Docker-compose.
 
-### Развертывание Feecc Workbench Daemon
+### Deploying the Feecc Workbench Daemon
 
-Клонируйте данный репозиторий с GitHub с помощью команды `git clone`.
+Clone this repository from GitHub using the `git clone` command.
 
-Перейдите в папку репозитория и поменяйте файл `docker-compose.yml` в соответствии со своими нуждами. Конфигурация
-определяется рядом переменных окружения:
+Go to the repository folder and change the `docker-compose.yml` file to suit your needs. The configuration 
+is defined by a number of environment variables:
 
 - **DB_MONGO_CONNECTION_URL** (Required): Your MongoDB connection URI
 - **ROBONOMICS_ENABLE_DATALOG** (Optional): Whether to enable datalog posting or not
 - **ROBONOMICS_ACCOUNT_SEED** (Optional): Your Robonomics network account seed phrase
 - **ROBONOMICS_SUBSTRATE_NODE_URL** (Optional): Robonomics network node URI
-- **YOURLS_SERVER** (Required): Your Yourls server URL
-- **YOURLS_USERNAME** (Required): Your Yourls server username
-- **YOURLS_PASSWORD** (Required): Your Yourls server password
+- **YOURLS_SERVER** (Required): Your Your Yourls server URL
+- **YOURLS_USERNAME** (Required): Yourls server username
+- **YOURLS_PASSWORD** (Required): Yourls server password
 - **IPFS_GATEWAY_ENABLE** (Optional): Whether to enable IPFS posting or not
 - **IPFS_GATEWAY_IPFS_SERVER_URI** (Optional): Your IPFS gateway deployment URI
 - **PRINTER_ENABLE** (Optional): Whether to enable printing or not
@@ -47,21 +47,21 @@
 - **HID_DEVICES_RFID_READER** (Optional): RFID reader device name
 - **HID_DEVICES_BARCODE_READER** (Optional): Barcode reader device name
 
-Разверните Feecc Workbench Daemon при помощи Docker-compose: находясь в корне репозитория введите команду
+Deploy the Feecc Workbench Daemon with Docker-compose: At the root of the repository, type
 `sudo docker-compose up -d --build`.
 
-> Обратите внимание: опция `--build` говорит системе собрать образ контейнера перед запуском. В зависимости от
-> скорости соединения и конфигурации машины этот процесс может быть достаточно долгим, однако нет необходимости
-> повторять этот шаг перед каждым запуском. При последующем запуске эту опцию можно будет убрать, однако после
-> каждого обновления или изменения конфигурации образ требуется собрать заново. Повторная сборка обычно происходит
-> гораздо быстрее, т.к. использует кеш предыдущей сборки, если он не устарел.
+> Note: the `--build` option tells the system to build an image of the container before running. Depending on the
+> connection speed and machine configuration, this process can be quite long, but there is no need to
+> repeat this step before each startup. This option can be removed at subsequent startups, but after
+> each update or configuration change the image needs to be rebuilt. Rebuilds usually happen
+> much faster as it uses the cache of the previous build, if it is not outdated.
 
-После этого шага сервер должен быть доступен по адресу `127.0.0.1:5000`. Проверьте, запустились ли ваши контейнеры с
-помощью менеджера процессов Docker: введите команду `sudo docker ps` и удостоверьтесь в том, что видите в списке
-процессов контейнер `feecc_workbench_daemon`. Если это не так, вероятно возникли ошибки на этапе сборки и запуска.
-Проверьте лог сборки, устраните их и повторите предыдущий шаг.
+After this step the server should be available at `127.0.0.1:5000`. Check if your containers are running with the
+Docker process manager: type `sudo docker ps` and make sure that you see the
+`feecc_workbench_daemon` on the container list. If not, there are probably errors in the build and run phases.
+Check the build log, fix them, and repeat the previous step.
 
-Если контейнер присутствует в таблице, попробуйте перейти в браузер и открыть страницу `http://127.0.0.1:5000/docs`, в
-ней должна быть отражена документация по REST API серверу системы. Если страница по этому адресу недоступна, то сервер
-не запустился должным образом. Следует проверить логи внутри контейнера на предмет ошибок, исправить их и повторить
-сборку и запуск.
+If the container is present in the table, try going to the browser and opening the `http://127.0.0.1:5000/docs` page, which should
+contain documentation on the system's REST API interface. If the page at that address is not available, then the server is 
+not started properly. You should check the logs inside the container for errors, fix them and repeat 
+build and run steps.

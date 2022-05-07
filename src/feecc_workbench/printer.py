@@ -4,12 +4,12 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import get_headers, time_execution
+from .utils import async_time_execution, get_headers
 
 PRINT_SERVER_ADDRESS: str = CONFIG.printer.print_server_uri
 
 
-@time_execution
+@async_time_execution
 async def print_image(file_path: str, rfid_card_id: str, annotation: tp.Optional[str] = None) -> None:
     """print the provided image file"""
     if not CONFIG.printer.enable:

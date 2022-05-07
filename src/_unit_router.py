@@ -68,14 +68,13 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
 
 
 @router.get("/pending_revision", response_model=mdl.UnitOutPending)
-def get_revision_pending(units: tp.List[Unit] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
+def get_revision_pending(units: tp.List[tp.Dict[str, str]] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
     """return all units staged for revision"""
     return mdl.UnitOutPending(
         status_code=status.HTTP_200_OK,
         detail=f"{len(units)} units awaiting revision.",
         units=[
-            mdl.UnitOutPendingEntry(unit_internal_id=unit.internal_id, unit_name=unit.schema.unit_name)
-            for unit in units
+            mdl.UnitOutPendingEntry(unit_internal_id=unit["internal_id"], unit_name=unit["unit_name"]) for unit in units
         ],
     )
 
