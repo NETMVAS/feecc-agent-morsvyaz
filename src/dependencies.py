@@ -7,10 +7,10 @@ from loguru import logger
 from feecc_workbench import models
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
-from feecc_workbench.unit_utils import UnitStatus
 from feecc_workbench.config import CONFIG
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
+from feecc_workbench.unit_utils import UnitStatus
 from feecc_workbench.utils import is_a_ean13_barcode
 
 
@@ -39,9 +39,9 @@ async def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-async def get_revision_pending_units() -> tp.List[Unit]:
+async def get_revision_pending_units() -> tp.List[tp.Dict[str, str]]:
     """get all the units headed for revision"""
-    return await MongoDbWrapper().get_all_units_by_status(UnitStatus.revision)  # type: ignore
+    return await MongoDbWrapper().get_unit_ids_and_names_by_status(UnitStatus.revision)  # type: ignore
 
 
 def identify_sender(event: models.HidEvent) -> models.HidEvent:

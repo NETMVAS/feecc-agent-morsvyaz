@@ -128,10 +128,31 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         )
 
     @async_time_execution
-    async def get_all_units_by_status(self, status: UnitStatus) -> tp.List[Unit]:
+    async def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> tp.List[tp.Dict[str, str]]:
+        pipeline = [
+            {"$match": {"status": status.value}},
+            {
+                "$lookup": {
+                    "from": "productionSchemas",
+                    "let": {"schema_id": "$schema_id"},
+                    "pipeline": [
+                        {"$match": {"$expr": {"$eq": ["$schema_id", "$$schema_id"]}}},
+                        {"$project": {"_id": 0, "unit_name": 1}},
+                    ],
+                    "as": "unit_name",
+                }
+            },
+            {"$unwind": {"path": "$unit_name"}},
+            {"$project": {"_id": 0, "unit_name": 1, "internal_id": 1}},
+        ]
+        result: tp.List[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=None)
+
         return [
-            await self._get_unit_from_raw_db_data(entry)
-            for entry in await self._find_many("status", status.value, self._unit_collection)
+            {
+                "internal_id": entry["internal_id"],
+                "unit_name": entry["unit_name"]["unit_name"],
+            }
+            for entry in result
         ]
 
     @async_time_execution
