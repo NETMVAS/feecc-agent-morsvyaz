@@ -4,6 +4,7 @@ from dataclasses import asdict
 import pydantic
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
+from pymongo import InsertOne, UpdateOne
 from yarl import URL
 
 from .Employee import Employee
@@ -40,72 +41,51 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         logger.info("Successfully connected to MongoDB")
 
-    @staticmethod
-    async def _upload_dict(document: Document, collection_: AsyncIOMotorCollection) -> None:
-        """insert a document into specified collection"""
-        logger.debug(f"Uploading document {document} to {collection_.name}")
-        await collection_.insert_one(document)
+    async def _bulk_push_production_stages(self, production_stages: tp.List[ProductionStage]) -> None:
+        tasks = []
 
-    async def _upload_dataclass(self, dataclass: tp.Any, collection_: AsyncIOMotorCollection) -> None:
-        """
-        convert an arbitrary dataclass to dictionary and insert it
-        into the desired collection in the database
-        """
-        await self._upload_dict(asdict(dataclass), collection_)
+        for stage in production_stages:
+            if stage.is_in_db:
+                task = UpdateOne({"id": stage.id}, {"$set": asdict(stage)})
+            else:
+                stage.is_in_db = True
+                task = InsertOne(asdict(stage))
 
-    @staticmethod
-    async def _find_item(key: str, value: str, collection_: AsyncIOMotorCollection) -> tp.Optional[Document]:
-        """
-        finds one element in the specified collection, which has
-        specified key matching specified value
-        """
-        return await collection_.find_one({key: value}, {"_id": 0})  # type: ignore
+            tasks.append(task)
 
-    @staticmethod
-    async def _find_many(key: str, value: str, collection_: AsyncIOMotorCollection) -> tp.List[Document]:
-        """
-        finds all elements in the specified collection, which have
-        specified key matching specified value
-        """
-        return await collection_.find({key: value}, {"_id": 0}).to_list(length=None)  # type: ignore
+        result = await self._prod_stage_collection.bulk_write(tasks)
+        logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
-    @staticmethod
-    async def _get_all_items_in_collection(collection_: AsyncIOMotorCollection) -> tp.List[Document]:
-        """get all documents in the provided collection"""
-        return await collection_.find({}, {"_id": 0}).to_list(length=None)  # type: ignore
+    @async_time_execution
+    async def upload_unit(self, unit: Unit) -> None:
+        """Upload data about the unit into the DB"""
+        for component in unit.components_units:
+            await self.update_unit(component)
 
-    @staticmethod
-    async def _update_document(
-        key: str, value: str, new_document: Document, collection_: AsyncIOMotorCollection
-    ) -> None:
-        """
-        finds matching document in the specified collection, and replaces it's data
-        with what is provided in the new_document argument
-        """
-        logger.debug(f"Updating key {key} with value {value}")
-        await collection_.find_one_and_update({key: value}, {"$set": new_document})
+        if unit.is_in_db:
+            return
+        else:
+            unit.is_in_db = True
 
-    async def _update_production_stage(self, updated_production_stage: ProductionStage) -> None:
-        """update data about the production stage in the DB"""
-        stage_dict: Document = asdict(updated_production_stage)
-        stage_id: str = updated_production_stage.id
-        await self._update_document("id", stage_id, stage_dict, self._prod_stage_collection)
+        await self._bulk_push_production_stages(unit.biography)
+
+        unit_dict = _get_unit_dict_data(unit)
+        await self._unit_collection.insert_one(unit_dict)
 
     @async_time_execution
     async def update_unit(self, unit: Unit, include_keys: tp.Optional[tp.List[str]] = None) -> None:
         """update data about the unit in the DB"""
-        for stage in unit.biography:
-            if stage.is_in_db:
-                await self._update_production_stage(stage)
-            else:
-                await self._upload_production_stage(stage)
+        for component in unit.components_units:
+            await self.update_unit(component)
+
+        await self._bulk_push_production_stages(unit.biography)
 
         unit_dict = _get_unit_dict_data(unit)
 
         if include_keys is not None:
             unit_dict = {key: unit_dict.get(key) for key in include_keys}
 
-        await self._update_document("uuid", unit.uuid, unit_dict, self._unit_collection)
+        await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         return Unit(
@@ -156,38 +136,11 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         ]
 
     @async_time_execution
-    async def upload_unit(self, unit: Unit) -> None:
-        """
-        convert a unit instance into a dictionary suitable for future reassembly while
-        converting nested structures and uploading them
-        """
-        for component in unit.components_units:
-            await self.upload_unit(component)
-
-        if unit.is_in_db:
-            return
-        else:
-            unit.is_in_db = True
-
-        unit_dict = _get_unit_dict_data(unit)
-
-        # upload nested dataclasses
-        for stage in unit.biography:
-            await self._upload_production_stage(stage)
-
-        await self._upload_dict(unit_dict, self._unit_collection)
-
-    async def _upload_production_stage(self, production_stage: ProductionStage) -> None:
-        if production_stage.is_in_db:
-            return
-
-        production_stage.is_in_db = True
-        await self._upload_dataclass(production_stage, self._prod_stage_collection)
-
-    @async_time_execution
     async def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
-        employee_data: tp.Optional[Document] = await self._find_item("rfid_card_id", card_id, self._employee_collection)
+        employee_data: tp.Optional[Document] = await self._employee_collection.find_one(
+            {"rfid_card_id": card_id}, {"_id": 0}
+        )
 
         if employee_data is None:
             message = f"No employee with card ID {card_id}"
@@ -233,13 +186,13 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     @async_time_execution
     async def get_all_schemas(self) -> tp.List[ProductionSchema]:
         """get all production schemas"""
-        schema_data = await self._get_all_items_in_collection(self._schemas_collection)
+        schema_data = await self._schemas_collection.find({}, {"_id": 0}).to_list(length=None)
         return [pydantic.parse_obj_as(ProductionSchema, schema) for schema in schema_data]
 
     @async_time_execution
     async def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
         """get the specified production schema"""
-        target_schema = await self._find_item("schema_id", schema_id, self._schemas_collection)
+        target_schema = await self._schemas_collection.find_one({"schema_id": schema_id}, {"_id": 0})
 
         if target_schema is None:
             raise ValueError(f"Schema {schema_id} not found")
