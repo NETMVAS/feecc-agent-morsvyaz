@@ -1,6 +1,8 @@
+import asyncio
 import typing as tp
+from time import time
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from loguru import logger
 from starlette import status
 
@@ -21,9 +23,7 @@ router = APIRouter(
 )
 
 
-@router.get("/status", response_model=mdl.WorkbenchOut)
-def get_workbench_status() -> mdl.WorkbenchOut:
-    """handle providing status of the given Workbench"""
+def get_workbench_status_data() -> mdl.WorkbenchOut:
     unit = WORKBENCH.unit
     return mdl.WorkbenchOut(
         state=WORKBENCH.state.value,
@@ -35,6 +35,45 @@ def get_workbench_status() -> mdl.WorkbenchOut:
         unit_biography=[stage.name for stage in unit.biography] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
     )
+
+
+@router.get("/status", response_model=mdl.WorkbenchOut)
+def get_workbench_status() -> mdl.WorkbenchOut:
+    """handle providing status of the given Workbench"""
+    return get_workbench_status_data()
+
+
+@router.websocket("/workbench/status/stream")
+async def stream_workbench_status(websocket: WebSocket) -> None:
+    """Send updates on the workbench state into a WS stream"""
+    await websocket.accept()
+    logger.info(f"Websocket connection to {websocket.url} established")
+
+    try:
+        last_ping = time()
+        ping_interval = 5
+        last_state = None
+
+        while True:
+            if time() - last_ping > ping_interval:
+                await websocket.send_text("ping")
+                last_ping = time()
+
+            current_state = WORKBENCH.state.value
+
+            if current_state != last_state:
+                wb_status = get_workbench_status_data()
+                await websocket.send_json(data=wb_status.json())
+                last_state = current_state
+
+            await asyncio.sleep(0.1)
+
+    except Exception as e:
+        logger.error(str(e))
+
+    finally:
+        await websocket.close()
+        logger.info(f"Websocket connection to {websocket.url} closed")
 
 
 @router.post("/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)
