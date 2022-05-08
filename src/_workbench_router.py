@@ -43,7 +43,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     return get_workbench_status_data()
 
 
-async def state_update_generator(request: Request) -> tp.Generator[str, None, None]:
+async def state_update_generator(request: Request) -> tp.AsyncGenerator[str, None]:
     """State update event generator for SSE streaming"""
     last_state = None
 
