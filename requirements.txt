@@ -34,6 +34,7 @@ pycryptodome==3.14.1; python_version > "3.6" and python_full_version < "3.0.0" a
 pydantic==1.9.0; python_full_version >= "3.6.1" and python_version >= "3.6"
 pymongo==3.12.3; python_full_version >= "3.5.2"
 python-barcode==0.13.1
+python-dotenv==0.20.0; python_version >= "3.5"
 pyusb==1.2.1; python_full_version >= "3.6.0"
 pyyaml==5.4.1; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.6.0")
 qrcode==6.1

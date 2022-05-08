@@ -1,8 +1,15 @@
+import os
 import sys
 import typing as tp
 
 import environ
+from dotenv import load_dotenv
 from loguru import logger
+
+dotenv_file = "../.env"
+if os.path.exists(dotenv_file):
+    load_dotenv(dotenv_file)
+    logger.info(f"Loaded env vars from file '{os.path.abspath(dotenv_file)}'")
 
 
 @environ.config(prefix="", frozen=True)
