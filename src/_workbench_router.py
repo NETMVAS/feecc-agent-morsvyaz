@@ -1,10 +1,10 @@
 import asyncio
 import typing as tp
-from time import time
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket
+from fastapi import APIRouter, Depends, HTTPException, Request
 from loguru import logger
 from starlette import status
+from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from feecc_workbench import models as mdl
@@ -43,37 +43,30 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     return get_workbench_status_data()
 
 
-@router.websocket("/workbench/status/stream")
-async def stream_workbench_status(websocket: WebSocket) -> None:
-    """Send updates on the workbench state into a WS stream"""
-    await websocket.accept()
-    logger.info(f"Websocket connection to {websocket.url} established")
+async def state_update_generator(request: Request) -> tp.Generator[str, None, None]:
+    """State update event generator for SSE streaming"""
+    last_state = None
 
-    try:
-        last_ping = time()
-        ping_interval = 5
-        last_state = None
+    while True:
+        current_state = WORKBENCH.state.value
 
-        while True:
-            if time() - last_ping > ping_interval:
-                await websocket.send_text("ping")
-                last_ping = time()
+        if await request.is_disconnected():
+            logger.info(f"SSE connection to {request.url} closed")
+            break
 
-            current_state = WORKBENCH.state.value
+        if current_state != last_state:
+            last_state = current_state
+            yield get_workbench_status_data().json()
 
-            if current_state != last_state:
-                wb_status = get_workbench_status_data()
-                await websocket.send_json(data=wb_status.json())
-                last_state = current_state
+        await asyncio.sleep(0.1)
 
-            await asyncio.sleep(0.1)
 
-    except Exception as e:
-        logger.error(str(e))
-
-    finally:
-        await websocket.close()
-        logger.info(f"Websocket connection to {websocket.url} closed")
+@router.get("/status/stream")
+async def stream_workbench_status(request: Request) -> EventSourceResponse:
+    """Send updates on the workbench state into a SSE stream"""
+    logger.info(f"SSE connection to {request.url} established")
+    status_stream = state_update_generator(request)
+    return EventSourceResponse(status_stream)
 
 
 @router.post("/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)
