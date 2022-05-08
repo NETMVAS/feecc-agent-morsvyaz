@@ -39,6 +39,9 @@ class AppConfig:
     class Printer:
         enable: bool = environ.bool_var(default=False, help="Whether to enable printing or not")
         print_server_uri: str = environ.var(default="http://127.0.0.1:8083", help="Your Print-server deployment URI")
+        skip_ack: bool = environ.bool_var(
+            default=False, help="Whether to wait for the task acknowledgement (slow) or not"
+        )
         print_barcode: bool = environ.bool_var(default=True, help="Whether to print barcodes or not")
         print_qr: bool = environ.bool_var(default=True, help="Whether to print QR codes or not")
         print_qr_only_for_composite: bool = environ.bool_var(

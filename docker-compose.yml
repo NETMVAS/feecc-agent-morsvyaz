@@ -14,6 +14,7 @@ services:
       IPFS_GATEWAY_IPFS_SERVER_URI: http://127.0.0.1:8082  # Your IPFS gateway deployment URI
       PRINTER_ENABLE: false  # Whether to enable printing or not
       PRINTER_PRINT_SERVER_URI: http://127.0.0.1:8083  # Your Print-server deployment URI
+      PRINTER_SKIP_ACK: "no"  # Whether to wait for the task acknowledgement (slow) or not
       PRINTER_PRINT_BARCODE: true  # Whether to print barcodes or not
       PRINTER_PRINT_QR: true  # Whether to print QR codes or not
       PRINTER_PRINT_QR_ONLY_FOR_COMPOSITE: false  # Whether to enable QR code printing for non-composite units or note or not

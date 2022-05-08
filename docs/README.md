@@ -33,6 +33,7 @@ is defined by a number of environment variables:
 - **IPFS_GATEWAY_IPFS_SERVER_URI** (Optional): Your IPFS gateway deployment URI
 - **PRINTER_ENABLE** (Optional): Whether to enable printing or not
 - **PRINTER_PRINT_SERVER_URI** (Optional): Your Print-server deployment URI
+- **PRINTER_SKIP_ACK** (Optional): Whether to wait for the task acknowledgement (slow) or not
 - **PRINTER_PRINT_BARCODE** (Optional): Whether to print barcodes or not
 - **PRINTER_PRINT_QR** (Optional): Whether to print QR codes or not
 - **PRINTER_PRINT_QR_ONLY_FOR_COMPOSITE** (Optional): Whether to enable QR code printing for non-composite units or note
