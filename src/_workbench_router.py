@@ -1,9 +1,8 @@
 import asyncio
 import typing as tp
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
-from starlette import status
 from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
@@ -43,29 +42,29 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     return get_workbench_status_data()
 
 
-async def state_update_generator(request: Request) -> tp.AsyncGenerator[str, None]:
+async def state_update_generator() -> tp.AsyncGenerator[str, None]:
     """State update event generator for SSE streaming"""
+    logger.info("SSE connection to state streaming endpoint established.")
     last_state = None
 
-    while True:
-        current_state = WORKBENCH.state.value
+    try:
+        while True:
+            current_state = WORKBENCH.state.value
 
-        if await request.is_disconnected():
-            logger.info(f"SSE connection to {request.url} closed")
-            break
+            if current_state != last_state:
+                last_state = current_state
+                yield get_workbench_status_data().json()
 
-        if current_state != last_state:
-            last_state = current_state
-            yield get_workbench_status_data().json()
+            await asyncio.sleep(0.1)
 
-        await asyncio.sleep(0.1)
+    except asyncio.CancelledError as e:
+        logger.info(f"SSE connection to state streaming endpoint closed. {e}")
 
 
 @router.get("/status/stream")
-async def stream_workbench_status(request: Request) -> EventSourceResponse:
+async def stream_workbench_status() -> EventSourceResponse:
     """Send updates on the workbench state into a SSE stream"""
-    logger.info(f"SSE connection to {request.url} established")
-    status_stream = state_update_generator(request)
+    status_stream = state_update_generator()
     return EventSourceResponse(status_stream)
 
 
