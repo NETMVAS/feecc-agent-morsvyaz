@@ -36,9 +36,13 @@ def get_workbench_status_data() -> mdl.WorkbenchOut:
     )
 
 
-@router.get("/status", response_model=mdl.WorkbenchOut)
+@router.get("/status", response_model=mdl.WorkbenchOut, deprecated=True)
 def get_workbench_status() -> mdl.WorkbenchOut:
-    """handle providing status of the given Workbench"""
+    """
+    handle providing status of the given Workbench
+
+    DEPRECATED: Use SSE instead
+    """
     return get_workbench_status_data()
 
 
