@@ -23,7 +23,5 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
 
     logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
-    unit = await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
-    unit.txn_hash = txn_hash
-    await MongoDbWrapper().update_unit(unit, include_keys=["txn_hash"])
+    await MongoDbWrapper().unit_add_txn_hash(unit_internal_id, txn_hash)
     logger.info(f"{unit_internal_id} data has been updated")
