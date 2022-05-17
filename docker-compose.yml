@@ -35,5 +35,7 @@ services:
     volumes:
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
+      - "./unit-passports/:/code/unit-passports/"
+      - "./workbench.log:/code/workbench.log"
     network_mode: host
     restart: always
