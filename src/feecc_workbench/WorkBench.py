@@ -25,6 +25,8 @@ from .states import STATE_TRANSITION_MAP, State
 from .unit_utils import UnitStatus
 from .utils import timestamp
 
+STATE_SWITCH_EVENT = asyncio.Event()
+
 
 class WorkBench(metaclass=SingletonMeta):
     """
@@ -75,6 +77,7 @@ class WorkBench(metaclass=SingletonMeta):
         self._validate_state_transition(new_state)
         logger.info(f"Workbench no.{self.number} state changed: {self.state.value} -> {new_state.value}")
         self.state = new_state
+        STATE_SWITCH_EVENT.set()
 
     @logger.catch(reraise=True, exclude=StateForbiddenError)
     def log_in(self, employee: Employee) -> None:

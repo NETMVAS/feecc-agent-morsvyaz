@@ -9,7 +9,7 @@ from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sen
 from feecc_workbench import models as mdl
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import WorkBench
+from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.states import State
@@ -46,20 +46,16 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     return get_workbench_status_data()
 
 
-async def state_update_generator() -> tp.AsyncGenerator[str, None]:
+async def state_update_generator(event: asyncio.Event) -> tp.AsyncGenerator[str, None]:
     """State update event generator for SSE streaming"""
     logger.info("SSE connection to state streaming endpoint established.")
-    last_state = None
 
     try:
         while True:
-            current_state = WORKBENCH.state.value
-
-            if current_state != last_state:
-                last_state = current_state
-                yield get_workbench_status_data().json()
-
-            await asyncio.sleep(0.1)
+            yield get_workbench_status_data().json()
+            logger.debug("State notification sent to the SSE client")
+            event.clear()
+            await event.wait()
 
     except asyncio.CancelledError as e:
         logger.info(f"SSE connection to state streaming endpoint closed. {e}")
@@ -68,7 +64,7 @@ async def state_update_generator() -> tp.AsyncGenerator[str, None]:
 @router.get("/status/stream")
 async def stream_workbench_status() -> EventSourceResponse:
     """Send updates on the workbench state into a SSE stream"""
-    status_stream = state_update_generator()
+    status_stream = state_update_generator(STATE_SWITCH_EVENT)
     return EventSourceResponse(status_stream)
 
 
