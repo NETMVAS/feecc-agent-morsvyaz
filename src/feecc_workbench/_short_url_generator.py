@@ -4,11 +4,13 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
+from .utils import async_time_execution
 
 YOURLS_CONFIG = CONFIG.yourls
 
 
-def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
+@async_time_execution
+async def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
     """
     :return keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :return link: full yourls url. E.g. url.today/6b
@@ -25,7 +27,10 @@ def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
         "format": "json",
         "url": underlying_url or "example.com",
     }  # api call to the yourls server. More on yourls.org
-    response = httpx.get(url, params=querystring)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.get(url, params=querystring)
+
     logger.debug(f"{YOURLS_CONFIG.server} returned: {response.text}")
     keyword: str = response.json()["url"]["keyword"]
     link = "https://" + str(YOURLS_CONFIG.server) + "/" + keyword  # link of form url.today/6b
@@ -33,7 +38,8 @@ def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
     return link
 
 
-def update_short_url(short_url: str, new_url: str) -> None:
+@async_time_execution
+async def update_short_url(short_url: str, new_url: str) -> None:
     """Update redirecting service so that now the short url points to the  gateway to a video in external_io"""
     keyword = short_url.split("/")[-1]
     url = f"https://{YOURLS_CONFIG.server}/yourls-api.php"
@@ -45,7 +51,10 @@ def update_short_url(short_url: str, new_url: str) -> None:
         "url": new_url,
         "shorturl": keyword,
     }
-    response = httpx.get(url, params=params)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.get(url, params=params)
+
     logger.debug(f"Trying to update short url link. Keyword: {keyword}")
 
     if response.status_code != 200:

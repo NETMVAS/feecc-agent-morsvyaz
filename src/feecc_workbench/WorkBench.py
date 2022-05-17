@@ -205,22 +205,30 @@ class WorkBench(metaclass=SingletonMeta):
         if CONFIG.ipfs_gateway.enable:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
             cid, link = res or ("", "")
-            short_url: str = generate_short_url(link)
-
             self.unit.passport_ipfs_cid = cid
-            self.unit.passport_short_url = short_url
 
-            if CONFIG.printer.print_qr and (
+            print_qr = CONFIG.printer.print_qr and (
                 not CONFIG.printer.print_qr_only_for_composite
                 or self.unit.schema.is_composite
                 or not self.unit.schema.is_a_component
-            ):
+            )
+
+            if print_qr:
+                short_url: str = await generate_short_url(link)
+                self.unit.passport_short_url = short_url
                 qrcode_path = create_qr(short_url)
                 await print_image(
                     qrcode_path,
                     self.employee.rfid_card_id,
                     annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
                 )
+            else:
+
+                async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
+                    short_link = await generate_short_url(url)
+                    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "passport_short_url", short_link)
+
+                asyncio.create_task(_bg_generate_short_url(link, self.unit.internal_id))
 
             if CONFIG.printer.print_security_tag:
                 seal_tag_img: str = create_seal_tag()
