@@ -41,6 +41,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         logger.info("Successfully connected to MongoDB")
 
+    def close_connection(self) -> None:
+        self._client.close()
+        logger.info("MongoDB connection closed")
+
     async def _bulk_push_production_stages(self, production_stages: tp.List[ProductionStage]) -> None:
         tasks = []
 
@@ -73,19 +77,21 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         await self._unit_collection.insert_one(unit_dict)
 
     @async_time_execution
-    async def update_unit(self, unit: Unit, include_keys: tp.Optional[tp.List[str]] = None) -> None:
+    async def update_unit(self, unit: Unit) -> None:
         """update data about the unit in the DB"""
         for component in unit.components_units:
             await self.update_unit(component)
 
         await self._bulk_push_production_stages(unit.biography)
-
         unit_dict = _get_unit_dict_data(unit)
-
-        if include_keys is not None:
-            unit_dict = {key: unit_dict.get(key) for key in include_keys}
-
         await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
+
+    @async_time_execution
+    async def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: tp.Any) -> None:
+        await self._unit_collection.find_one_and_update(
+            {"internal_id": unit_internal_id}, {"$set": {field_name: field_val}}
+        )
+        logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         return Unit(

@@ -1,14 +1,15 @@
+import asyncio
 import typing as tp
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
-from starlette import status
+from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from feecc_workbench import models as mdl
 from feecc_workbench.Employee import Employee
 from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import WorkBench
+from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.states import State
@@ -21,9 +22,7 @@ router = APIRouter(
 )
 
 
-@router.get("/status", response_model=mdl.WorkbenchOut)
-def get_workbench_status() -> mdl.WorkbenchOut:
-    """handle providing status of the given Workbench"""
+def get_workbench_status_data() -> mdl.WorkbenchOut:
     unit = WORKBENCH.unit
     return mdl.WorkbenchOut(
         state=WORKBENCH.state.value,
@@ -35,6 +34,38 @@ def get_workbench_status() -> mdl.WorkbenchOut:
         unit_biography=[stage.name for stage in unit.biography] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
     )
+
+
+@router.get("/status", response_model=mdl.WorkbenchOut, deprecated=True)
+def get_workbench_status() -> mdl.WorkbenchOut:
+    """
+    handle providing status of the given Workbench
+
+    DEPRECATED: Use SSE instead
+    """
+    return get_workbench_status_data()
+
+
+async def state_update_generator(event: asyncio.Event) -> tp.AsyncGenerator[str, None]:
+    """State update event generator for SSE streaming"""
+    logger.info("SSE connection to state streaming endpoint established.")
+
+    try:
+        while True:
+            yield get_workbench_status_data().json()
+            logger.debug("State notification sent to the SSE client")
+            event.clear()
+            await event.wait()
+
+    except asyncio.CancelledError as e:
+        logger.info(f"SSE connection to state streaming endpoint closed. {e}")
+
+
+@router.get("/status/stream")
+async def stream_workbench_status() -> EventSourceResponse:
+    """Send updates on the workbench state into a SSE stream"""
+    status_stream = state_update_generator(STATE_SWITCH_EVENT)
+    return EventSourceResponse(status_stream)
 
 
 @router.post("/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)

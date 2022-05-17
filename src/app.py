@@ -35,5 +35,10 @@ def startup_event() -> None:
     MongoDbWrapper()
 
 
+@app.on_event("shutdown")
+async def shutdown_event() -> None:
+    MongoDbWrapper().close_connection()
+
+
 if __name__ == "__main__":
     uvicorn.run("app:app", port=5000)

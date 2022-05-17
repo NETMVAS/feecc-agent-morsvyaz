@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Feecc-Workbench-Daemon"
-version = "1.1.7"
+version = "1.2.0"
 description = "Workbench software for the Feecc QA system"
 authors = ["arseniiarsenii <arseniivelichko2@gmail.com>"]
 license = "Apache 2.0"
@@ -21,10 +21,11 @@ httpx = "^0.19.0"
 robonomics-interface = "^0.5.2"
 environ-config = "^22.1.0"
 yarl = "^1.7.2"
+sse-starlette = "^0.10.3"
+python-dotenv = "^0.20.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.902"
-black = "^21.6b0"
 flake8 = "^3.9.2"
 types-PyYAML = "^5.4.3"
 types-requests = "^2.25.0"
@@ -33,6 +34,7 @@ vulture = "^2.3"
 pre-commit = "^2.15.0"
 pytest-cov = "^3.0.0"
 ssort = "^0.11.5"
+black = "^22.3.0"
 
 [tool.pytest.ini_options]
 markers = ["short_url"]

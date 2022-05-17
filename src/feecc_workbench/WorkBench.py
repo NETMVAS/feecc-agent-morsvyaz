@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import typing as tp
 from pathlib import Path
 
@@ -25,6 +26,8 @@ from .states import STATE_TRANSITION_MAP, State
 from .unit_utils import UnitStatus
 from .utils import timestamp
 
+STATE_SWITCH_EVENT = asyncio.Event()
+
 
 class WorkBench(metaclass=SingletonMeta):
     """
@@ -44,7 +47,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     async def create_new_unit(self, schema: ProductionSchema) -> Unit:
         """initialize a new instance of the Unit class"""
         if self.state != State.AUTHORIZED_IDLING_STATE:
@@ -61,6 +64,7 @@ class WorkBench(metaclass=SingletonMeta):
                 annotation = f"{parent_schema.unit_name}. {unit.model_name}."
 
             await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)  # type: ignore
+            os.remove(unit.barcode.filename)
 
         return unit
 
@@ -75,8 +79,9 @@ class WorkBench(metaclass=SingletonMeta):
         self._validate_state_transition(new_state)
         logger.info(f"Workbench no.{self.number} state changed: {self.state.value} -> {new_state.value}")
         self.state = new_state
+        STATE_SWITCH_EVENT.set()
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     def log_in(self, employee: Employee) -> None:
         """authorize employee"""
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
@@ -86,7 +91,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     def log_out(self) -> None:
         """log out the employee"""
         self._validate_state_transition(State.AWAIT_LOGIN_STATE)
@@ -99,7 +104,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AWAIT_LOGIN_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     def assign_unit(self, unit: Unit) -> None:
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
@@ -118,7 +123,7 @@ class WorkBench(metaclass=SingletonMeta):
         else:
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     def remove_unit(self) -> None:
         """remove a unit from the workbench"""
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
@@ -129,7 +134,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     async def start_operation(self, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
@@ -143,7 +148,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     async def assign_component_to_unit(self, component: Unit) -> None:
         """assign provided component to a composite unit"""
         assert (
@@ -158,7 +163,7 @@ class WorkBench(metaclass=SingletonMeta):
 
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
@@ -191,7 +196,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    @logger.catch(reraise=True)
+    @logger.catch(reraise=True, exclude=StateForbiddenError)
     async def upload_unit_passport(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         assert self.unit is not None, "No unit is assigned to the workbench"
@@ -202,31 +207,38 @@ class WorkBench(metaclass=SingletonMeta):
         if CONFIG.ipfs_gateway.enable:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
             cid, link = res or ("", "")
-            short_url: str = generate_short_url(link)
-
             self.unit.passport_ipfs_cid = cid
-            self.unit.passport_short_url = short_url
 
-            if CONFIG.printer.print_qr and (
+            print_qr = CONFIG.printer.print_qr and (
                 not CONFIG.printer.print_qr_only_for_composite
                 or self.unit.schema.is_composite
                 or not self.unit.schema.is_a_component
-            ):
+            )
+
+            if print_qr:
+                short_url: str = await generate_short_url(link)
+                self.unit.passport_short_url = short_url
                 qrcode_path = create_qr(short_url)
                 await print_image(
                     qrcode_path,
                     self.employee.rfid_card_id,
                     annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
                 )
+                os.remove(qrcode_path)
+            else:
+
+                async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
+                    short_link = await generate_short_url(url)
+                    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "passport_short_url", short_link)
+
+                asyncio.create_task(_bg_generate_short_url(link, self.unit.internal_id))
 
             if CONFIG.printer.print_security_tag:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, self.employee.rfid_card_id)
+                os.remove(seal_tag_img)
 
             if CONFIG.robonomics.enable_datalog and res is not None:
-                # for now Robonomics interface library doesn't support async io.
-                # This operation requires waiting for the block to be written in the blockchain,
-                # which takes 15 seconds on average, so it's done in another thread
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         if self.unit.is_in_db:
