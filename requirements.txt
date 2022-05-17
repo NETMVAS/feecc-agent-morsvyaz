@@ -1,5 +1,5 @@
-anyio==3.5.0; python_full_version >= "3.6.2" and python_version >= "3.6"
-asgiref==3.5.1; python_version >= "3.7"
+anyio==3.6.1; python_full_version >= "3.6.2" and python_version >= "3.6"
+asgiref==3.5.2; python_version >= "3.7"
 attrs==21.4.0; python_version >= "3.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0" and python_version >= "3.7"
 base58==2.1.1; python_version > "3.6" and python_version < "4"
 brother-ql==0.9.4
