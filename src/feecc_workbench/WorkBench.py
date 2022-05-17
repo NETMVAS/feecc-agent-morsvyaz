@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import typing as tp
 from pathlib import Path
 
@@ -63,6 +64,7 @@ class WorkBench(metaclass=SingletonMeta):
                 annotation = f"{parent_schema.unit_name}. {unit.model_name}."
 
             await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)  # type: ignore
+            os.remove(unit.barcode.filename)
 
         return unit
 
@@ -222,6 +224,7 @@ class WorkBench(metaclass=SingletonMeta):
                     self.employee.rfid_card_id,
                     annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
                 )
+                os.remove(qrcode_path)
             else:
 
                 async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
@@ -233,6 +236,7 @@ class WorkBench(metaclass=SingletonMeta):
             if CONFIG.printer.print_security_tag:
                 seal_tag_img: str = create_seal_tag()
                 await print_image(seal_tag_img, self.employee.rfid_card_id)
+                os.remove(seal_tag_img)
 
             if CONFIG.robonomics.enable_datalog and res is not None:
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
