@@ -41,6 +41,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         logger.info("Successfully connected to MongoDB")
 
+    def close_connection(self) -> None:
+        self._client.close()
+        logger.info("MongoDB connection closed")
+
     async def _bulk_push_production_stages(self, production_stages: tp.List[ProductionStage]) -> None:
         tasks = []
 
