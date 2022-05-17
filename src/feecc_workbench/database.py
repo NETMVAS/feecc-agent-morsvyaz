@@ -83,10 +83,11 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
 
     @async_time_execution
-    async def unit_add_txn_hash(self, unit_internal_id: str, txn_hash: str) -> None:
+    async def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: tp.Any) -> None:
         await self._unit_collection.find_one_and_update(
-            {"internal_id": unit_internal_id}, {"$set": {"txn_hash": txn_hash}}
+            {"internal_id": unit_internal_id}, {"$set": {field_name: field_val}}
         )
+        logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         return Unit(

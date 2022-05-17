@@ -37,7 +37,7 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     txn_hash = queue.get()
 
     logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
-    await MongoDbWrapper().unit_add_txn_hash(unit_internal_id, txn_hash)
+    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
 
 
 @time_execution
