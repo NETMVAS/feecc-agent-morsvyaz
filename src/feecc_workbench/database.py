@@ -61,30 +61,19 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
     @async_time_execution
-    async def upload_unit(self, unit: Unit) -> None:
-        """Upload data about the unit into the DB"""
+    async def push_unit(self, unit: Unit) -> None:
+        """Upload or update data about the unit into the DB"""
         for component in unit.components_units:
-            await self.update_unit(component)
+            await self.push_unit(component)
+
+        await self._bulk_push_production_stages(unit.biography)
+        unit_dict = _get_unit_dict_data(unit)
 
         if unit.is_in_db:
-            return
+            await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
         else:
-            unit.is_in_db = True
-
-        await self._bulk_push_production_stages(unit.biography)
-
-        unit_dict = _get_unit_dict_data(unit)
-        await self._unit_collection.insert_one(unit_dict)
-
-    @async_time_execution
-    async def update_unit(self, unit: Unit) -> None:
-        """update data about the unit in the DB"""
-        for component in unit.components_units:
-            await self.update_unit(component)
-
-        await self._bulk_push_production_stages(unit.biography)
-        unit_dict = _get_unit_dict_data(unit)
-        await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
+            unit_dict["is_in_db"] = True
+            await self._unit_collection.insert_one(unit_dict)
 
     @async_time_execution
     async def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: tp.Any) -> None:

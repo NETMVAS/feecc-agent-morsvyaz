@@ -54,7 +54,7 @@ class WorkBench(metaclass=SingletonMeta):
             raise StateForbiddenError("Cannot create a new unit unless workbench has state AuthorizedIdling")
 
         unit = Unit(schema)
-        await self._database.upload_unit(unit)
+        await self._database.push_unit(unit)
 
         if CONFIG.printer.print_barcode and CONFIG.printer.enable:
             if unit.schema.parent_schema_id is None:
@@ -158,9 +158,7 @@ class WorkBench(metaclass=SingletonMeta):
         self.unit.assign_component(component)
 
         if self.unit.components_filled:
-            for component in self.unit.components_units:
-                await self._database.update_unit(component)
-
+            await self._database.push_unit(self.unit)
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=StateForbiddenError)
@@ -192,7 +190,7 @@ class WorkBench(metaclass=SingletonMeta):
             premature=premature,
             override_timestamp=override_timestamp,
         )
-        await self._database.update_unit(self.unit)
+        await self._database.push_unit(self.unit)
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
@@ -241,7 +239,4 @@ class WorkBench(metaclass=SingletonMeta):
             if CONFIG.robonomics.enable_datalog and res is not None:
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
-        if self.unit.is_in_db:
-            await self._database.update_unit(self.unit)
-        else:
-            await self._database.upload_unit(self.unit)
+        await self._database.push_unit(self.unit)
