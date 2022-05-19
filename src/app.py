@@ -7,6 +7,7 @@ import _employee_router
 import _unit_router
 import _workbench_router
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
+from feecc_workbench.WorkBench import WorkBench
 from feecc_workbench.database import MongoDbWrapper
 
 # apply logging configuration
@@ -37,6 +38,7 @@ def startup_event() -> None:
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
+    await WorkBench().shutdown()
     MongoDbWrapper().close_connection()
 
 

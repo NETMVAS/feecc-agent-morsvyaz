@@ -240,3 +240,23 @@ class WorkBench(metaclass=SingletonMeta):
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         await self._database.push_unit(self.unit)
+
+    async def shutdown(self) -> None:
+        logger.info("Workbench shutdown sequence initiated")
+
+        if self.state == State.PRODUCTION_STAGE_ONGOING_STATE:
+            logger.warning(
+                "Ending ongoing operation prematurely. Reason: Unfinished when Workbench shutdown sequence initiated"
+            )
+            await self.end_operation(
+                premature=True,
+                additional_info={"Ended reason": "Unfinished when Workbench shutdown sequence initiated"},
+            )
+
+        if self.state in (State.UNIT_ASSIGNED_IDLING_STATE, State.GATHER_COMPONENTS_STATE):
+            self.remove_unit()
+
+        if self.state == State.AUTHORIZED_IDLING_STATE:
+            self.log_out()
+
+        logger.info("Workbench shutdown sequence complete")
