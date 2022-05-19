@@ -84,23 +84,37 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
 
     async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
+        # get nested component units
+        components_internal_ids = unit_dict.get("components_internal_ids", [])
+        components_units = []
+
+        for component_internal_id in components_internal_ids:
+            component_unit = await self.get_unit_by_internal_id(component_internal_id)
+            components_units.append(component_unit)
+
+        # get biography objects instead of dicts
+        stage_dicts = unit_dict.get("prod_stage_dicts", [])
+        biography = []
+
+        for stage_dict in stage_dicts:
+            production_stage = ProductionStage(**stage_dict)
+            production_stage.is_in_db = True
+            biography.append(production_stage)
+
+        # construct a Unit object from the document data
         return Unit(
             schema=await self.get_schema_by_id(unit_dict["schema_id"]),
-            uuid=unit_dict.get("uuid", None),
-            internal_id=unit_dict.get("internal_id", None),
+            uuid=unit_dict.get("uuid"),
+            internal_id=unit_dict.get("internal_id"),
             is_in_db=True,
-            biography=[ProductionStage(**stage, is_in_db=True) for stage in unit_dict.get("prod_stage_dicts", [])]
-            or None,
-            components_units=[
-                await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
-            ]
-            or None,
-            featured_in_int_id=unit_dict.get("featured_in_int_id", None),
-            passport_short_url=unit_dict.get("passport_short_url", None),
-            passport_ipfs_cid=unit_dict.get("passport_ipfs_cid", None),
-            txn_hash=unit_dict.get("txn_hash", None),
-            serial_number=unit_dict.get("serial_number", None),
-            creation_time=unit_dict.get("creation_time", None),
+            biography=biography or None,
+            components_units=components_units or None,
+            featured_in_int_id=unit_dict.get("featured_in_int_id"),
+            passport_short_url=unit_dict.get("passport_short_url"),
+            passport_ipfs_cid=unit_dict.get("passport_ipfs_cid"),
+            txn_hash=unit_dict.get("txn_hash"),
+            serial_number=unit_dict.get("serial_number"),
+            creation_time=unit_dict.get("creation_time"),
             status=unit_dict.get("status", None),
         )
 
