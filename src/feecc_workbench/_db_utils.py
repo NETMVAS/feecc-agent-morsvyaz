@@ -29,7 +29,6 @@ def _get_unit_dict_data(unit: Unit) -> tp.Dict[str, tp.Union[str, bool, None, tp
         "schema_id": unit.schema.schema_id,
         "uuid": unit.uuid,
         "internal_id": unit.internal_id,
-        "is_in_db": unit.is_in_db,
         "passport_short_url": unit.passport_short_url,
         "passport_ipfs_cid": unit.passport_ipfs_cid,
         "txn_hash": unit.txn_hash,

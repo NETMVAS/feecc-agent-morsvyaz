@@ -49,11 +49,13 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         tasks = []
 
         for stage in production_stages:
+            stage_dict = asdict(stage)
+            del stage_dict["is_in_db"]
+
             if stage.is_in_db:
-                task = UpdateOne({"id": stage.id}, {"$set": asdict(stage)})
+                task = UpdateOne({"id": stage.id}, {"$set": stage_dict})
             else:
-                stage.is_in_db = True
-                task = InsertOne(asdict(stage))
+                task = InsertOne(stage_dict)
 
             tasks.append(task)
 
@@ -72,7 +74,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         if unit.is_in_db:
             await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
         else:
-            unit_dict["is_in_db"] = True
             await self._unit_collection.insert_one(unit_dict)
 
     @async_time_execution
@@ -87,8 +88,9 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             schema=await self.get_schema_by_id(unit_dict["schema_id"]),
             uuid=unit_dict.get("uuid", None),
             internal_id=unit_dict.get("internal_id", None),
-            is_in_db=unit_dict.get("is_in_db", None),
-            biography=[ProductionStage(**stage) for stage in unit_dict.get("prod_stage_dicts", [])] or None,
+            is_in_db=True,
+            biography=[ProductionStage(**stage, is_in_db=True) for stage in unit_dict.get("prod_stage_dicts", [])]
+            or None,
             components_units=[
                 await self.get_unit_by_internal_id(id_) for id_ in unit_dict.get("components_internal_ids", [])
             ]
