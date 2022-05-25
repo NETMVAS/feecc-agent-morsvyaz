@@ -1,23 +1,28 @@
 import asyncio
+import typing as tp
 from queue import Queue
 from threading import Lock, Thread
 
 from loguru import logger
-from robonomicsinterface import RobonomicsInterface
+from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
 from .database import MongoDbWrapper
 from .utils import async_time_execution, time_execution
 
-if CONFIG.robonomics.enable_datalog:
-    ROBONOMICS_CLIENT = RobonomicsInterface(
-        seed=CONFIG.robonomics.account_seed or None,
-        remote_ws=CONFIG.robonomics.substrate_node_uri or None,
-    )
-else:
-    ROBONOMICS_CLIENT = None
-
+ROBONOMICS_ACCOUNT: tp.Optional[Account] = None
+DATALOG_CLIENT: tp.Optional[Datalog] = None
 CLIENT_LOCK = Lock()
+
+if CONFIG.robonomics.enable_datalog:
+    ROBONOMICS_ACCOUNT = Account(
+        seed=CONFIG.robonomics.account_seed,
+        remote_ws=CONFIG.robonomics.substrate_node_uri,
+    )
+    DATALOG_CLIENT = Datalog(
+        account=ROBONOMICS_ACCOUNT,
+        wait_for_inclusion=False,
+    )
 
 
 @async_time_execution
@@ -27,8 +32,6 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     This operation requires waiting for the block to be written in the blockchain,
     which takes 15 seconds on average, so it's done in another thread
     """
-    assert ROBONOMICS_CLIENT is not None, "Robonomics interface client has not been initialized"
-
     queue: Queue[str] = Queue(maxsize=1)
     event = asyncio.Event()
     Thread(target=_post_to_datalog, args=(content, queue, event, CLIENT_LOCK)).start()
@@ -43,10 +46,11 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
 @time_execution
 def _post_to_datalog(content: str, queue: Queue[str], event: asyncio.Event, lock: Lock) -> None:
     """echo provided string to the Robonomics datalog"""
+    assert DATALOG_CLIENT is not None, "Robonomics interface client has not been initialized"
     logger.info(f"Posting data '{content}' to Robonomics datalog")
 
     lock.acquire(timeout=180)
-    txn_hash: str = ROBONOMICS_CLIENT.record_datalog(content)
+    txn_hash: str = DATALOG_CLIENT.record(data=content)
     lock.release()
 
     logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
