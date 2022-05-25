@@ -1,3 +1,5 @@
+# There are no binaries of this packages as of today for ARM platforms,
+# so compilation is required
 FROM python:3.10 as dependency-compilation
 WORKDIR /tmp
 RUN apt-get update && apt-get install -y\
@@ -13,6 +15,10 @@ RUN . /root/.cargo/env && pip install py-ed25519-bindings
 RUN . /root/.cargo/env && pip install py-sr25519-bindings
 RUN . /root/.cargo/env && pip install cryptography
 
+# At this stage we convert Poetry's dependency file into a more traditional
+# requirements.txt to avoid installing Poetry into the final container.
+# Although very slow, this cannot be skipped, as we need to resolve dependencies
+# for the exact platform the client is using.
 FROM python:3.10 as requirements-stage
 WORKDIR /tmp
 COPY --from=dependency-compilation /root/.cache/pip /root/.cache/pip
@@ -20,6 +26,8 @@ RUN pip install poetry
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
+# Final container build. Uses pre-compiled dependencies and requirements.txt
+# obtained in the previous steps
 FROM python:3.10
 WORKDIR /code
 COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
