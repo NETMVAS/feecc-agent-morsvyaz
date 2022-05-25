@@ -15,6 +15,7 @@ RUN . /root/.cargo/env && pip install cryptography
 
 FROM python:3.10 as requirements-stage
 WORKDIR /tmp
+COPY --from=dependency-compilation /root/.cache/pip /root/.cache/pip
 RUN pip install poetry
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
