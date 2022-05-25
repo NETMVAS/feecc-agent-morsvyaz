@@ -1,21 +1,23 @@
-name: Build a Docker image and push it into the containrer registry
+name: Docker image build and push
 
 on:
   push:
-    branches: [ development, main ]
+    branches:
+      - development
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 env:
   PROJECT_NAME: feecc-workbench-daemon
-  BRANCH_NAME: latest
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
 
       - name: Install doctl
         uses: digitalocean/action-doctl@v2.1.0
