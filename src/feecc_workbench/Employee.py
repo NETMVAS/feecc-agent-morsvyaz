@@ -1,5 +1,4 @@
 import hashlib
-import typing as tp
 from dataclasses import dataclass
 
 
@@ -14,7 +13,7 @@ class Employee:
         self.passport_code = self.get_passport_code()
 
     @property
-    def data(self) -> tp.Dict[str, str]:
+    def data(self) -> dict[str, str]:
         return {"name": self.name, "position": self.position}
 
     def get_passport_code(self) -> str:

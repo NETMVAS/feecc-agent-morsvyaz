@@ -1,5 +1,3 @@
-import typing as tp
-
 import httpx
 from loguru import logger
 
@@ -10,7 +8,7 @@ YOURLS_CONFIG = CONFIG.yourls
 
 
 @async_time_execution
-async def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
+async def generate_short_url(underlying_url: str | None = None) -> str:
     """
     :return keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :return link: full yourls url. E.g. url.today/6b

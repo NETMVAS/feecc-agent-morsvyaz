@@ -1,15 +1,13 @@
-import typing as tp
-
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from starlette import status
 
 from dependencies import get_revision_pending_units, get_schema_by_id, get_unit_by_internal_id
 from feecc_workbench import models as mdl
-from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import WorkBench
 from feecc_workbench.exceptions import StateForbiddenError
 from feecc_workbench.states import State
+from feecc_workbench.Unit import Unit
+from feecc_workbench.WorkBench import WorkBench
 
 WORKBENCH = WorkBench()
 
@@ -19,10 +17,10 @@ router = APIRouter(
 )
 
 
-@router.post("/new/{schema_id}", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse])  # type: ignore
+@router.post("/new/{schema_id}", response_model=mdl.UnitOut | mdl.GenericResponse)
 async def create_unit(
     schema: mdl.ProductionSchema = Depends(get_schema_by_id),
-) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
+) -> mdl.UnitOut | mdl.GenericResponse:
     """handle new Unit creation"""
     try:
         unit: Unit = await WORKBENCH.create_new_unit(schema)
@@ -68,7 +66,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
 
 
 @router.get("/pending_revision", response_model=mdl.UnitOutPending)
-def get_revision_pending(units: tp.List[tp.Dict[str, str]] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
+def get_revision_pending(units: list[dict[str, str]] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
     """return all units staged for revision"""
     return mdl.UnitOutPending(
         status_code=status.HTTP_200_OK,

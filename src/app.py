@@ -7,8 +7,8 @@ import _employee_router
 import _unit_router
 import _workbench_router
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
-from feecc_workbench.WorkBench import WorkBench
 from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.WorkBench import WorkBench
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])

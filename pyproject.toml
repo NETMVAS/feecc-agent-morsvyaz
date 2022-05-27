@@ -6,7 +6,7 @@ authors = ["arseniiarsenii <arseniivelichko2@gmail.com>"]
 license = "Apache 2.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.9,<4.0"
 Pillow = "^8.2.0"
 PyYAML = "^5.4.1"
 brother-ql = "^0.9.4"
@@ -35,6 +35,10 @@ pre-commit = "^2.15.0"
 pytest-cov = "^3.0.0"
 ssort = "^0.11.5"
 black = "^22.3.0"
+flake8-new-union-types = "^0.4.0"
+flake8-pep585 = "^0.1.5"
+pyupgrade = "^2.32.1"
+isort = "^5.10.1"
 
 [tool.pytest.ini_options]
 markers = ["short_url"]

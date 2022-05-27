@@ -1,5 +1,5 @@
 import asyncio
-import typing as tp
+from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
@@ -7,12 +7,12 @@ from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from feecc_workbench import models as mdl
-from feecc_workbench.Employee import Employee
-from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.states import State
+from feecc_workbench.Unit import Unit
+from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 
 WORKBENCH = WorkBench()
 
@@ -46,7 +46,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     return get_workbench_status_data()
 
 
-async def state_update_generator(event: asyncio.Event) -> tp.AsyncGenerator[str, None]:
+async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, None]:
     """State update event generator for SSE streaming"""
     logger.info("SSE connection to state streaming endpoint established.")
 
@@ -134,7 +134,7 @@ async def get_schemas() -> mdl.SchemasList:
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
-        included_schemas: tp.Optional[tp.List[mdl.SchemaListEntry]] = (
+        included_schemas: list[mdl.SchemaListEntry] | None = (
             [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
             if schema.is_composite
             else None
@@ -161,11 +161,11 @@ async def get_schemas() -> mdl.SchemasList:
 
 @router.get(
     "/production-schemas/{schema_id}",
-    response_model=tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse],  # type: ignore
+    response_model=mdl.ProductionSchemaResponse | mdl.GenericResponse,
 )
 async def get_schema(
     schema: mdl.ProductionSchema = Depends(get_schema_by_id),
-) -> tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse]:
+) -> mdl.ProductionSchemaResponse | mdl.GenericResponse:
     """get schema by it's ID"""
     return mdl.ProductionSchemaResponse(
         status_code=status.HTTP_200_OK,

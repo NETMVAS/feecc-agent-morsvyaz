@@ -1,5 +1,4 @@
 import enum
-import typing as tp
 
 
 class State(enum.Enum):
@@ -13,7 +12,7 @@ class State(enum.Enum):
 
 
 S = State
-STATE_TRANSITION_MAP: tp.Dict[State, tp.List[State]] = {
+STATE_TRANSITION_MAP: dict[State, list[State]] = {
     S.AWAIT_LOGIN_STATE: [S.AUTHORIZED_IDLING_STATE],
     S.AUTHORIZED_IDLING_STATE: [S.UNIT_ASSIGNED_IDLING_STATE, S.AWAIT_LOGIN_STATE, S.GATHER_COMPONENTS_STATE],
     S.GATHER_COMPONENTS_STATE: [S.AUTHORIZED_IDLING_STATE, S.UNIT_ASSIGNED_IDLING_STATE],

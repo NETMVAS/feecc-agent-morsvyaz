@@ -1,5 +1,6 @@
 from __future__ import annotations
-import typing as tp
+
+from typing import Any
 
 from loguru import logger
 
@@ -10,9 +11,9 @@ class SingletonMeta(type):
     This implementation is __init__ signature agnostic.
     """
 
-    _instances: tp.Dict[tp.Any, tp.Any] = {}
+    _instances: dict[Any, Any] = {}
 
-    def __call__(cls: SingletonMeta, *args: tp.Any, **kwargs: tp.Any) -> tp.Any:
+    def __call__(cls: SingletonMeta, *args: Any, **kwargs: Any) -> Any:
         """
         Possible changes to the value of the `__init__` argument do not affect
         the returned instance.

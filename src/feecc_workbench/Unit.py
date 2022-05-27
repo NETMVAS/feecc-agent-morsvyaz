@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import datetime as dt
-import typing as tp
 from functools import reduce
 from operator import add
+from typing import no_type_check
 from uuid import uuid4
 
 from loguru import logger
 
+from ._Barcode import Barcode
 from .Employee import Employee
+from .models import ProductionSchema
 from .ProductionStage import ProductionStage
 from .Types import AdditionalInfo
-from ._Barcode import Barcode
-from .models import ProductionSchema
 from .unit_utils import UnitStatus, biography_factory
 from .utils import TIMESTAMP_FORMAT, timestamp
 
@@ -23,18 +23,18 @@ class Unit:
     def __init__(
         self,
         schema: ProductionSchema,
-        uuid: tp.Optional[str] = None,
-        internal_id: tp.Optional[str] = None,
-        is_in_db: tp.Optional[bool] = None,
-        biography: tp.Optional[tp.List[ProductionStage]] = None,
-        components_units: tp.Optional[tp.List[Unit]] = None,
-        featured_in_int_id: tp.Optional[str] = None,
-        passport_short_url: tp.Optional[str] = None,
-        passport_ipfs_cid: tp.Optional[str] = None,
-        txn_hash: tp.Optional[str] = None,
-        serial_number: tp.Optional[str] = None,
-        creation_time: tp.Optional[dt.datetime] = None,
-        status: tp.Union[UnitStatus, str] = UnitStatus.production,
+        uuid: str | None = None,
+        internal_id: str | None = None,
+        is_in_db: bool | None = None,
+        biography: list[ProductionStage] | None = None,
+        components_units: list[Unit] | None = None,
+        featured_in_int_id: str | None = None,
+        passport_short_url: str | None = None,
+        passport_ipfs_cid: str | None = None,
+        txn_hash: str | None = None,
+        serial_number: str | None = None,
+        creation_time: dt.datetime | None = None,
+        status: UnitStatus | str = UnitStatus.production,
     ) -> None:
         self.status: UnitStatus = UnitStatus(status) if isinstance(status, str) else status
 
@@ -45,23 +45,23 @@ class Unit:
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
-        self.passport_short_url: tp.Optional[str] = passport_short_url
-        self.passport_ipfs_cid: tp.Optional[str] = passport_ipfs_cid
-        self.txn_hash: tp.Optional[str] = txn_hash
-        self.serial_number: tp.Optional[str] = serial_number
-        self.components_units: tp.List[Unit] = components_units or []
-        self.featured_in_int_id: tp.Optional[str] = featured_in_int_id
-        self.employee: tp.Optional[Employee] = None
-        self.biography: tp.List[ProductionStage] = biography or biography_factory(schema, self.uuid)
+        self.passport_short_url: str | None = passport_short_url
+        self.passport_ipfs_cid: str | None = passport_ipfs_cid
+        self.txn_hash: str | None = txn_hash
+        self.serial_number: str | None = serial_number
+        self.components_units: list[Unit] = components_units or []
+        self.featured_in_int_id: str | None = featured_in_int_id
+        self.employee: Employee | None = None
+        self.biography: list[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.now()
 
     @property
-    def components_schema_ids(self) -> tp.List[str]:
+    def components_schema_ids(self) -> list[str]:
         return self.schema.required_components_schema_ids or []
 
     @property
-    def components_internal_ids(self) -> tp.List[str]:
+    def components_internal_ids(self) -> list[str]:
         return [c.internal_id for c in self.components_units]
 
     @property
@@ -79,7 +79,7 @@ class Unit:
         return True
 
     @property
-    def next_pending_operation(self) -> tp.Optional[ProductionStage]:
+    def next_pending_operation(self) -> ProductionStage | None:
         """get next pending operation if any"""
         for operation in self.biography:
             if not operation.completed:
@@ -105,8 +105,8 @@ class Unit:
 
         return reduce(add, (stage_len(stage) for stage in self.biography)) if self.biography else dt.timedelta(0)
 
-    @tp.no_type_check
-    def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
+    @no_type_check
+    def assigned_components(self) -> dict[str, str | None] | None:
         """get a mapping for all the currently assigned components VS the desired components"""
         assigned_components = {component.schema.schema_id: component.internal_id for component in self.components_units}
 
@@ -153,7 +153,7 @@ class Unit:
     def start_operation(
         self,
         employee: Employee,
-        additional_info: tp.Optional[AdditionalInfo] = None,
+        additional_info: AdditionalInfo | None = None,
     ) -> None:
         """begin the provided operation and save data about it"""
         operation = self.next_pending_operation
@@ -181,10 +181,10 @@ class Unit:
 
     async def end_operation(
         self,
-        video_hashes: tp.Optional[tp.List[str]] = None,
-        additional_info: tp.Optional[AdditionalInfo] = None,
+        video_hashes: list[str] | None = None,
+        additional_info: AdditionalInfo | None = None,
         premature: bool = False,
-        override_timestamp: tp.Optional[str] = None,
+        override_timestamp: str | None = None,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data

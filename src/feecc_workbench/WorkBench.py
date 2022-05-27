@@ -2,27 +2,26 @@ from __future__ import annotations
 
 import asyncio
 import os
-import typing as tp
 from pathlib import Path
 
 from loguru import logger
 
-from .Camera import Camera
-from .Employee import Employee
-from .Singleton import SingletonMeta
-from .Types import AdditionalInfo
-from .Unit import Unit
 from ._image_generation import create_qr, create_seal_tag
 from ._short_url_generator import generate_short_url
+from .Camera import Camera
 from .config import CONFIG
 from .database import MongoDbWrapper
+from .Employee import Employee
 from .exceptions import StateForbiddenError
 from .ipfs import publish_file
 from .models import ProductionSchema
 from .passport_generator import construct_unit_passport
 from .printer import print_image
 from .robonomics import post_to_datalog
+from .Singleton import SingletonMeta
 from .states import STATE_TRANSITION_MAP, State
+from .Types import AdditionalInfo
+from .Unit import Unit
 from .unit_utils import UnitStatus
 from .utils import timestamp
 
@@ -39,10 +38,10 @@ class WorkBench(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
         self.number: int = CONFIG.workbench.number
-        camera_number: tp.Optional[int] = CONFIG.camera.camera_no
-        self.camera: tp.Optional[Camera] = Camera(camera_number) if camera_number and CONFIG.camera.enable else None
-        self.employee: tp.Optional[Employee] = None
-        self.unit: tp.Optional[Unit] = None
+        camera_number: int | None = CONFIG.camera.camera_no
+        self.camera: Camera | None = Camera(camera_number) if camera_number and CONFIG.camera.enable else None
+        self.employee: Employee | None = None
+        self.unit: Unit | None = None
         self.state: State = State.AWAIT_LOGIN_STATE
 
         logger.info(f"Workbench {self.number} was initialized")
@@ -162,7 +161,7 @@ class WorkBench(metaclass=SingletonMeta):
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=StateForbiddenError)
-    async def end_operation(self, additional_info: tp.Optional[AdditionalInfo] = None, premature: bool = False) -> None:
+    async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
         assert self.unit is not None, "No unit is assigned to the workbench"
@@ -170,12 +169,12 @@ class WorkBench(metaclass=SingletonMeta):
         logger.info("Trying to end operation")
         override_timestamp = timestamp()
 
-        ipfs_hashes: tp.List[str] = []
+        ipfs_hashes: list[str] = []
         if self.camera is not None and self.employee is not None:
             await self.camera.end(self.employee.rfid_card_id)
             override_timestamp = timestamp()
 
-            file: tp.Optional[str] = self.camera.record.remote_file_path  # type: ignore
+            file: str | None = self.camera.record.remote_file_path  # type: ignore
 
             if file is not None:
                 data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)

@@ -1,4 +1,3 @@
-import typing as tp
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -15,8 +14,8 @@ CAMERAMAN_ADDRESS: str = CONFIG.camera.cameraman_uri
 class Record:
     rec_id: str
     start_time: datetime = field(default_factory=datetime.now)
-    end_time: tp.Optional[datetime] = None
-    remote_file_path: tp.Optional[str] = None
+    end_time: datetime | None = None
+    remote_file_path: str | None = None
 
     @property
     def is_ongoing(self) -> bool:
@@ -28,7 +27,7 @@ class Camera:
 
     def __init__(self, number: int) -> None:
         self.number: int = number
-        self.record: tp.Optional[Record] = None
+        self.record: Record | None = None
         self._check_presence()
 
     def _check_presence(self) -> None:
@@ -39,7 +38,7 @@ class Camera:
             logger.critical("GW connection has been refused. Is it up?")
             return
 
-        cameras: tp.List[tp.Dict[str, tp.Union[int, str]]] = response.json()["cameras"]
+        cameras: list[dict[str, int | str]] = response.json()["cameras"]
 
         for camera in cameras:
             if camera["number"] == self.number:

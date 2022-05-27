@@ -1,5 +1,5 @@
-import typing as tp
 from dataclasses import asdict
+from typing import Any
 
 import pydantic
 from loguru import logger
@@ -7,15 +7,15 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, Asyn
 from pymongo import InsertOne, UpdateOne
 from yarl import URL
 
+from ._db_utils import _get_database_client, _get_unit_dict_data
+from .config import CONFIG
 from .Employee import Employee
+from .exceptions import EmployeeNotFoundError, UnitNotFoundError
+from .models import ProductionSchema
 from .ProductionStage import ProductionStage
 from .Singleton import SingletonMeta
 from .Types import Document
 from .Unit import Unit
-from ._db_utils import _get_database_client, _get_unit_dict_data
-from .config import CONFIG
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError
-from .models import ProductionSchema
 from .unit_utils import UnitStatus
 from .utils import async_time_execution
 
@@ -45,7 +45,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._client.close()
         logger.info("MongoDB connection closed")
 
-    async def _bulk_push_production_stages(self, production_stages: tp.List[ProductionStage]) -> None:
+    async def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
         tasks = []
 
         for stage in production_stages:
@@ -77,7 +77,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             await self._unit_collection.insert_one(unit_dict)
 
     @async_time_execution
-    async def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: tp.Any) -> None:
+    async def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
         await self._unit_collection.find_one_and_update(
             {"internal_id": unit_internal_id}, {"$set": {field_name: field_val}}
         )
@@ -119,7 +119,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         )
 
     @async_time_execution
-    async def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> tp.List[tp.Dict[str, str]]:
+    async def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
         pipeline = [
             {"$match": {"status": status.value}},
             {
@@ -136,7 +136,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             {"$unwind": {"path": "$unit_name"}},
             {"$project": {"_id": 0, "unit_name": 1, "internal_id": 1}},
         ]
-        result: tp.List[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=None)
+        result: list[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=None)
 
         return [
             {
@@ -149,9 +149,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     @async_time_execution
     async def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
-        employee_data: tp.Optional[Document] = await self._employee_collection.find_one(
-            {"rfid_card_id": card_id}, {"_id": 0}
-        )
+        employee_data: Document | None = await self._employee_collection.find_one({"rfid_card_id": card_id}, {"_id": 0})
 
         if employee_data is None:
             message = f"No employee with card ID {card_id}"
@@ -180,7 +178,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         ]
 
         try:
-            result: tp.List[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=1)
+            result: list[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=1)
         except Exception as E:
             logger.error(E)
             raise E
@@ -195,7 +193,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         return await self._get_unit_from_raw_db_data(unit_dict)
 
     @async_time_execution
-    async def get_all_schemas(self) -> tp.List[ProductionSchema]:
+    async def get_all_schemas(self) -> list[ProductionSchema]:
         """get all production schemas"""
         schema_data = await self._schemas_collection.find({}, {"_id": 0}).to_list(length=None)
         return [pydantic.parse_obj_as(ProductionSchema, schema) for schema in schema_data]

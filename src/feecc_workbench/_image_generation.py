@@ -1,17 +1,16 @@
 import os
 import time
-import typing as tp
 from datetime import datetime as dt
 
 import qrcode
-from PIL import Image, ImageDraw, ImageFont, ImageOps
 from loguru import logger
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .config import CONFIG
 from .utils import time_execution
 
 # color values
-color = tp.Tuple[int, int, int]
+color = tuple[int, int, int]
 WHITE: color = (255, 255, 255)
 BLACK: color = (0, 0, 0)
 
@@ -108,7 +107,7 @@ def create_seal_tag() -> str:
     # add a timestamp to the seal tag if needed
     if timestamp_enabled:
         txt_w, _ = seal_tag_draw.textsize(tag_timestamp, font)
-        xy: tp.Tuple[int, int] = int((image_width - txt_w) / 2), (upper_field + main_txt_h)
+        xy: tuple[int, int] = int((image_width - txt_w) / 2), (upper_field + main_txt_h)
         seal_tag_draw.text(xy=xy, text=tag_timestamp, fill=BLACK, font=font, align="center")
 
     # save the image in the output folder

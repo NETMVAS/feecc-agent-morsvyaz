@@ -1,6 +1,5 @@
 import os
 import sys
-import typing as tp
 
 import environ
 from dotenv import load_dotenv
@@ -21,8 +20,8 @@ class AppConfig:
     @environ.config(frozen=True)
     class RobonomicsNetwork:
         enable_datalog: bool = environ.bool_var(default=False, help="Whether to enable datalog posting or not")
-        account_seed: tp.Optional[str] = environ.var(default=None, help="Your Robonomics network account seed phrase")
-        substrate_node_uri: tp.Optional[str] = environ.var(default=None, help="Robonomics network node URI")
+        account_seed: str | None = environ.var(default=None, help="Your Robonomics network account seed phrase")
+        substrate_node_uri: str | None = environ.var(default=None, help="Robonomics network node URI")
 
     @environ.config(frozen=True)
     class Yourls:
@@ -59,7 +58,7 @@ class AppConfig:
     class Camera:
         enable: bool = environ.bool_var(default=False, help="Whether to enable Cameraman or not")
         cameraman_uri: str = environ.var(default="http://127.0.0.1:8081", help="Your Cameraman deployment URI")
-        camera_no: tp.Optional[int] = environ.var(default=None, converter=int, help="Camera number")
+        camera_no: int | None = environ.var(default=None, converter=int, help="Camera number")
 
     @environ.config(frozen=True)
     class WorkBenchConfig:

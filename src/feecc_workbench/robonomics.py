@@ -1,5 +1,4 @@
 import asyncio
-import typing as tp
 from queue import Queue
 from threading import Lock, Thread
 
@@ -10,8 +9,8 @@ from .config import CONFIG
 from .database import MongoDbWrapper
 from .utils import async_time_execution, time_execution
 
-ROBONOMICS_ACCOUNT: tp.Optional[Account] = None
-DATALOG_CLIENT: tp.Optional[Datalog] = None
+ROBONOMICS_ACCOUNT: Account | None = None
+DATALOG_CLIENT: Datalog | None = None
 CLIENT_LOCK = Lock()
 
 if CONFIG.robonomics.enable_datalog:

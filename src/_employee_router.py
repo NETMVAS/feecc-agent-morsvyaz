@@ -1,5 +1,3 @@
-import typing as tp
-
 from fastapi import APIRouter, Depends
 from loguru import logger
 from starlette import status
@@ -7,8 +5,8 @@ from starlette import status
 from dependencies import get_employee_by_card_id
 from feecc_workbench import models as mdl
 from feecc_workbench.Employee import Employee
-from feecc_workbench.WorkBench import WorkBench
 from feecc_workbench.exceptions import StateForbiddenError
+from feecc_workbench.WorkBench import WorkBench
 
 WORKBENCH = WorkBench()
 
@@ -26,10 +24,10 @@ def get_employee_data(employee: mdl.EmployeeWCardModel = Depends(get_employee_by
     )
 
 
-@router.post("/log-in", response_model=tp.Union[mdl.EmployeeOut, mdl.GenericResponse])  # type: ignore
+@router.post("/log-in", response_model=mdl.EmployeeOut | mdl.GenericResponse)
 def log_in_employee(
     employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id),
-) -> tp.Union[mdl.EmployeeOut, mdl.GenericResponse]:
+) -> mdl.EmployeeOut | mdl.GenericResponse:
     """handle logging in the Employee at a given Workbench"""
     try:
         WORKBENCH.log_in(Employee(rfid_card_id=employee.rfid_card_id, name=employee.name, position=employee.position))

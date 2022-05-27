@@ -1,6 +1,5 @@
 import datetime as dt
 import sys
-import typing as tp
 
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -24,7 +23,7 @@ def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:
         sys.exit(1)
 
 
-def _get_unit_dict_data(unit: Unit) -> tp.Dict[str, tp.Union[str, bool, None, tp.List[str], dt.datetime]]:
+def _get_unit_dict_data(unit: Unit) -> dict[str, str | bool | None | list[str] | dt.datetime]:
     return {
         "schema_id": unit.schema.schema_id,
         "uuid": unit.uuid,

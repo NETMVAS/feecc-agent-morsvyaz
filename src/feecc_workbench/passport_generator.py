@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import typing as tp
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -10,8 +10,8 @@ from .ProductionStage import ProductionStage
 from .Unit import Unit
 
 
-def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
-    stage: tp.Dict[str, tp.Any] = {
+def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
+    stage: dict[str, Any] = {
         "Наименование": prod_stage.name,
         "Код сотрудника": prod_stage.employee_name,
         "Время начала": prod_stage.session_start_time,
@@ -29,12 +29,12 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
     return stage
 
 
-def _get_passport_dict(unit: Unit) -> tp.Dict[str, tp.Any]:
+def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     """
     form a nested dictionary containing all the unit
     data to dump it into a in a human friendly passport
     """
-    passport_dict: tp.Dict[str, tp.Any] = {
+    passport_dict: dict[str, Any] = {
         "Уникальный номер паспорта изделия": unit.uuid,
         "Модель изделия": unit.model_name,
     }
@@ -56,7 +56,7 @@ def _get_passport_dict(unit: Unit) -> tp.Dict[str, tp.Any]:
     return passport_dict
 
 
-def _save_passport(unit: Unit, passport_dict: tp.Dict[str, tp.Any], path: str) -> None:
+def _save_passport(unit: Unit, passport_dict: dict[str, Any], path: str) -> None:
     """makes a unit passport and dumps it in a form of a YAML file"""
     if not os.path.isdir("unit-passports"):
         os.mkdir("unit-passports")
