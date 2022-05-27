@@ -53,6 +53,7 @@ exclude = "test*"
 strict = true
 ignore_missing_imports  = true
 allow_untyped_decorators = true
+implicit_reexport = true
 
 [tool.black]
 line-length = 120
