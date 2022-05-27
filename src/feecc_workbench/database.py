@@ -14,7 +14,7 @@ from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
 from .ProductionStage import ProductionStage
 from .Singleton import SingletonMeta
-from .Types import Document
+from .Types import BulkWriteTask, Document
 from .Unit import Unit
 from .unit_utils import UnitStatus
 from .utils import async_time_execution
@@ -46,15 +46,14 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.info("MongoDB connection closed")
 
     async def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
-        bulk_write_task = UpdateOne | InsertOne
-        tasks: list[bulk_write_task] = []
+        tasks: list[BulkWriteTask] = []
 
         for stage in production_stages:
             stage_dict = asdict(stage)
             del stage_dict["is_in_db"]
 
             if stage.is_in_db:
-                task: bulk_write_task = UpdateOne({"id": stage.id}, {"$set": stage_dict})
+                task: BulkWriteTask = UpdateOne({"id": stage.id}, {"$set": stage_dict})
             else:
                 task = InsertOne(stage_dict)
 
