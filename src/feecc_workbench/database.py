@@ -46,14 +46,15 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.info("MongoDB connection closed")
 
     async def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
-        tasks = []
+        bulk_write_task = UpdateOne | InsertOne
+        tasks: list[bulk_write_task] = []
 
         for stage in production_stages:
             stage_dict = asdict(stage)
             del stage_dict["is_in_db"]
 
             if stage.is_in_db:
-                task = UpdateOne({"id": stage.id}, {"$set": stage_dict})
+                task: bulk_write_task = UpdateOne({"id": stage.id}, {"$set": stage_dict})
             else:
                 task = InsertOne(stage_dict)
 
