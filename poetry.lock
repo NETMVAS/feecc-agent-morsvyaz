@@ -339,6 +339,18 @@ pycodestyle = ">=2.8.0,<2.9.0"
 pyflakes = ">=2.4.0,<2.5.0"
 
 [[package]]
+name = "flake8-new-union-types"
+version = "0.4.1"
+description = "Flake8 plugin to enforce the new Union and Optional annotation syntax defined in PEP 604"
+category = "dev"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[package.dependencies]
+attrs = ">=21.4.0"
+flake8 = ">=3.0.0"
+
+[[package]]
 name = "flake8-pep585"
 version = "0.1.5.1"
 description = "flake8 plugin to enforce new-style type hints (PEP 585)"
@@ -1164,7 +1176,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "feb9f0c3dbfbbbc4888425541893d0792c9395c27603a26a607db23282538bc1"
+content-hash = "45a3c449b2f9c7f999e8b4cdd4a73e5ffa97ad78fecaacfeca1eb9c7990fb1b7"
 
 [metadata.files]
 anyio = [
@@ -1325,6 +1337,10 @@ filelock = [
 flake8 = [
     {file = "flake8-4.0.1-py2.py3-none-any.whl", hash = "sha256:479b1304f72536a55948cb40a32dce8bb0ffe3501e26eaf292c7e60eb5e0428d"},
     {file = "flake8-4.0.1.tar.gz", hash = "sha256:806e034dda44114815e23c16ef92f95c91e4c71100ff52813adf7132a6ad870d"},
+]
+flake8-new-union-types = [
+    {file = "flake8-new-union-types-0.4.1.tar.gz", hash = "sha256:0a9dd421099f2525f8be525977ff6632b13b68719a7b0807cf49028d4287b0aa"},
+    {file = "flake8_new_union_types-0.4.1-py3-none-any.whl", hash = "sha256:92737a2f598772d5aedd05b5450c5dd200e0f1acd42b3c1f95dbbe3211af2009"},
 ]
 flake8-pep585 = [
     {file = "flake8-pep585-0.1.5.1.tar.gz", hash = "sha256:07e6fef6e7b02d5c2b363a6c7008b7aad0db1489c57b4c2629d4b04ed295cec8"},
