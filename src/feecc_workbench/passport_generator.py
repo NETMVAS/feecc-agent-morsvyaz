@@ -30,7 +30,7 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
 def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     """
     form a nested dictionary containing all the unit
-    data to dump it into a in a human friendly passport
+    data to dump it into a human friendly passport
     """
     passport_dict: dict[str, Any] = {
         "Уникальный номер паспорта изделия": unit.uuid,
