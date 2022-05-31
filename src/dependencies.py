@@ -44,7 +44,7 @@ async def get_revision_pending_units() -> list[dict[str, str]]:
 
 
 def identify_sender(event: models.HidEvent) -> models.HidEvent:
-    """identify, which device the input is coming from and if it is known return it's role"""
+    """identify, which device the input is coming from and if it is known return its role"""
     logger.debug(f"Received event dict: {event.dict(include={'string', 'name'})}")
 
     known_hid_devices: dict[str, str] = {

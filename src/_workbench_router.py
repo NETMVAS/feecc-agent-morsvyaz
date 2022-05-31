@@ -63,7 +63,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
 @router.get("/status/stream")
 async def stream_workbench_status() -> EventSourceResponse:
-    """Send updates on the workbench state into a SSE stream"""
+    """Send updates on the workbench state into an SSE stream"""
     status_stream = state_update_generator(STATE_SWITCH_EVENT)
     return EventSourceResponse(status_stream)
 
