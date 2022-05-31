@@ -17,10 +17,8 @@ router = APIRouter(
 )
 
 
-@router.post("/new/{schema_id}", response_model=mdl.UnitOut | mdl.GenericResponse)
-async def create_unit(
-    schema: mdl.ProductionSchema = Depends(get_schema_by_id),
-) -> mdl.UnitOut | mdl.GenericResponse:
+@router.post("/new/{schema_id}", response_model=mdl.UnitOut)
+async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.UnitOut:
     """handle new Unit creation"""
     try:
         unit: Unit = await WORKBENCH.create_new_unit(schema)
@@ -33,7 +31,7 @@ async def create_unit(
 
     except Exception as e:
         logger.error(f"Exception occurred while creating new Unit: {e}")
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 @router.get("/{unit_internal_id}/info", response_model=mdl.UnitInfo)
