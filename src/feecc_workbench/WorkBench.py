@@ -44,7 +44,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def create_new_unit(self, schema: ProductionSchema) -> Unit:
         """initialize a new instance of the Unit class"""
         if self.state != State.AUTHORIZED_IDLING_STATE:
@@ -78,7 +78,7 @@ class WorkBench(metaclass=SingletonMeta):
         self.state = new_state
         STATE_SWITCH_EVENT.set()
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     def log_in(self, employee: Employee) -> None:
         """authorize employee"""
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
@@ -88,7 +88,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     def log_out(self) -> None:
         """log out the employee"""
         self._validate_state_transition(State.AWAIT_LOGIN_STATE)
@@ -101,7 +101,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AWAIT_LOGIN_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     def assign_unit(self, unit: Unit) -> None:
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
@@ -120,7 +120,7 @@ class WorkBench(metaclass=SingletonMeta):
         else:
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     def remove_unit(self) -> None:
         """remove a unit from the workbench"""
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
@@ -131,7 +131,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def start_operation(self, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
@@ -145,7 +145,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def assign_component_to_unit(self, component: Unit) -> None:
         """assign provided component to a composite unit"""
         assert (
@@ -158,7 +158,7 @@ class WorkBench(metaclass=SingletonMeta):
             await self._database.push_unit(self.unit)
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
@@ -191,7 +191,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    @logger.catch(reraise=True, exclude=StateForbiddenError)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def upload_unit_passport(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         assert self.unit is not None, "No unit is assigned to the workbench"
