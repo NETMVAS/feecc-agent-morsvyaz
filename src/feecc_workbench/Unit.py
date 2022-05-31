@@ -70,22 +70,18 @@ class Unit:
 
     @property
     def components_filled(self) -> bool:
-        if self.components_schema_ids:
-            if not self.components_units:
-                return False
+        if not self.components_schema_ids:
+            return True
 
-            return len(self.components_schema_ids) == len(self.components_units)
+        if not self.components_units:
+            return False
 
-        return True
+        return len(self.components_schema_ids) == len(self.components_units)
 
     @property
     def next_pending_operation(self) -> ProductionStage | None:
         """get next pending operation if any"""
-        for operation in self.biography:
-            if not operation.completed:
-                return operation
-
-        return None
+        return next((operation for operation in self.biography if not operation.completed), None)
 
     @property
     def total_assembly_time(self) -> dt.timedelta:
