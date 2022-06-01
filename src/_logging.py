@@ -27,7 +27,7 @@ FILE_LOGGING_CONFIG = {
 
 
 # disable Uvicorn's access logs for specified endpoints
-class EnpointAccessFilter(logging.Filter):
+class EndpointAccessFilter(logging.Filter):
     excluded_endpoints = {"/docs", "/openapi.json", "/health", "/metrics", "/robots.txt"}
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -37,4 +37,4 @@ class EnpointAccessFilter(logging.Filter):
         return endpoint not in self.excluded_endpoints
 
 
-logging.getLogger("uvicorn.access").addFilter(EnpointAccessFilter())
+logging.getLogger("uvicorn.access").addFilter(EndpointAccessFilter())
