@@ -35,7 +35,7 @@ class Camera:
         try:
             response = httpx.get(f"{CAMERAMAN_ADDRESS}/cameras")
         except httpx.ConnectError:
-            logger.critical("GW connection has been refused. Is it up?")
+            logger.warning("Cameraman connection has been refused. Is it up?")
             return
 
         cameras: list[dict[str, int | str]] = response.json()["cameras"]

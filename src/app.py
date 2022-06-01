@@ -7,8 +7,9 @@ import _employee_router
 import _unit_router
 import _workbench_router
 from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
-from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.WorkBench import WorkBench
+from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.utils import check_service_connectivity
 
 # apply logging configuration
 logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
@@ -33,6 +34,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event() -> None:
+    check_service_connectivity()
     MongoDbWrapper()
 
 
