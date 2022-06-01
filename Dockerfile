@@ -34,5 +34,6 @@ COPY --from=requirements-stage /tmp/requirements.txt /src/requirements.txt
 COPY --from=dependency-compilation /root/.cache/pip /root/.cache/pip
 RUN pip install --no-cache-dir --upgrade -r /src/requirements.txt
 COPY ./src /src
-WORKDIR /src
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000", "--no-access-log"]
+HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=12 \
+    CMD curl --fail http://localhost:5000/docs || exit 1
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
