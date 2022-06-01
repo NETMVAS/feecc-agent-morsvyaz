@@ -72,7 +72,12 @@ def check_service_connectivity() -> None:
         checked_cnt += 1
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         uri = URL(service_endpoint)
-        result = sock.connect_ex((uri.host, uri.port))
+
+        try:
+            result = sock.connect_ex((uri.host, uri.port))
+        except Exception as e:
+            logger.debug(f"An error occured during socket connection attempt: {e}")
+            result = 1
 
         if result == 0:
             logger.info(f"{service_endpoint} connection tested positive")
