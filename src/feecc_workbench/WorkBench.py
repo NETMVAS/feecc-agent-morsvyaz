@@ -106,7 +106,22 @@ class WorkBench(metaclass=SingletonMeta):
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
+        def _get_unit_list(unit_: Unit) -> list[Unit]:
+            """list all the units in the component tree"""
+            units_tree = [unit_]
+            for component_ in unit_.components_units:
+                nested = _get_unit_list(component_)
+                units_tree.extend(nested)
+            return units_tree
+
         allowed = (UnitStatus.production, UnitStatus.revision)
+
+        if unit.status not in allowed:
+            for component in _get_unit_list(unit):
+                if component.status in allowed:
+                    unit = component
+                    break
+
         assert unit.status in allowed, f"Can only assign unit with status: {allowed}. {unit.status=}. Forbidden."
 
         self.unit = unit
