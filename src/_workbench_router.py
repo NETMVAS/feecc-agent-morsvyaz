@@ -7,12 +7,12 @@ from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from feecc_workbench import models as mdl
-from feecc_workbench.Employee import Employee
-from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.states import State
+from feecc_workbench.Unit import Unit
+from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 
 WORKBENCH = WorkBench()
 
