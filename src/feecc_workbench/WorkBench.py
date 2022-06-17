@@ -168,6 +168,7 @@ class WorkBench(metaclass=SingletonMeta):
         ), f"Cannot assign components unless WB is in state {State.GATHER_COMPONENTS_STATE}"
 
         self.unit.assign_component(component)
+        STATE_SWITCH_EVENT.set()
 
         if self.unit.components_filled:
             await self._database.push_unit(self.unit)
