@@ -160,7 +160,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
-    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError, ValueError))
     async def assign_component_to_unit(self, component: Unit) -> None:
         """assign provided component to a composite unit"""
         assert (
