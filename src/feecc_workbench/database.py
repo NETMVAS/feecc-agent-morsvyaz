@@ -56,6 +56,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
                 task: BulkWriteTask = UpdateOne({"id": stage.id}, {"$set": stage_dict})
             else:
                 task = InsertOne(stage_dict)
+                stage.is_in_db = True
 
             tasks.append(task)
 
