@@ -47,6 +47,8 @@ is defined by a number of environment variables:
 - **WORKBENCH_NUMBER** (Required): Workbench number
 - **HID_DEVICES_RFID_READER** (Optional): RFID reader device name
 - **HID_DEVICES_BARCODE_READER** (Optional): Barcode reader device name
+- **LOG_ECS_ENABLE** (Optional): Emit console logs in the ECS format instead of human-friendly format (defaults to
+  disabled)
 
 Deploy the Feecc Workbench Daemon with Docker-compose: At the root of the repository, type
 `sudo docker-compose up -d --build`.

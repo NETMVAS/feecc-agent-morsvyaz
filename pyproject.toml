@@ -23,6 +23,7 @@ yarl = "^1.7.2"
 sse-starlette = "^0.10.3"
 python-dotenv = "^0.20.0"
 robonomics-interface = "^1.0.3"
+ecs-logging = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.960"

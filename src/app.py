@@ -6,13 +6,13 @@ from loguru import logger
 import _employee_router
 import _unit_router
 import _workbench_router
-from _logging import CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG
+from _logging import HANDLERS
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.utils import check_service_connectivity
 from feecc_workbench.WorkBench import WorkBench
 
 # apply logging configuration
-logger.configure(handlers=[CONSOLE_LOGGING_CONFIG, FILE_LOGGING_CONFIG])
+logger.configure(handlers=HANDLERS)
 
 # create app
 app = FastAPI(title="Feecc Workbench daemon")

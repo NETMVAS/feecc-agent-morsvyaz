@@ -27,6 +27,7 @@ services:
       WORKBENCH_NUMBER: 1  # Workbench number
       HID_DEVICES_RFID_READER: IC Reader IC Reader  # RFID reader device name
       HID_DEVICES_BARCODE_READER: Newtologic  NT1640S  # Barcode reader device name
+      LOG_ECS_ENABLE: null  # Use ECS to format logs
     build:
       context: ./
       dockerfile: Dockerfile
