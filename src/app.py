@@ -1,13 +1,16 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from sse_starlette import EventSourceResponse
 
 import _employee_router
 import _unit_router
 import _workbench_router
 from _logging import HANDLERS
 from feecc_workbench.database import MongoDbWrapper
+from feecc_workbench.Messenger import MessageLevels, Messenger, message_generator
+from feecc_workbench.models import GenericResponse
 from feecc_workbench.utils import check_service_connectivity
 from feecc_workbench.WorkBench import WorkBench
 
@@ -42,6 +45,20 @@ def startup_event() -> None:
 async def shutdown_event() -> None:
     await WorkBench().shutdown()
     MongoDbWrapper().close_connection()
+
+
+@app.get("/notifications")
+async def stream_notifications() -> EventSourceResponse:
+    """Stream backend emitted notifications into an SSE stream"""
+    stream = message_generator()
+    return EventSourceResponse(stream)
+
+
+@app.post("/notifications")
+async def emit_notification(level: MessageLevels, message: str) -> GenericResponse:
+    """Emit notification into an SSE stream"""
+    await Messenger().emit_message(level, message)
+    return GenericResponse(status_code=status.HTTP_200_OK, detail="Notification emitted")
 
 
 if __name__ == "__main__":
