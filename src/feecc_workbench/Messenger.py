@@ -1,6 +1,5 @@
 import asyncio
 import json
-from asyncio import Queue
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from enum import Enum
@@ -58,7 +57,7 @@ class MessageBrocker:
 
     alive: bool = True
     brocker_id: str = field(default_factory=lambda: uuid4().hex[:4])
-    feed: Queue[Message] = field(default_factory=Queue)
+    feed: asyncio.Queue[Message] = field(default_factory=asyncio.Queue)
 
     def __post_init__(self) -> None:
         logger.debug(f"Message brocker {self.brocker_id} created")
