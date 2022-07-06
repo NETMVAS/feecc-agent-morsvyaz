@@ -115,6 +115,7 @@ class WorkBench(metaclass=SingletonMeta):
             return units_tree
 
         allowed = (UnitStatus.production, UnitStatus.revision)
+        override = unit.status == UnitStatus.built and unit.passport_ipfs_cid is None
 
         if unit.status not in allowed:
             for component in _get_unit_list(unit):
@@ -122,7 +123,9 @@ class WorkBench(metaclass=SingletonMeta):
                     unit = component
                     break
 
-        assert unit.status in allowed, f"Can only assign unit with status: {allowed}. {unit.status=}. Forbidden."
+        assert (
+            override or unit.status in allowed
+        ), f"Can only assign unit with status: {[s.value for s in allowed]}. {unit.status.value=}. Forbidden."
 
         self.unit = unit
         logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
