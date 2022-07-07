@@ -185,7 +185,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             raise E
 
         if not result:
-            message = f"Unit with {unit_internal_id=} not found"
+            message = f"Unit with internal id {unit_internal_id} not found"
             logger.warning(message)
             raise UnitNotFoundError(message)
 

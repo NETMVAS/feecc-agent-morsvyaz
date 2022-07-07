@@ -21,7 +21,7 @@ from .states import STATE_TRANSITION_MAP, State
 from .Types import AdditionalInfo
 from .Unit import Unit
 from .unit_utils import UnitStatus
-from .utils import emit_error, emit_warning, timestamp
+from .utils import emit_error, emit_success, emit_warning, timestamp
 
 STATE_SWITCH_EVENT = asyncio.Event()
 
@@ -96,7 +96,9 @@ class WorkBench(metaclass=SingletonMeta):
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
 
         self.employee = employee
-        logger.info(f"Employee {employee.name} is logged in at the workbench no. {self.number}")
+        message = f"Employee {employee.name} is logged in at the workbench no. {self.number}"
+        logger.info(message)
+        emit_success(message)
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
@@ -108,7 +110,10 @@ class WorkBench(metaclass=SingletonMeta):
         if self.state == State.UNIT_ASSIGNED_IDLING_STATE:
             self.remove_unit()
 
-        logger.info(f"Employee {self.employee.name} was logged out the Workbench {self.number}")  # type: ignore
+        assert self.employee is not None
+        message = f"Employee {self.employee.name} was logged out at the workbench no. {self.number}"
+        logger.info(message)
+        emit_success(message)
         self.employee = None
 
         self.switch_state(State.AWAIT_LOGIN_STATE)
@@ -141,7 +146,10 @@ class WorkBench(metaclass=SingletonMeta):
             raise AssertionError(message)
 
         self.unit = unit
-        logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
+
+        message = f"Unit {unit.internal_id} has been assigned to the workbench"
+        logger.info(message)
+        emit_success(message)
 
         if not unit.components_filled:
             logger.info(
@@ -161,7 +169,10 @@ class WorkBench(metaclass=SingletonMeta):
             emit_error(message)
             raise AssertionError(message)
 
-        logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")
+        message = f"Unit {self.unit.internal_id} has been removed from the workbench"
+        logger.info(message)
+        emit_success(message)
+
         self.unit = None
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
@@ -303,6 +314,7 @@ class WorkBench(metaclass=SingletonMeta):
 
     async def shutdown(self) -> None:
         logger.info("Workbench shutdown sequence initiated")
+        emit_warning("Workbench shutdown sequence initiated. Do not turn off the machine")
 
         if self.state == State.PRODUCTION_STAGE_ONGOING_STATE:
             logger.warning(
@@ -319,4 +331,6 @@ class WorkBench(metaclass=SingletonMeta):
         if self.state == State.AUTHORIZED_IDLING_STATE:
             self.log_out()
 
-        logger.info("Workbench shutdown sequence complete")
+        message = "Workbench shutdown sequence complete"
+        logger.info(message)
+        emit_success(message)

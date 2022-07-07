@@ -12,6 +12,7 @@ from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.states import State
 from feecc_workbench.Unit import Unit
+from feecc_workbench.utils import emit_warning
 from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 
 WORKBENCH = WorkBench()
@@ -182,6 +183,7 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                 try:
                     employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
                 except EmployeeNotFoundError as e:
+                    emit_warning(str(e))
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
                 WORKBENCH.log_in(employee)

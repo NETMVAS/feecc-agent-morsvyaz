@@ -36,7 +36,7 @@ class Message:
             "variant": self.level.value,
             "persist": False,
             "preventDuplicate": True,
-            "autoHideDuration": 10000,
+            "autoHideDuration": 5000,
             "anchorOrigin": {
                 "vertical": "bottom",
                 "horizontal": "left",
@@ -47,6 +47,8 @@ class Message:
             case MessageLevels.ERROR:
                 message_dict["persist"] = True
                 message_dict["preventDuplicate"] = False
+            case MessageLevels.WARNING:
+                message_dict["autoHideDuration"] = 10000
 
         return message_dict
 

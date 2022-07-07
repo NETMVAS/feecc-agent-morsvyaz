@@ -37,7 +37,7 @@ async def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
     try:
         return await MongoDbWrapper().get_schema_by_id(schema_id)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 async def get_revision_pending_units() -> list[dict[str, str]]:
