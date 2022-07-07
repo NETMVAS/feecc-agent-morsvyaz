@@ -3,7 +3,7 @@ from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
 from .database import MongoDbWrapper
-from .utils import async_time_execution, emit_error
+from .utils import async_time_execution, emit_error, emit_success
 
 ROBONOMICS_ACCOUNT: Account | None = None
 DATALOG_CLIENT: Datalog | None = None
@@ -36,6 +36,8 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
         logger.error(message)
         emit_error(message)
 
-    logger.info(f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}")
+    message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
+    emit_success(message)
+    logger.info(message)
     logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
     await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
