@@ -12,6 +12,7 @@ from .database import MongoDbWrapper
 from .Employee import Employee
 from .exceptions import StateForbiddenError
 from .ipfs import publish_file
+from .Messenger import MessageLevels, Messenger
 from .models import ProductionSchema
 from .passport_generator import construct_unit_passport
 from .printer import print_image
@@ -68,7 +69,13 @@ class WorkBench(metaclass=SingletonMeta):
     def _validate_state_transition(self, new_state: State) -> None:
         """check if state transition can be performed using the map"""
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
-            raise StateForbiddenError(f"State transition from {self.state.value} to {new_state.value} is not allowed.")
+            message = f"State transition from {self.state.value} to {new_state.value} is not allowed."
+            task = Messenger().emit_message(
+                level=MessageLevels.WARNING,
+                message=f"State transition from {self.state.value} to {new_state.value} is not allowed.",
+            )
+            asyncio.create_task(task)
+            raise StateForbiddenError(message)
 
     def switch_state(self, new_state: State) -> None:
         """apply new state to the workbench"""
