@@ -18,7 +18,7 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
 
     if prod_stage.video_hashes is not None:
         stage["Видеозаписи процесса сборки в IPFS"] = [
-            "https://gateway.ipfs.io/ipfs/" + cid for cid in prod_stage.video_hashes
+            f"https://gateway.ipfs.io/ipfs/{cid}" for cid in prod_stage.video_hashes
         ]
 
     if prod_stage.additional_info:
