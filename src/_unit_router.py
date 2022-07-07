@@ -90,7 +90,7 @@ async def unit_upload_record() -> mdl.GenericResponse:
     except Exception as e:
         message: str = f"Can't handle unit upload. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/assign-component/{unit_internal_id}", response_model=mdl.GenericResponse)
@@ -109,4 +109,4 @@ async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl
     except Exception as e:
         message: str = f"An error occurred during component assignment: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e

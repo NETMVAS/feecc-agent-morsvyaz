@@ -78,7 +78,7 @@ def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericRes
     except Exception as e:
         message: str = f"An error occurred during unit assignment: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/remove-unit", response_model=mdl.GenericResponse)
@@ -91,7 +91,7 @@ def remove_unit() -> mdl.GenericResponse:
     except Exception as e:
         message: str = f"An error occurred during unit removal: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/start-operation", response_model=mdl.GenericResponse)
@@ -107,7 +107,7 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/end-operation", response_model=mdl.GenericResponse)
@@ -123,7 +123,7 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
     except Exception as e:
         message = f"Couldn't handle end record request. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
@@ -211,4 +211,4 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
 
     except Exception as e:
         logger.error(e)
-        return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e

@@ -49,4 +49,4 @@ def log_out_employee() -> mdl.GenericResponse:
     except Exception as e:
         message: str = f"An error occurred while logging out the Employee: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
