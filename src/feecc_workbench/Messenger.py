@@ -44,7 +44,7 @@ class Message:
         }
 
         match self.level:
-            case MessageLevels.ERROR, MessageLevels.WARNING:
+            case MessageLevels.ERROR | MessageLevels.WARNING:
                 message_dict["persist"] = True
                 message_dict["preventDuplicate"] = False
 
