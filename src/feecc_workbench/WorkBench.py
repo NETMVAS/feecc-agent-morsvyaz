@@ -12,7 +12,6 @@ from .database import MongoDbWrapper
 from .Employee import Employee
 from .exceptions import StateForbiddenError
 from .ipfs import publish_file
-from .Messenger import MessageLevels, Messenger
 from .models import ProductionSchema
 from .passport_generator import construct_unit_passport
 from .printer import print_image
@@ -22,7 +21,7 @@ from .states import STATE_TRANSITION_MAP, State
 from .Types import AdditionalInfo
 from .Unit import Unit
 from .unit_utils import UnitStatus
-from .utils import timestamp
+from .utils import emit_error, timestamp
 
 STATE_SWITCH_EVENT = asyncio.Event()
 
@@ -70,11 +69,7 @@ class WorkBench(metaclass=SingletonMeta):
         """check if state transition can be performed using the map"""
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
             message = f"State transition from {self.state.value} to {new_state.value} is not allowed."
-            task = Messenger().emit_message(
-                level=MessageLevels.WARNING,
-                message=f"State transition from {self.state.value} to {new_state.value} is not allowed.",
-            )
-            asyncio.create_task(task)
+            emit_error(message)
             raise StateForbiddenError(message)
 
     def switch_state(self, new_state: State) -> None:
@@ -130,9 +125,10 @@ class WorkBench(metaclass=SingletonMeta):
                     unit = component
                     break
 
-        assert (
-            override or unit.status in allowed
-        ), f"Can only assign unit with status: {[s.value for s in allowed]}. {unit.status.value=}. Forbidden."
+        if not (override or unit.status in allowed):
+            message = f"Can only assign unit with status: {[s.value for s in allowed]}. Unit status is {unit.status.value}. Forbidden."
+            emit_error(message)
+            raise AssertionError(message)
 
         self.unit = unit
         logger.info(f"Unit {unit.internal_id} has been assigned to the workbench")
@@ -149,7 +145,11 @@ class WorkBench(metaclass=SingletonMeta):
     def remove_unit(self) -> None:
         """remove a unit from the workbench"""
         self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
-        assert self.unit is not None, "Cannot remove unit. No unit is currently assigned to the workbench."
+
+        if self.unit is None:
+            message = "Cannot remove unit. No unit is currently assigned to the workbench."
+            emit_error(message)
+            raise AssertionError(message)
 
         logger.info(f"Unit {self.unit.internal_id} has been removed from the workbench")
         self.unit = None
@@ -160,10 +160,18 @@ class WorkBench(metaclass=SingletonMeta):
     async def start_operation(self, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
-        assert self.unit is not None, "No unit is assigned to the workbench"
-        assert self.employee is not None, "No employee is assigned to the workbench"
 
-        self.unit.start_operation(self.employee, additional_info)
+        if self.unit is None:
+            message = "No unit is assigned to the workbench"
+            emit_error(message)
+            raise AssertionError(message)
+
+        if self.employee is None:
+            message = "No employee is logged in at the workbench"
+            emit_error(message)
+            raise AssertionError(message)
+
+        self.unit.start_operation(self.employee, additional_info)  # FIXME: Fail risk
 
         if self.camera is not None and self.employee is not None:
             await self.camera.start(self.employee.rfid_card_id)
@@ -188,7 +196,11 @@ class WorkBench(metaclass=SingletonMeta):
     async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
-        assert self.unit is not None, "No unit is assigned to the workbench"
+
+        if self.unit is None:
+            message = "No unit is assigned to the workbench"
+            emit_error(message)
+            raise AssertionError(message)
 
         logger.info("Trying to end operation")
         override_timestamp = timestamp()
@@ -220,10 +232,17 @@ class WorkBench(metaclass=SingletonMeta):
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def upload_unit_passport(self) -> None:
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
-        assert self.unit is not None, "No unit is assigned to the workbench"
-        assert self.employee is not None, "No employee is assigned to the workbench"
+        if self.unit is None:
+            message = "No unit is assigned to the workbench"
+            emit_error(message)
+            raise AssertionError(message)
 
-        passport_file_path = await construct_unit_passport(self.unit)
+        if self.employee is None:
+            message = "No employee is logged in at the workbench"
+            emit_error(message)
+            raise AssertionError(message)
+
+        passport_file_path = await construct_unit_passport(self.unit)  # FIXME: Fail risk
 
         if CONFIG.ipfs_gateway.enable:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
