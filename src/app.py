@@ -47,14 +47,14 @@ async def shutdown_event() -> None:
     MongoDbWrapper().close_connection()
 
 
-@app.get("/notifications")
+@app.get("/notifications", tags=["notifications"])
 async def stream_notifications() -> EventSourceResponse:
     """Stream backend emitted notifications into an SSE stream"""
     stream = message_generator()
     return EventSourceResponse(stream)
 
 
-@app.post("/notifications")
+@app.post("/notifications", tags=["notifications"])
 async def emit_notification(level: MessageLevels, message: str) -> GenericResponse:
     """Emit notification into an SSE stream"""
     await Messenger().emit_message(level, message)
