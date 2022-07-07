@@ -210,7 +210,8 @@ class WorkBench(metaclass=SingletonMeta):
             await self.camera.end(self.employee.rfid_card_id)
             override_timestamp = timestamp()
 
-            file: str | None = self.camera.record.remote_file_path  # type: ignore
+            assert self.camera.record is not None, "No record found"
+            file: str | None = self.camera.record.remote_file_path
 
             if file is not None:
                 data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
