@@ -56,6 +56,25 @@ def timestamp() -> str:
     return dt.datetime.now().strftime(TIMESTAMP_FORMAT)
 
 
+def service_is_up(service_endpoint: str | URL) -> bool:
+    """Check if the provided host is reachable"""
+    if isinstance(service_endpoint, str):
+        uri = URL(service_endpoint)
+    elif isinstance(service_endpoint, URL):
+        uri = service_endpoint
+    else:
+        raise ValueError(f"Cannot check endpoint {service_endpoint}. Wrong format")
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            result = sock.connect_ex((uri.host, uri.port))
+        except Exception as e:
+            logger.debug(f"An error occured during socket connection attempt: {e}")
+            result = 1
+
+    return result == 0
+
+
 def check_service_connectivity() -> None:
     """check if all requsted external services are reachable"""
     services = (
@@ -72,16 +91,14 @@ def check_service_connectivity() -> None:
 
         logger.info(f"Checking connection for service endpoint {service_endpoint}")
         checked_cnt += 1
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        uri = URL(service_endpoint)
 
         try:
-            result = sock.connect_ex((uri.host, uri.port))
+            result = service_is_up(service_endpoint)
         except Exception as e:
             logger.debug(f"An error occured during socket connection attempt: {e}")
-            result = 1
+            result = False
 
-        if result == 0:
+        if result:
             logger.info(f"{service_endpoint} connection tested positive")
         else:
             logger.error(f"{service_endpoint} connection has been refused.")
