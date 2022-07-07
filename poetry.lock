@@ -1079,21 +1079,6 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
-name = "transitions"
-version = "0.8.11"
-description = "A lightweight, object-oriented Python state machine implementation with many extensions."
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-six = "*"
-
-[package.extras]
-diagrams = ["pygraphviz"]
-test = ["pytest"]
-
-[[package]]
 name = "typer"
 version = "0.4.1"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -1250,7 +1235,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "74401371ee11c4f31bfd59a9e8188eb7bcd7aaf28c322014c192e4693d98c39f"
+content-hash = "de118e8af8f46955289899fa57750a98d9fbf09e79638465134ac8d65290a789"
 
 [metadata.files]
 aiohttp = [
@@ -2165,10 +2150,6 @@ tomlkit = [
 toolz = [
     {file = "toolz-0.11.2-py3-none-any.whl", hash = "sha256:a5700ce83414c64514d82d60bcda8aabfde092d1c1a8663f9200c07fdcc6da8f"},
     {file = "toolz-0.11.2.tar.gz", hash = "sha256:6b312d5e15138552f1bda8a4e66c30e236c831b612b2bf0005f8a1df10a4bc33"},
-]
-transitions = [
-    {file = "transitions-0.8.11-py2.py3-none-any.whl", hash = "sha256:9525dd9b708b0a54bb4562a06a483d237e75c94547ba9831c81c6872d0ea1522"},
-    {file = "transitions-0.8.11.tar.gz", hash = "sha256:7b20d32906ea4d60ee6f6c1f5dc9c9f178802425c5b155213eb0f25c277f04e4"},
 ]
 typer = [
     {file = "typer-0.4.1-py3-none-any.whl", hash = "sha256:e8467f0ebac0c81366c2168d6ad9f888efdfb6d4e1d3d5b4a004f46fa444b5c3"},
