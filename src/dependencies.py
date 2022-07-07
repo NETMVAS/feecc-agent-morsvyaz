@@ -10,7 +10,7 @@ from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.Unit import Unit
 from feecc_workbench.unit_utils import UnitStatus
-from feecc_workbench.utils import is_a_ean13_barcode
+from feecc_workbench.utils import emit_warning, is_a_ean13_barcode
 
 
 async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
@@ -18,7 +18,8 @@ async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
         return await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        emit_warning(str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.EmployeeWCardModel:
@@ -27,7 +28,8 @@ async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Em
         return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        emit_warning(str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 async def get_schema_by_id(schema_id: str) -> models.ProductionSchema:

@@ -127,6 +127,13 @@ def emit_error(message: str) -> None:
     )
 
 
+def emit_warning(message: str) -> None:
+    _emit_message_sync(
+        level=MessageLevels.WARNING,
+        message=message,
+    )
+
+
 def emit_success(message: str) -> None:
     _emit_message_sync(
         level=MessageLevels.SUCCESS,

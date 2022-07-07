@@ -21,7 +21,7 @@ from .states import STATE_TRANSITION_MAP, State
 from .Types import AdditionalInfo
 from .Unit import Unit
 from .unit_utils import UnitStatus
-from .utils import emit_error, timestamp
+from .utils import emit_error, emit_warning, timestamp
 
 STATE_SWITCH_EVENT = asyncio.Event()
 
@@ -136,8 +136,8 @@ class WorkBench(metaclass=SingletonMeta):
                     break
 
         if not (override or unit.status in allowed):
-            message = f"Can only assign unit with status: {[s.value for s in allowed]}. Unit status is {unit.status.value}. Forbidden."
-            emit_error(message)
+            message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
+            emit_warning(message)
             raise AssertionError(message)
 
         self.unit = unit
