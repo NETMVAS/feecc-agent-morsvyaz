@@ -60,7 +60,7 @@ def create_qr(link: str) -> str:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-    path_to_qr = dir_ + f"/{int(time.time())}_qr.png"
+    path_to_qr = f"{dir_}/{int(time.time())}_qr.png"
     img_qr_big.save(path_to_qr)  # saving picture for further printing with a timestamp
 
     logger.debug(f"Successfully saved QR code image file for {link} to {path_to_qr}")
