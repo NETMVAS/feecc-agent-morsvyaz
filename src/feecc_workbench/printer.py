@@ -4,7 +4,7 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import async_time_execution, get_headers
+from .utils import async_time_execution, emit_error, get_headers, service_is_up
 
 PRINT_SERVER_ADDRESS: str = CONFIG.printer.print_server_uri
 
@@ -14,6 +14,11 @@ async def print_image(file_path: str, rfid_card_id: str, annotation: str | None 
     if not CONFIG.printer.enable:
         logger.warning("Printer disabled, task dropped")
         return
+    else:
+        if not service_is_up(PRINT_SERVER_ADDRESS):
+            message = "Printer is not available"
+            emit_error(message)
+            raise ConnectionError(message)
 
     task = print_image_task(file_path, rfid_card_id, annotation)
 

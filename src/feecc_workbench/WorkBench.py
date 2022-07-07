@@ -48,7 +48,9 @@ class WorkBench(metaclass=SingletonMeta):
     async def create_new_unit(self, schema: ProductionSchema) -> Unit:
         """initialize a new instance of the Unit class"""
         if self.state != State.AUTHORIZED_IDLING_STATE:
-            raise StateForbiddenError("Cannot create a new unit unless workbench has state AuthorizedIdling")
+            message = "Cannot create a new unit unless workbench has state AuthorizedIdling"
+            emit_error(message)
+            raise StateForbiddenError(message)
 
         unit = Unit(schema)
         await self._database.push_unit(unit)
@@ -60,8 +62,17 @@ class WorkBench(metaclass=SingletonMeta):
                 parent_schema = await self._database.get_schema_by_id(unit.schema.parent_schema_id)
                 annotation = f"{parent_schema.unit_name}. {unit.model_name}."
 
-            await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)  # type: ignore
+            assert self.employee is not None
+
+            try:
+                await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)
+            except Exception as e:
+                emit_error(f"Failed to print barcode. Cannot create new unit. Error: {e}")
+                raise e
+
             os.remove(unit.barcode.filename)
+
+        await self._database.push_unit(unit)
 
         return unit
 
@@ -260,12 +271,14 @@ class WorkBench(metaclass=SingletonMeta):
                 short_url: str = await generate_short_url(link)
                 self.unit.passport_short_url = short_url
                 qrcode_path = create_qr(short_url)
-                await print_image(
-                    qrcode_path,
-                    self.employee.rfid_card_id,
-                    annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
-                )
-                os.remove(qrcode_path)
+                try:
+                    await print_image(
+                        qrcode_path,
+                        self.employee.rfid_card_id,
+                        annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
+                    )
+                finally:
+                    os.remove(qrcode_path)
             else:
 
                 async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
@@ -276,7 +289,12 @@ class WorkBench(metaclass=SingletonMeta):
 
             if CONFIG.printer.print_security_tag:
                 seal_tag_img: str = create_seal_tag()
-                await print_image(seal_tag_img, self.employee.rfid_card_id)
+
+                try:
+                    await print_image(seal_tag_img, self.employee.rfid_card_id)
+                except Exception as e:
+                    emit_error(f"Failed to print security tag. Error: {e}")
+
                 os.remove(seal_tag_img)
 
             if CONFIG.robonomics.enable_datalog and res is not None:
