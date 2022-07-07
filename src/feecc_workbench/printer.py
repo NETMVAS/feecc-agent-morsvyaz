@@ -39,6 +39,7 @@ async def print_image_task(file_path: str, rfid_card_id: str, annotation: str | 
         response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
 
     if response.is_error:
+        emit_error(f"Print server returned an error: {response.text}")
         raise httpx.RequestError(response.text)
 
     logger.info(f"Printed image '{file_path}'")

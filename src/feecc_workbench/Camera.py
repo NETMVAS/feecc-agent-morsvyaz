@@ -5,7 +5,7 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import get_headers
+from .utils import emit_error, get_headers
 
 CAMERAMAN_ADDRESS: str = CONFIG.camera.cameraman_uri
 
@@ -35,8 +35,14 @@ class Camera:
         try:
             response = httpx.get(f"{CAMERAMAN_ADDRESS}/cameras")
         except httpx.ConnectError:
-            logger.warning("Cameraman connection has been refused. Is it up?")
+            message = "Cameraman connection has been refused. Is it up?"
+            logger.warning(message)
+            emit_error(message)
             return
+
+        if response.is_error:
+            emit_error(f"Cameraman returned an error: {response.text}")
+            raise httpx.RequestError(response.text)
 
         cameras: list[dict[str, int | str]] = response.json()["cameras"]
 
@@ -55,6 +61,7 @@ class Camera:
             )
 
         if response.is_error:
+            emit_error(f"Cameraman returned an error: {response.text}")
             raise httpx.RequestError(response.text)
 
         record_id: str = response.json()["record_id"]
@@ -74,6 +81,7 @@ class Camera:
             )
 
         if response.is_error:
+            emit_error(f"Cameraman returned an error: {response.text}")
             raise httpx.RequestError(response.text)
 
         logger.info(f"Recording {self.record.rec_id} is ended on Camera {self.number}")

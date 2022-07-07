@@ -2,7 +2,7 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import async_time_execution
+from .utils import async_time_execution, emit_error, service_is_up
 
 YOURLS_CONFIG = CONFIG.yourls
 
@@ -26,12 +26,21 @@ async def generate_short_url(underlying_url: str | None = None) -> str:
         "url": underlying_url or "example.com",
     }  # api call to the yourls server. More on yourls.org
 
+    if not service_is_up(url):
+        message = f"Yourls server {url} is unreachable"
+        emit_error(message)
+        raise ConnectionError(message)
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(url, params=querystring)
 
+    if response.is_error:
+        emit_error(f"Yourls returned an error: {response.text}")
+        raise httpx.RequestError(response.text)
+
     logger.debug(f"{YOURLS_CONFIG.server} returned: {response.text}")
     keyword: str = response.json()["url"]["keyword"]
-    link = "https://" + str(YOURLS_CONFIG.server) + "/" + keyword  # link of form url.today/6b
+    link = f"https://{str(YOURLS_CONFIG.server)}/{keyword}"
     logger.info(f"Assigned yourls link: {link}")
     return link
 

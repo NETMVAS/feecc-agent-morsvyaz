@@ -53,7 +53,6 @@ class WorkBench(metaclass=SingletonMeta):
             raise StateForbiddenError(message)
 
         unit = Unit(schema)
-        await self._database.push_unit(unit)
 
         if CONFIG.printer.print_barcode and CONFIG.printer.enable:
             if unit.schema.parent_schema_id is None:
@@ -182,10 +181,10 @@ class WorkBench(metaclass=SingletonMeta):
             emit_error(message)
             raise AssertionError(message)
 
-        self.unit.start_operation(self.employee, additional_info)  # FIXME: Fail risk
-
-        if self.camera is not None and self.employee is not None:
+        if self.camera is not None:
             await self.camera.start(self.employee.rfid_card_id)
+
+        self.unit.start_operation(self.employee, additional_info)
 
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
@@ -254,7 +253,7 @@ class WorkBench(metaclass=SingletonMeta):
             emit_error(message)
             raise AssertionError(message)
 
-        passport_file_path = await construct_unit_passport(self.unit)  # FIXME: Fail risk
+        passport_file_path = await construct_unit_passport(self.unit)
 
         if CONFIG.ipfs_gateway.enable:
             res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
