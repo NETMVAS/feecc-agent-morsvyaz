@@ -19,7 +19,7 @@ async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
         return await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
-        messenger.warning(str(e))
+        messenger.warning("Изделие не найдено")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
@@ -29,7 +29,7 @@ async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Em
         return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
-        messenger.warning(str(e))
+        messenger.warning("Сотрудник не найден")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 

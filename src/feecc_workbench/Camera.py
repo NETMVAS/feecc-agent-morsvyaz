@@ -38,11 +38,11 @@ class Camera:
         except httpx.ConnectError:
             message = "Cameraman connection has been refused. Is it up?"
             logger.warning(message)
-            messenger.error(message)
+            messenger.error("Нет связи с сервером видеофиксации")
             return
 
         if response.is_error:
-            messenger.error(f"Cameraman returned an error: {response.text}")
+            messenger.error(f"Ошибка службы видеофиксации: {response.text}")
             raise httpx.RequestError(response.text)
 
         cameras: list[dict[str, int | str]] = response.json()["cameras"]
@@ -62,7 +62,7 @@ class Camera:
             )
 
         if response.is_error:
-            messenger.error(f"Cameraman returned an error: {response.text}")
+            messenger.error(f"Ошибка службы видеофиксации: {response.text}")
             raise httpx.RequestError(response.text)
 
         record_id: str = response.json()["record_id"]
@@ -82,7 +82,7 @@ class Camera:
             )
 
         if response.is_error:
-            messenger.error(f"Cameraman returned an error: {response.text}")
+            messenger.error(f"Ошибка службы видеофиксации: {response.text}")
             raise httpx.RequestError(response.text)
 
         logger.info(f"Recording {self.record.rec_id} is ended on Camera {self.number}")

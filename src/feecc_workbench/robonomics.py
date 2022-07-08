@@ -54,7 +54,7 @@ def _post_to_datalog(content: str, queue: Queue[str], event: asyncio.Event, lock
     lock.release()
 
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
-    messenger.success(message)
+    messenger.success("Данные паспорта опубликованы в Даталоге сети Robonomics")
     logger.info(message)
     queue.put(txn_hash)
     event.set()

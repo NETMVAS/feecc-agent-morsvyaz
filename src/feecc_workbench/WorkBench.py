@@ -50,7 +50,7 @@ class WorkBench(metaclass=SingletonMeta):
         """initialize a new instance of the Unit class"""
         if self.state != State.AUTHORIZED_IDLING_STATE:
             message = "Cannot create a new unit unless workbench has state AuthorizedIdling"
-            messenger.error(message)
+            messenger.error("Для создания нового изделия рабочий стол должен иметь состояние AuthorizedIdling")
             raise StateForbiddenError(message)
 
         unit = Unit(schema)
@@ -67,7 +67,7 @@ class WorkBench(metaclass=SingletonMeta):
             try:
                 await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)
             except Exception as e:
-                messenger.error(f"Failed to print barcode. Cannot create new unit. Error: {e}")
+                messenger.error(f"Ошибка при печати этикетки: {e}")
                 raise e
 
             os.remove(unit.barcode.filename)
@@ -80,7 +80,7 @@ class WorkBench(metaclass=SingletonMeta):
         """check if state transition can be performed using the map"""
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
             message = f"State transition from {self.state.value} to {new_state.value} is not allowed."
-            messenger.error(message)
+            messenger.error(f"Переход из состояния {self.state.value} в состояние {new_state.value} невозможен")
             raise StateForbiddenError(message)
 
     def switch_state(self, new_state: State) -> None:
@@ -99,7 +99,7 @@ class WorkBench(metaclass=SingletonMeta):
         self.employee = employee
         message = f"Employee {employee.name} is logged in at the workbench no. {self.number}"
         logger.info(message)
-        messenger.success(message)
+        messenger.success(f"Авторизован {employee.position} {employee.name}")
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
@@ -114,7 +114,7 @@ class WorkBench(metaclass=SingletonMeta):
         assert self.employee is not None
         message = f"Employee {self.employee.name} was logged out at the workbench no. {self.number}"
         logger.info(message)
-        messenger.success(message)
+        messenger.success(f"{self.employee.name} вышел из системы")
         self.employee = None
 
         self.switch_state(State.AWAIT_LOGIN_STATE)
@@ -143,14 +143,18 @@ class WorkBench(metaclass=SingletonMeta):
 
         if not (override or unit.status in allowed):
             message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-            messenger.warning(message)
+            messenger.warning(
+                f"На стол могут быть помещены изделия со статусами:"
+                f" {', '.join(s.value for s in allowed)}."
+                f" Статус мзделия: {unit.status.value}. Отказано."
+            )
             raise AssertionError(message)
 
         self.unit = unit
 
         message = f"Unit {unit.internal_id} has been assigned to the workbench"
         logger.info(message)
-        messenger.success(message)
+        messenger.success(f"Изделие с внутренним номером {unit.internal_id} помещено на стол")
 
         if not unit.components_filled:
             logger.info(
@@ -167,12 +171,12 @@ class WorkBench(metaclass=SingletonMeta):
 
         if self.unit is None:
             message = "Cannot remove unit. No unit is currently assigned to the workbench."
-            messenger.error(message)
+            messenger.error("Невозможно убрать со стола изделие. На рабочем столе отсутсвует изделие")
             raise AssertionError(message)
 
         message = f"Unit {self.unit.internal_id} has been removed from the workbench"
         logger.info(message)
-        messenger.success(message)
+        messenger.success(f"Изделие с внутренним номером {self.unit.internal_id} убрано со стола")
 
         self.unit = None
 
@@ -185,12 +189,12 @@ class WorkBench(metaclass=SingletonMeta):
 
         if self.unit is None:
             message = "No unit is assigned to the workbench"
-            messenger.error(message)
+            messenger.error("На рабочем столе отсутсвует изделие")
             raise AssertionError(message)
 
         if self.employee is None:
             message = "No employee is logged in at the workbench"
-            messenger.error(message)
+            messenger.error("Необходима авторизация")
             raise AssertionError(message)
 
         if self.camera is not None:
@@ -221,7 +225,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         if self.unit is None:
             message = "No unit is assigned to the workbench"
-            messenger.error(message)
+            messenger.error("На рабочем столе отсутсвует изделие")
             raise AssertionError(message)
 
         logger.info("Trying to end operation")
@@ -257,12 +261,12 @@ class WorkBench(metaclass=SingletonMeta):
         """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
         if self.unit is None:
             message = "No unit is assigned to the workbench"
-            messenger.error(message)
+            messenger.error("На рабочем столе отсутсвует изделие")
             raise AssertionError(message)
 
         if self.employee is None:
             message = "No employee is logged in at the workbench"
-            messenger.error(message)
+            messenger.error("Необходима авторизация")
             raise AssertionError(message)
 
         passport_file_path = await construct_unit_passport(self.unit)
@@ -304,7 +308,7 @@ class WorkBench(metaclass=SingletonMeta):
                 try:
                     await print_image(seal_tag_img, self.employee.rfid_card_id)
                 except Exception as e:
-                    messenger.error(f"Failed to print security tag. Error: {e}")
+                    messenger.error(f"Ошибка при печати пломбы: {e}")
 
                 os.remove(seal_tag_img)
 
@@ -315,7 +319,7 @@ class WorkBench(metaclass=SingletonMeta):
 
     async def shutdown(self) -> None:
         logger.info("Workbench shutdown sequence initiated")
-        messenger.warning("Workbench shutdown sequence initiated. Do not turn off the machine")
+        messenger.warning("Завершение работы сервера. Не выключайте машину!")
 
         if self.state == State.PRODUCTION_STAGE_ONGOING_STATE:
             logger.warning(
@@ -334,4 +338,4 @@ class WorkBench(metaclass=SingletonMeta):
 
         message = "Workbench shutdown sequence complete"
         logger.info(message)
-        messenger.success(message)
+        messenger.success("Работа сервера завершена")

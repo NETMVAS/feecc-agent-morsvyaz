@@ -29,14 +29,14 @@ async def generate_short_url(underlying_url: str | None = None) -> str:
 
     if not service_is_up(url):
         message = f"Yourls server {url} is unreachable"
-        messenger.error(message)
+        messenger.error("Служба создания коротких ссылок недоступна")
         raise ConnectionError(message)
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(url, params=querystring)
 
     if response.is_error:
-        messenger.error(f"Yourls returned an error: {response.text}")
+        messenger.error(f"Ошибка при создании короткой ссылки: {response.text}")
         raise httpx.RequestError(response.text)
 
     logger.debug(f"{YOURLS_CONFIG.server} returned: {response.text}")
