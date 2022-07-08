@@ -7,7 +7,8 @@ from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
 from .database import MongoDbWrapper
-from .utils import async_time_execution, emit_success, time_execution
+from .Messenger import messenger
+from .utils import async_time_execution, time_execution
 
 ROBONOMICS_ACCOUNT: Account | None = None
 DATALOG_CLIENT: Datalog | None = None
@@ -53,7 +54,7 @@ def _post_to_datalog(content: str, queue: Queue[str], event: asyncio.Event, lock
     lock.release()
 
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
-    emit_success(message)
+    messenger.success(message)
     logger.info(message)
     queue.put(txn_hash)
     event.set()

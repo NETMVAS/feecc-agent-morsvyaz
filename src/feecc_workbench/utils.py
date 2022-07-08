@@ -1,4 +1,3 @@
-import asyncio
 import datetime as dt
 import re
 import socket
@@ -10,7 +9,6 @@ from loguru import logger
 from yarl import URL
 
 from .config import CONFIG
-from .Messenger import MessageLevels, Messenger
 
 TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M:%S"
 
@@ -110,32 +108,3 @@ def check_service_connectivity() -> None:
 
     if checked_cnt:
         logger.info(f"{checked_cnt - failed_cnt}/{checked_cnt} service connectivity checks passed")
-
-
-def _emit_message_sync(message: str, level: MessageLevels) -> None:
-    task = Messenger().emit_message(
-        level=level,
-        message=message,
-    )
-    asyncio.create_task(task)
-
-
-def emit_error(message: str) -> None:
-    _emit_message_sync(
-        level=MessageLevels.ERROR,
-        message=message,
-    )
-
-
-def emit_warning(message: str) -> None:
-    _emit_message_sync(
-        level=MessageLevels.WARNING,
-        message=message,
-    )
-
-
-def emit_success(message: str) -> None:
-    _emit_message_sync(
-        level=MessageLevels.SUCCESS,
-        message=message,
-    )

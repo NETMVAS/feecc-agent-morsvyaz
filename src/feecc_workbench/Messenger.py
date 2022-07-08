@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
@@ -99,11 +100,57 @@ class Messenger(metaclass=SingletonMeta):
         else:
             logger.warning(f"Message '{message}' not emitted: no recipients")
 
+    def _emit_message_sync(self, message: str, level: MessageLevels) -> None:
+        task = self.emit_message(
+            level=level,
+            message=message,
+        )
+        with contextlib.suppress(RuntimeError):  # temp fix
+            asyncio.create_task(task)  # FIXME: Sometimes produces 'RuntimeError: no running event loop'
+
+    def default(self, message: str) -> None:
+        """Emit 'default' level message"""
+        self._emit_message_sync(
+            level=MessageLevels.DEBUG,
+            message=message,
+        )
+
+    def info(self, message: str) -> None:
+        """Emit 'info' level message"""
+        self._emit_message_sync(
+            level=MessageLevels.INFO,
+            message=message,
+        )
+
+    def success(self, message: str) -> None:
+        """Emit 'success' level message"""
+        self._emit_message_sync(
+            level=MessageLevels.SUCCESS,
+            message=message,
+        )
+
+    def warning(self, message: str) -> None:
+        """Emit 'warning' level message"""
+        self._emit_message_sync(
+            level=MessageLevels.WARNING,
+            message=message,
+        )
+
+    def error(self, message: str) -> None:
+        """Emit 'error' level message"""
+        self._emit_message_sync(
+            level=MessageLevels.ERROR,
+            message=message,
+        )
+
+
+messenger = Messenger()
+
 
 async def message_generator() -> AsyncGenerator[str, None]:
     """Notification generator for SSE message streaming"""
     logger.info("SSE connection to message streaming endpoint established.")
-    brocker = Messenger().get_brocker()
+    brocker = messenger.get_brocker()
 
     try:
         while True:

@@ -9,7 +9,7 @@ import _unit_router
 import _workbench_router
 from _logging import HANDLERS
 from feecc_workbench.database import MongoDbWrapper
-from feecc_workbench.Messenger import MessageLevels, Messenger, message_generator
+from feecc_workbench.Messenger import MessageLevels, message_generator, messenger
 from feecc_workbench.models import GenericResponse
 from feecc_workbench.utils import check_service_connectivity
 from feecc_workbench.WorkBench import WorkBench
@@ -57,7 +57,7 @@ async def stream_notifications() -> EventSourceResponse:
 @app.post("/notifications", tags=["notifications"])
 async def emit_notification(level: MessageLevels, message: str) -> GenericResponse:
     """Emit notification into an SSE stream"""
-    await Messenger().emit_message(level, message)
+    await messenger.emit_message(level, message)
     return GenericResponse(status_code=status.HTTP_200_OK, detail="Notification emitted")
 
 

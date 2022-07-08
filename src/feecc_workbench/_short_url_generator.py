@@ -2,7 +2,8 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import async_time_execution, emit_error, service_is_up
+from .Messenger import messenger
+from .utils import async_time_execution, service_is_up
 
 YOURLS_CONFIG = CONFIG.yourls
 
@@ -28,14 +29,14 @@ async def generate_short_url(underlying_url: str | None = None) -> str:
 
     if not service_is_up(url):
         message = f"Yourls server {url} is unreachable"
-        emit_error(message)
+        messenger.error(message)
         raise ConnectionError(message)
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(url, params=querystring)
 
     if response.is_error:
-        emit_error(f"Yourls returned an error: {response.text}")
+        messenger.error(f"Yourls returned an error: {response.text}")
         raise httpx.RequestError(response.text)
 
     logger.debug(f"{YOURLS_CONFIG.server} returned: {response.text}")

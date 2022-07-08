@@ -4,7 +4,8 @@ import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import async_time_execution, emit_error, get_headers, service_is_up
+from .Messenger import messenger
+from .utils import async_time_execution, get_headers, service_is_up
 
 PRINT_SERVER_ADDRESS: str = CONFIG.printer.print_server_uri
 
@@ -17,7 +18,7 @@ async def print_image(file_path: str, rfid_card_id: str, annotation: str | None 
     else:
         if not service_is_up(PRINT_SERVER_ADDRESS):
             message = "Printer is not available"
-            emit_error(message)
+            messenger.error(message)
             raise ConnectionError(message)
 
     task = print_image_task(file_path, rfid_card_id, annotation)
@@ -39,7 +40,7 @@ async def print_image_task(file_path: str, rfid_card_id: str, annotation: str | 
         response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
 
     if response.is_error:
-        emit_error(f"Print server returned an error: {response.text}")
+        messenger.error(f"Print server returned an error: {response.text}")
         raise httpx.RequestError(response.text)
 
     logger.info(f"Printed image '{file_path}'")
