@@ -1,12 +1,17 @@
+import asyncio
+from queue import Queue
+from threading import Lock, Thread
+
 from loguru import logger
 from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
 from .database import MongoDbWrapper
-from .utils import async_time_execution, emit_error, emit_success
+from .utils import async_time_execution, emit_success, time_execution
 
 ROBONOMICS_ACCOUNT: Account | None = None
 DATALOG_CLIENT: Datalog | None = None
+CLIENT_LOCK = Lock()
 
 if CONFIG.robonomics.enable_datalog:
     ROBONOMICS_ACCOUNT = Account(
@@ -26,18 +31,29 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     This operation requires waiting for the block to be written in the blockchain,
     which takes 15 seconds on average, so it's done in another thread
     """
+    queue: Queue[str] = Queue(maxsize=1)
+    event = asyncio.Event()
+    Thread(target=_post_to_datalog, args=(content, queue, event, CLIENT_LOCK)).start()
+
+    await event.wait()
+    txn_hash = queue.get()
+
+    logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
+    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
+
+
+@time_execution
+def _post_to_datalog(content: str, queue: Queue[str], event: asyncio.Event, lock: Lock) -> None:
+    """echo provided string to the Robonomics datalog"""
     assert DATALOG_CLIENT is not None, "Robonomics interface client has not been initialized"
     logger.info(f"Posting data '{content}' to Robonomics datalog")
 
-    try:
-        txn_hash: str = DATALOG_CLIENT.record(data=content)
-    except Exception as e:
-        message = f"An error ocurred while posting to Robonomics Datalog: {e}"
-        logger.error(message)
-        emit_error(message)
+    lock.acquire(timeout=180)
+    txn_hash: str = DATALOG_CLIENT.record(data=content)
+    lock.release()
 
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
     emit_success(message)
     logger.info(message)
-    logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
-    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
+    queue.put(txn_hash)
+    event.set()
