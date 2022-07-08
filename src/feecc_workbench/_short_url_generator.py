@@ -39,7 +39,7 @@ async def generate_short_url(underlying_url: str | None = None) -> str:
         messenger.error(f"Ошибка при создании короткой ссылки: {response.text}")
         raise httpx.RequestError(response.text)
 
-    logger.debug(f"{YOURLS_CONFIG.server} returned: {response.text}")
+    logger.debug(f"{YOURLS_CONFIG.server} returned: {response.json().get('detail', '')}")
     keyword: str = response.json()["url"]["keyword"]
     link = f"https://{str(YOURLS_CONFIG.server)}/{keyword}"
     logger.info(f"Assigned yourls link: {link}")

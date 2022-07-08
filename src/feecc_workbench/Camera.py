@@ -42,8 +42,8 @@ class Camera:
             return
 
         if response.is_error:
-            messenger.error(f"Ошибка службы видеофиксации: {response.text}")
-            raise httpx.RequestError(response.text)
+            messenger.error(f"Ошибка службы видеофиксации: {response.json().get('detail', '')}")
+            raise httpx.RequestError(response.json().get("detail", ""))
 
         cameras: list[dict[str, int | str]] = response.json()["cameras"]
 
@@ -62,8 +62,8 @@ class Camera:
             )
 
         if response.is_error:
-            messenger.error(f"Ошибка службы видеофиксации: {response.text}")
-            raise httpx.RequestError(response.text)
+            messenger.error(f"Ошибка службы видеофиксации: {response.json().get('detail', '')}")
+            raise httpx.RequestError(response.json().get("detail", ""))
 
         record_id: str = response.json()["record_id"]
         logger.info(f"Recording {record_id} is started on Camera {self.number}")
@@ -82,8 +82,8 @@ class Camera:
             )
 
         if response.is_error:
-            messenger.error(f"Ошибка службы видеофиксации: {response.text}")
-            raise httpx.RequestError(response.text)
+            messenger.error(f"Ошибка службы видеофиксации: {response.json().get('detail', '')}")
+            raise httpx.RequestError(response.json().get("detail", ""))
 
         logger.info(f"Recording {self.record.rec_id} is ended on Camera {self.number}")
         self.record.end_time = datetime.now()

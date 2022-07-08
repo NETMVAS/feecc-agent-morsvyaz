@@ -292,6 +292,8 @@ class WorkBench(metaclass=SingletonMeta):
                         self.employee.rfid_card_id,
                         annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
                     )
+                except Exception as e:
+                    messenger.error(f"Ошибка при печати QR-кода: {e}")
                 finally:
                     os.remove(qrcode_path)
             else:

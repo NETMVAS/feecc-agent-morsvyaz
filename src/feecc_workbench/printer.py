@@ -40,7 +40,6 @@ async def print_image_task(file_path: str, rfid_card_id: str, annotation: str | 
         response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
 
     if response.is_error:
-        messenger.error(f"Ошибка сервера печати: {response.text}")
-        raise httpx.RequestError(response.text)
+        raise httpx.RequestError(response.json().get("detail", ""))
 
     logger.info(f"Printed image '{file_path}'")

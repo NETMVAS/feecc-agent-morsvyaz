@@ -35,8 +35,8 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[AnyStr]) -> tup
             response = await client.post(url="/by-path", headers=headers, json=json)
 
     if response.is_error:
-        messenger.error(f"Ошибка шлюза IPFS: {response.text}")
-        raise httpx.RequestError(response.text)
+        messenger.error(f"Ошибка шлюза IPFS: {response.json().get('detail', '')}")
+        raise httpx.RequestError(response.json().get("detail", ""))
 
     assert int(response.json().get("status", 500)) == 200, response.json()
 
