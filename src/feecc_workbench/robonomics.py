@@ -37,10 +37,9 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     Thread(target=_post_to_datalog, args=(content, queue, event, CLIENT_LOCK)).start()
 
     await event.wait()
-    txn_hash = queue.get()
-
-    logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
-    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
+    if txn_hash := queue.get():
+        logger.info(f"Adding {txn_hash=} to unit {unit_internal_id} data")
+        await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
 
 
 @time_execution
@@ -49,12 +48,19 @@ def _post_to_datalog(content: str, queue: Queue[str], event: asyncio.Event, lock
     assert DATALOG_CLIENT is not None, "Robonomics interface client has not been initialized"
     logger.info(f"Posting data '{content}' to Robonomics datalog")
 
-    lock.acquire(timeout=180)
-    txn_hash: str = DATALOG_CLIENT.record(data=content)
-    lock.release()
+    try:
+        assert lock.acquire(timeout=180), "Failed to unlock Datalog client"
+        txn_hash: str = DATALOG_CLIENT.record(data=content)
+        message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
+        messenger.success("Данные паспорта опубликованы в Даталоге сети Robonomics")
+        logger.info(message)
+    except Exception as e:
+        logger.error(f"Failed to post to the Datalog: {e}")
+        messenger.error("Не удалось записать данные паспорта в Даталог сети Robonomics")
+        txn_hash = ""
+    finally:
+        if lock.locked():
+            lock.release()
 
-    message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
-    messenger.success("Данные паспорта опубликованы в Даталоге сети Robonomics")
-    logger.info(message)
     queue.put(txn_hash)
     event.set()

@@ -1,4 +1,5 @@
 import os
+import pathlib
 from typing import Any
 
 import yaml
@@ -64,9 +65,9 @@ def _save_passport(unit: Unit, passport_dict: dict[str, Any], path: str) -> None
 
 
 @logger.catch(reraise=True)
-async def construct_unit_passport(unit: Unit) -> str:
+async def construct_unit_passport(unit: Unit) -> pathlib.Path:
     """construct own passport, dump it as .yaml file and return a path to it"""
     passport = _get_passport_dict(unit)
     path = f"unit-passports/unit-passport-{unit.uuid}.yaml"
     _save_passport(unit, passport, path)
-    return path
+    return pathlib.Path(path)

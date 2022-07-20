@@ -65,7 +65,7 @@ class WorkBench(metaclass=SingletonMeta):
             assert self.employee is not None
 
             try:
-                await print_image(unit.barcode.filename, self.employee.rfid_card_id, annotation=annotation)
+                await print_image(Path(unit.barcode.filename), self.employee.rfid_card_id, annotation=annotation)
             except Exception as e:
                 messenger.error(f"Ошибка при печати этикетки: {e}")
                 raise e
@@ -269,11 +269,11 @@ class WorkBench(metaclass=SingletonMeta):
             messenger.error("Необходима авторизация")
             raise AssertionError(message)
 
-        passport_file_path = await construct_unit_passport(self.unit)
+        passport_file_path: Path = await construct_unit_passport(self.unit)
 
         if CONFIG.ipfs_gateway.enable:
-            res = await publish_file(file_path=Path(passport_file_path), rfid_card_id=self.employee.rfid_card_id)
-            cid, link = res or ("", "")
+            res = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
+            cid, link = res
             self.unit.passport_ipfs_cid = cid
 
             print_qr = CONFIG.printer.print_qr and (
@@ -305,14 +305,14 @@ class WorkBench(metaclass=SingletonMeta):
                 asyncio.create_task(_bg_generate_short_url(link, self.unit.internal_id))
 
             if CONFIG.printer.print_security_tag:
-                seal_tag_img: str = create_seal_tag()
+                seal_tag_img: Path = create_seal_tag()
 
                 try:
                     await print_image(seal_tag_img, self.employee.rfid_card_id)
                 except Exception as e:
                     messenger.error(f"Ошибка при печати пломбы: {e}")
-
-                os.remove(seal_tag_img)
+                finally:
+                    os.remove(seal_tag_img)
 
             if CONFIG.robonomics.enable_datalog and res is not None:
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))

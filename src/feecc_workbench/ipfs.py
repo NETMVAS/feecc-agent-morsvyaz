@@ -40,8 +40,9 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[AnyStr]) -> tup
 
     assert int(response.json().get("status", 500)) == 200, response.json()
 
-    cid: str = response.json()["ipfs_cid"]
-    link: str = response.json()["ipfs_link"]
+    cid: str = response.json().get("ipfs_cid")
+    link: str = response.json().get("ipfs_link")
+    assert cid and link, "IPFS gateway returned no CID"
 
     logger.info(f"File '{file_path} published to IPFS under CID {cid}'")
 

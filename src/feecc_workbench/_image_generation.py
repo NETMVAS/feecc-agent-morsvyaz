@@ -1,4 +1,5 @@
 import os
+import pathlib
 import time
 from datetime import datetime as dt
 
@@ -16,15 +17,8 @@ BLACK: color = (0, 0, 0)
 
 
 @time_execution
-def create_qr(link: str) -> str:
-    """
-    :param link: full yourls url. E.g. https://url.today/6b
-    :type link: str
-    :return: full filename of a resulted qr-code
-    :rtype: str
-
-    This is a qr-creating submodule. Inserts a Robonomics logo inside the qr and adds logos aside if required
-    """
+def create_qr(link: str) -> pathlib.Path:
+    """This is a qr-creating submodule. Inserts a Robonomics logo inside the qr and adds logos aside if required"""
     logger.debug(f"Generating QR code image file for {link}")
 
     robonomics_logo = Image.open("media/robonomics.jpg").resize((100, 100))
@@ -65,11 +59,11 @@ def create_qr(link: str) -> str:
 
     logger.debug(f"Successfully saved QR code image file for {link} to {path_to_qr}")
 
-    return path_to_qr
+    return pathlib.Path(path_to_qr)
 
 
 @time_execution
-def create_seal_tag() -> str:
+def create_seal_tag() -> pathlib.Path:
     """generate a custom seal tag with required parameters"""
     logger.info("Generating seal tag")
 
@@ -80,10 +74,12 @@ def create_seal_tag() -> str:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-    seal_tag_path = f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
+    seal_tag_path = pathlib.Path(
+        f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
+    )
 
     # check if seal tag has already been created
-    if os.path.exists(seal_tag_path):
+    if seal_tag_path.exists():
         return seal_tag_path
 
     # make a basic security tag with needed dimensions
