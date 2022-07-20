@@ -230,21 +230,33 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info("Trying to end operation")
         override_timestamp = timestamp()
-
         ipfs_hashes: list[str] = []
-        if self.camera is not None and self.employee is not None:
-            await self.camera.end(self.employee.rfid_card_id)
-            override_timestamp = timestamp()
 
-            assert self.camera.record is not None, "No record found"
-            file: str | None = self.camera.record.remote_file_path
+        if self.camera is not None and self.employee is not None:
+            try:
+                await self.camera.end(self.employee.rfid_card_id)
+                override_timestamp = timestamp()
+                assert self.camera.record is not None, "No record found"
+                file: str | None = self.camera.record.remote_file_path
+            except Exception as e:
+                logger.error(f"Failed to end record: {e}")
+                messenger.warning("Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.")
+                file = None
 
             if file is not None:
-                data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
+                try:
+                    data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
 
-                if data is not None:
-                    cid, link = data
-                    ipfs_hashes.append(cid)
+                    if data is not None:
+                        cid, link = data
+                        ipfs_hashes.append(cid)
+                except Exception as e:
+                    logger.error(f"Failed to publish record: {e}")
+                    messenger.warning(
+                        "Этап завершен, однако опубликовать видеозапись в сети IPFS не удалось. "
+                        "Видеозапись сохранена локально. Обратитесь к администратору."
+                    )
+                    ipfs_hashes = []
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
