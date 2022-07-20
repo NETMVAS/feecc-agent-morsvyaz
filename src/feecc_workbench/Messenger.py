@@ -28,7 +28,7 @@ class Message:
     """A single message object"""
 
     message: str
-    level: MessageLevels = field(default_factory=lambda: MessageLevels.INFO)
+    level: MessageLevels = MessageLevels.INFO
 
     def get_api_dict(self) -> MessageApiDict:
         message_dict = {
@@ -76,17 +76,26 @@ class MessageBrocker:
 
 
 class Messenger(metaclass=SingletonMeta):
-    """Messebger is a single entrypoint to get brockers and emit messages across all brockers at once"""
+    """
+    Messenger is a single entrypoint to get brockers and
+    emit messages across all brockers at once.
+
+    Interface mimics logger.
+
+    Singleton object.
+    """
 
     def __init__(self) -> None:
         self._brockers: list[MessageBrocker] = []
 
     def get_brocker(self) -> MessageBrocker:
+        """Get a new message brocker and register it in the Messenger"""
         brocker = MessageBrocker()
         self._brockers.append(brocker)
         return brocker
 
     async def emit_message(self, level: MessageLevels, message: str) -> None:
+        """Emit message across all brockers"""
         self._brockers = [br for br in self._brockers if br.alive]
         brocker_cnt = len(self._brockers)
         message_ = Message(message, level)
@@ -100,6 +109,7 @@ class Messenger(metaclass=SingletonMeta):
             logger.warning(f"Message '{message}' not emitted: no recipients")
 
     def _emit_message_sync(self, message: str, level: MessageLevels) -> None:
+        """A synchronous entrypoint to message emitting method"""
         task = self.emit_message(level, message)
         try:
             asyncio.create_task(task)
