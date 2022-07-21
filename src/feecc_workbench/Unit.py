@@ -57,6 +57,16 @@ class Unit:
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.now()
 
+        if self.components_units:
+            slots: dict[str, Unit | None] = {u.schema.schema_id: u for u in self.components_units}
+            assert all(
+                k in (self.schema.required_components_schema_ids or []) for k in slots
+            ), "Provided components are not a part of the unit schema"
+        else:
+            slots = {schema_id: None for schema_id in (schema.required_components_schema_ids or [])}
+
+        self._component_slots: dict[str, Unit | None] = slots
+
     @property
     def components_schema_ids(self) -> list[str]:
         return self.schema.required_components_schema_ids or []
@@ -71,13 +81,7 @@ class Unit:
 
     @property
     def components_filled(self) -> bool:
-        if not self.components_schema_ids:
-            return True
-
-        if not self.components_units:
-            return False
-
-        return len(self.components_schema_ids) == len(self.components_units)
+        return None not in self._component_slots.values()
 
     @property
     def next_pending_operation(self) -> ProductionStage | None:
@@ -114,48 +118,42 @@ class Unit:
         return assigned_components or None
 
     def assign_component(self, component: Unit) -> None:
-        """acquire one of the composite unit's components"""
+        """Assign one of the composite unit's components to the unit"""
         if self.components_filled:
-            logger.error(f"Unit {self.model_name} component requirements have already been satisfied")
-            messenger.error("Изделию уже присвоены все необходимые компоненты")
+            messenger.warning("Изделию уже присвоены все необходимые компоненты")
+            raise ValueError(f"Unit {self.model_name} component requirements have already been satisfied")
 
-        elif component.schema.schema_id in self.components_schema_ids:
-            if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
-                if component.status is not UnitStatus.built:
-                    messenger.error(
-                        f'Сборка компонента "{component.model_name}" не была завершена. Невозможно присвоить компонент.'
-                    )
-                    raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
-
-                elif component.featured_in_int_id is not None:
-                    messenger.error(
-                        f"Компонент №{component.internal_id} уже использован в изделии №{component.featured_in_int_id}"
-                    )
-                    raise ValueError(
-                        f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
-                    )
-
-                else:
-                    self.components_units.append(component)
-                    component.featured_in_int_id = self.internal_id
-                    logger.info(
-                        f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}"
-                    )
-                    messenger.success(f'Компонент "{component.model_name}" присвоен изделию "{self.model_name}"')
-
-            else:
-                message = f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
-                logger.error(message)
-                messenger.error(f"Компонент {component.model_name} уже был добавлен к этому изделию")
-                raise ValueError(message)
-
-        else:
-            message = (
+        if component.schema.schema_id not in self._component_slots:
+            messenger.warning(f'Комопнент "{component.model_name}" не явлеяется частью изделия "{self.model_name}"')
+            raise ValueError(
                 f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
             )
-            logger.error(message)
-            messenger.error(f'Комопнент "{component.model_name}" не явлеяется частью изделия "{self.model_name}"')
-            raise ValueError(message)
+
+        if self._component_slots.get(component.schema.schema_id, "") is not None:
+            messenger.warning(f'Компонент "{component.model_name}" уже был добавлен к этому изделию')
+            raise ValueError(
+                f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
+            )
+
+        if component.status is not UnitStatus.built:
+            messenger.warning(
+                f'Сборка компонента "{component.model_name}" не была завершена. Невозможно присвоить компонент'
+            )
+            raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
+
+        if component.featured_in_int_id is not None:
+            messenger.warning(
+                f"Компонент №{component.internal_id} уже использован в изделии №{component.featured_in_int_id}"
+            )
+            raise ValueError(
+                f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
+            )
+
+        self._component_slots[component.schema.schema_id] = component
+        self.components_units.append(component)
+        component.featured_in_int_id = self.internal_id
+        logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
+        messenger.success(f'Компонент "{component.model_name}" присвоен изделию "{self.model_name}"')
 
     def start_operation(
         self,
