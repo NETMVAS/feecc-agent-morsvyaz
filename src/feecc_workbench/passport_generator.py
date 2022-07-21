@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 import pathlib
 from typing import Any
@@ -28,6 +29,17 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
     return stage
 
 
+def _get_total_assembly_time(unit: Unit) -> dt.timedelta:
+    """Calculate total assembly time of the unit and all its components recursively"""
+    own_time: dt.timedelta = unit.total_assembly_time
+
+    for component in unit.components_units:
+        component_time = _get_total_assembly_time(component)
+        own_time += component_time
+
+    return own_time
+
+
 def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     """
     form a nested dictionary containing all the unit
@@ -48,6 +60,7 @@ def _get_passport_dict(unit: Unit) -> dict[str, Any]:
 
     if unit.components_units:
         passport_dict["Компоненты в составе изделия"] = [_get_passport_dict(c) for c in unit.components_units]
+        passport_dict["Общая продолжительность сборки (включая компоненты)"] = str(_get_total_assembly_time(unit))
 
     if unit.serial_number:
         passport_dict["Серийный номер изделия"] = unit.serial_number
