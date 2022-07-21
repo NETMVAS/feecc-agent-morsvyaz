@@ -59,6 +59,7 @@ def identify_sender(event: models.HidEvent) -> models.HidEvent:
         if device_name == event.name:
             if sender_name == "barcode_reader" and not is_a_ean13_barcode(event.string):
                 message = f"'{event.string}' is not a EAN13 barcode and cannot be an internal unit ID."
+                messenger.default("Не является штрих-кодом")
                 logger.warning(message)
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 

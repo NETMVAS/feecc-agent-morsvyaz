@@ -10,6 +10,7 @@ from loguru import logger
 
 from ._Barcode import Barcode
 from .Employee import Employee
+from .Messenger import messenger
 from .models import ProductionSchema
 from .ProductionStage import ProductionStage
 from .Types import AdditionalInfo
@@ -116,13 +117,20 @@ class Unit:
         """acquire one of the composite unit's components"""
         if self.components_filled:
             logger.error(f"Unit {self.model_name} component requirements have already been satisfied")
+            messenger.error("Изделию уже присвоены все необходимые компоненты")
 
         elif component.schema.schema_id in self.components_schema_ids:
             if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
                 if component.status is not UnitStatus.built:
+                    messenger.error(
+                        f'Сборка компонента "{component.model_name}" не была завершена. Невозможно присвоить компонент.'
+                    )
                     raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
 
                 elif component.featured_in_int_id is not None:
+                    messenger.error(
+                        f"Компонент №{component.internal_id} уже использован в изделии №{component.featured_in_int_id}"
+                    )
                     raise ValueError(
                         f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
                     )
@@ -133,10 +141,12 @@ class Unit:
                     logger.info(
                         f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}"
                     )
+                    messenger.success(f'Компонент "{component.model_name}" присвоен изделию "{self.model_name}"')
 
             else:
                 message = f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
                 logger.error(message)
+                messenger.error(f"Компонент {component.model_name} уже был добавлен к этому изделию")
                 raise ValueError(message)
 
         else:
@@ -144,6 +154,7 @@ class Unit:
                 f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
             )
             logger.error(message)
+            messenger.error(f'Комопнент "{component.model_name}" не явлеяется частью изделия "{self.model_name}"')
             raise ValueError(message)
 
     def start_operation(
