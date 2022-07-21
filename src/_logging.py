@@ -8,7 +8,7 @@ import ecs_logging
 # set up logging configurations
 BASE_LOGGING_CONFIG = {
     "colorize": True,
-    "backtrace": True,
+    "backtrace": False,
     "diagnose": True,
     "catch": True,
 }

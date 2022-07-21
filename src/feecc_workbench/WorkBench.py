@@ -69,8 +69,8 @@ class WorkBench(metaclass=SingletonMeta):
             except Exception as e:
                 messenger.error(f"Ошибка при печати этикетки: {e}")
                 raise e
-
-            os.remove(unit.barcode.filename)
+            finally:
+                os.remove(unit.barcode.filename)
 
         await self._database.push_unit(unit)
 
@@ -145,8 +145,8 @@ class WorkBench(metaclass=SingletonMeta):
             message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
             messenger.warning(
                 f"На стол могут быть помещены изделия со статусами:"
-                f" {', '.join(s.value for s in allowed)}."
-                f" Статус мзделия: {unit.status.value}. Отказано."
+                f" {', '.join(s.value.upper() for s in allowed)}."
+                f" Статус изделия: {unit.status.value.upper()}. Отказано."
             )
             raise AssertionError(message)
 
