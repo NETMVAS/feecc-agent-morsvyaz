@@ -32,23 +32,25 @@ def create_qr(link: str) -> pathlib.Path:
         (img_qr_big.size[1] - robonomics_logo.size[1]) // 2,
     )  # position to insert to logo right in the center of a qr-code
 
-    qr_size = 200  # size of the entire qr-code
-    border_s = int((554 - qr_size) / 2)
+    total_width = 554
+    qr_size = total_width // 3  # size of the entire qr-code
+    border_s = int((total_width - qr_size) / 2)
     img_qr_big.paste(robonomics_logo, pos)  # insert logo
     img_qr_big = img_qr_big.resize((qr_size, qr_size))  # resize qr
     img_qr_big = ImageOps.expand(img_qr_big, border=border_s, fill="white")
     img_qr_pos = 0, border_s - 2, qr_size + border_s * 2, border_s + qr_size + 2
     img_qr_big = img_qr_big.crop(img_qr_pos)
 
-    if CONFIG.printer.qr_add_logos:
+    # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
+    if CONFIG.printer.qr_add_logos:  # FIXME: Broken
         left_pic = Image.open("media/left_pic.jpg").resize((qr_size, qr_size))
         pos_l = (24, 2)
         img_qr_big.paste(left_pic, pos_l)
 
         right_pic = Image.open("media/right_pic.jpg").resize((qr_size, qr_size))
-        pos_r = (696 - qr_size - 24, 2)
+        pos_r = (total_width - qr_size - 24, 2)
         img_qr_big.paste(right_pic, pos_r)
-    # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
+
     dir_ = "output/qr_codes"
 
     if not os.path.isdir(dir_):
