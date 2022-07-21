@@ -7,7 +7,7 @@ license = "Apache 2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-Pillow = "^9.1.1"
+Pillow = "^9.2.0"
 PyYAML = "^6.0"
 brother-ql = "^0.9.4"
 qrcode = "^7.3.1"
@@ -22,25 +22,25 @@ environ-config = "^22.1.0"
 yarl = "^1.7.2"
 sse-starlette = "^0.10.3"
 python-dotenv = "^0.20.0"
-robonomics-interface = "^1.0.3"
+robonomics-interface = "^1.1.0"
 ecs-logging = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.960"
 flake8 = "^4.0.1"
-types-PyYAML = "^6.0.7"
-types-requests = "^2.27.29"
+types-PyYAML = "^6.0.10"
+types-requests = "^2.28.3"
 pytest = "^7.1.2"
-vulture = "^2.4"
-pre-commit = "^2.19.0"
+vulture = "^2.5"
+pre-commit = "^2.20.0"
 pytest-cov = "^3.0.0"
 ssort = "^0.11.5"
-black = {extras = ["d"], version = "^22.3.0"}
+black = {extras = ["d"], version = "^22.6.0"}
 flake8-new-union-types = "^0.4.1"
 flake8-pep585 = "^0.1.5.1"
-pyupgrade = "^2.32.1"
+pyupgrade = "^2.37.2"
 isort = "^5.10.1"
-poetryup = "^0.7.1"
+poetryup = "^0.7.2"
 
 [tool.pytest.ini_options]
 markers = ["short_url"]
