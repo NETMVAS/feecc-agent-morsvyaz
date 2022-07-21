@@ -299,10 +299,16 @@ class WorkBench(metaclass=SingletonMeta):
                 self.unit.passport_short_url = short_url
                 qrcode_path = create_qr(short_url)
                 try:
+                    if self.unit.schema.parent_schema_id is None:
+                        annotation = f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
+                    else:
+                        parent_schema = await self._database.get_schema_by_id(self.unit.schema.parent_schema_id)
+                        annotation = f"{parent_schema.unit_name}. {self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
+
                     await print_image(
                         qrcode_path,
                         self.employee.rfid_card_id,
-                        annotation=f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}",
+                        annotation=annotation,
                     )
                 except Exception as e:
                     messenger.error(f"Ошибка при печати QR-кода: {e}")
