@@ -64,10 +64,11 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
     @async_time_execution
-    async def push_unit(self, unit: Unit) -> None:
+    async def push_unit(self, unit: Unit, include_components: bool = True) -> None:
         """Upload or update data about the unit into the DB"""
-        for component in unit.components_units:
-            await self.push_unit(component)
+        if unit.components_units and include_components:
+            for component in unit.components_units:
+                await self.push_unit(component)
 
         await self._bulk_push_production_stages(unit.biography)
         unit_dict = _get_unit_dict_data(unit)

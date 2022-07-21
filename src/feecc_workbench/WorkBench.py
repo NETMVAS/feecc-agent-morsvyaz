@@ -264,7 +264,7 @@ class WorkBench(metaclass=SingletonMeta):
             premature=premature,
             override_timestamp=override_timestamp,
         )
-        await self._database.push_unit(self.unit)
+        await self._database.push_unit(self.unit, include_components=False)
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
