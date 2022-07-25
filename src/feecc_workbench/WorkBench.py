@@ -67,7 +67,7 @@ class WorkBench(metaclass=SingletonMeta):
             try:
                 await print_image(Path(unit.barcode.filename), self.employee.rfid_card_id, annotation=annotation)
             except Exception as e:
-                messenger.error(f"Ошибка при печати этикетки: {e}")
+                messenger.error("Ошибка при печати этикетки")
                 raise e
             finally:
                 os.remove(unit.barcode.filename)
@@ -311,7 +311,8 @@ class WorkBench(metaclass=SingletonMeta):
                         annotation=annotation,
                     )
                 except Exception as e:
-                    messenger.error(f"Ошибка при печати QR-кода: {e}")
+                    messenger.error("Ошибка при печати QR-кода")
+                    logger.error(str(e))
                 finally:
                     os.remove(qrcode_path)
             else:
@@ -328,7 +329,8 @@ class WorkBench(metaclass=SingletonMeta):
                 try:
                     await print_image(seal_tag_img, self.employee.rfid_card_id)
                 except Exception as e:
-                    messenger.error(f"Ошибка при печати пломбы: {e}")
+                    messenger.error("Ошибка при печати пломбы")
+                    logger.error(str(e))
                 finally:
                     os.remove(seal_tag_img)
 
