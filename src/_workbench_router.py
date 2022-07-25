@@ -202,8 +202,11 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                 if WORKBENCH.state == State.AUTHORIZED_IDLING_STATE:
                     WORKBENCH.assign_unit(unit)
                 elif WORKBENCH.state == State.UNIT_ASSIGNED_IDLING_STATE:
-                    WORKBENCH.remove_unit()
-                    WORKBENCH.assign_unit(unit)
+                    if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
+                        messenger.info("Это изделие уже помещено на рабочий стол")
+                    else:
+                        WORKBENCH.remove_unit()
+                        WORKBENCH.assign_unit(unit)
                 elif WORKBENCH.state == State.GATHER_COMPONENTS_STATE:
                     await WORKBENCH.assign_component_to_unit(unit)
                 else:
