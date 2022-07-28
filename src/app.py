@@ -1,4 +1,6 @@
 import uvicorn
+from aioprometheus.asgi.middleware import MetricsMiddleware
+from aioprometheus.asgi.starlette import metrics
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -33,6 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Enable Prometheus metrics
+app.add_middleware(MetricsMiddleware)
+app.add_route("/metrics", metrics)
 
 
 @app.on_event("startup")

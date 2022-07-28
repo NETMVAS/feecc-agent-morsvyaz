@@ -24,6 +24,7 @@ sse-starlette = "^0.10.3"
 python-dotenv = "^0.20.0"
 robonomics-interface = "^1.1.0"
 ecs-logging = "^2.0.0"
+aioprometheus = "^22.5.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.960"
