@@ -15,7 +15,7 @@ if os.path.exists(dotenv_file):
 class AppConfig:
     @environ.config(frozen=True)
     class MongoDB:
-        mongo_connection_uri: str = environ.var(help="Your MongoDB connection URI")
+        mongo_connection_uri: str = environ.var(name="MONGODB_URI", help="Your MongoDB connection URI")
 
     @environ.config(frozen=True)
     class RobonomicsNetwork:
