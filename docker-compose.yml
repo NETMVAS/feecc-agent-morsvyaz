@@ -3,7 +3,7 @@ services:
   feecc_workbench_daemon:
     environment:
       # Use these environment variables to configure your deployment
-      DB_MONGO_CONNECTION_URI: ""  # Your MongoDB connection URI
+      MONGODB_URI: ""  # Your MongoDB connection URI
       ROBONOMICS_ENABLE_DATALOG: "no"  # Whether to enable datalog posting or not
       ROBONOMICS_ACCOUNT_SEED: ""  # Your Robonomics network account seed phrase
       ROBONOMICS_SUBSTRATE_NODE_URI: "no"  # Robonomics network node URI
