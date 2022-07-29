@@ -24,6 +24,8 @@ if CONFIG.robonomics.enable_datalog:
         wait_for_inclusion=False,
     )
 
+CLIENT_LOCK = Lock()
+
 
 @async_time_execution
 async def post_to_datalog(content: str, unit_internal_id: str) -> None:
