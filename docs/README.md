@@ -22,7 +22,7 @@ Clone this repository from GitHub using the `git clone` command.
 Go to the repository folder and change the `docker-compose.yml` file to suit your needs. The configuration
 is defined by a number of environment variables:
 
-- **DB_MONGO_CONNECTION_URL** (Required): Your MongoDB connection URI
+- **MONGODB_URI** (Required): Your MongoDB connection URI
 - **ROBONOMICS_ENABLE_DATALOG** (Optional): Whether to enable datalog posting or not
 - **ROBONOMICS_ACCOUNT_SEED** (Optional): Your Robonomics network account seed phrase
 - **ROBONOMICS_SUBSTRATE_NODE_URL** (Optional): Robonomics network node URI
