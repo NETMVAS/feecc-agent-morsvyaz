@@ -1,7 +1,7 @@
-from __future__ import annotations
-
+import datetime as dt
 import os
-import typing as tp
+import pathlib
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -10,8 +10,8 @@ from .ProductionStage import ProductionStage
 from .Unit import Unit
 
 
-def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
-    stage: tp.Dict[str, tp.Any] = {
+def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
+    stage: dict[str, Any] = {
         "Наименование": prod_stage.name,
         "Код сотрудника": prod_stage.employee_name,
         "Время начала": prod_stage.session_start_time,
@@ -20,7 +20,7 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
 
     if prod_stage.video_hashes is not None:
         stage["Видеозаписи процесса сборки в IPFS"] = [
-            "https://gateway.ipfs.io/ipfs/" + cid for cid in prod_stage.video_hashes
+            f"https://gateway.ipfs.io/ipfs/{cid}" for cid in prod_stage.video_hashes
         ]
 
     if prod_stage.additional_info:
@@ -29,12 +29,23 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> tp.Dict[str, tp.Any]:
     return stage
 
 
-def _get_passport_dict(unit: Unit) -> tp.Dict[str, tp.Any]:
+def _get_total_assembly_time(unit: Unit) -> dt.timedelta:
+    """Calculate total assembly time of the unit and all its components recursively"""
+    own_time: dt.timedelta = unit.total_assembly_time
+
+    for component in unit.components_units:
+        component_time = _get_total_assembly_time(component)
+        own_time += component_time
+
+    return own_time
+
+
+def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     """
     form a nested dictionary containing all the unit
-    data to dump it into a in a human friendly passport
+    data to dump it into a human friendly passport
     """
-    passport_dict: tp.Dict[str, tp.Any] = {
+    passport_dict: dict[str, Any] = {
         "Уникальный номер паспорта изделия": unit.uuid,
         "Модель изделия": unit.model_name,
     }
@@ -49,6 +60,7 @@ def _get_passport_dict(unit: Unit) -> tp.Dict[str, tp.Any]:
 
     if unit.components_units:
         passport_dict["Компоненты в составе изделия"] = [_get_passport_dict(c) for c in unit.components_units]
+        passport_dict["Общая продолжительность сборки (включая компоненты)"] = str(_get_total_assembly_time(unit))
 
     if unit.serial_number:
         passport_dict["Серийный номер изделия"] = unit.serial_number
@@ -56,7 +68,7 @@ def _get_passport_dict(unit: Unit) -> tp.Dict[str, tp.Any]:
     return passport_dict
 
 
-def _save_passport(unit: Unit, passport_dict: tp.Dict[str, tp.Any], path: str) -> None:
+def _save_passport(unit: Unit, passport_dict: dict[str, Any], path: str) -> None:
     """makes a unit passport and dumps it in a form of a YAML file"""
     if not os.path.isdir("unit-passports"):
         os.mkdir("unit-passports")
@@ -66,9 +78,9 @@ def _save_passport(unit: Unit, passport_dict: tp.Dict[str, tp.Any], path: str) -
 
 
 @logger.catch(reraise=True)
-async def construct_unit_passport(unit: Unit) -> str:
+async def construct_unit_passport(unit: Unit) -> pathlib.Path:
     """construct own passport, dump it as .yaml file and return a path to it"""
     passport = _get_passport_dict(unit)
     path = f"unit-passports/unit-passport-{unit.uuid}.yaml"
     _save_passport(unit, passport, path)
-    return path
+    return pathlib.Path(path)

@@ -27,6 +27,7 @@ services:
       WORKBENCH_NUMBER: 1  # Workbench number
       HID_DEVICES_RFID_READER: IC Reader IC Reader  # RFID reader device name
       HID_DEVICES_BARCODE_READER: Newtologic  NT1640S  # Barcode reader device name
+      LOG_ECS_ENABLE: null  # Dump ECS formatted logs to ecs_log.json file
     build:
       context: ./
       dockerfile: Dockerfile
@@ -35,7 +36,8 @@ services:
     volumes:
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
-      - "./unit-passports/:/code/unit-passports/"
-      - "./workbench.log:/code/workbench.log"
+      - "./unit-passports/:/src/unit-passports/"
+      - "./workbench.log:/src/workbench.log"
+      - "./ecs_log.json:/src/ecs_log.json"
     network_mode: host
     restart: always

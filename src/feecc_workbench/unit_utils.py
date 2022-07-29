@@ -1,11 +1,10 @@
 import enum
-import typing as tp
 
-from .ProductionStage import ProductionStage
 from .models import ProductionSchema
+from .ProductionStage import ProductionStage
 
 
-def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> tp.List[ProductionStage]:
+def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> list[ProductionStage]:
     biography = []
 
     if production_schema.production_stages is not None:

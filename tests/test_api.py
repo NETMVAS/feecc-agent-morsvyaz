@@ -1,9 +1,12 @@
 import os
 from copy import copy
 from time import sleep
+from typing import no_type_check
+
+from fastapi.testclient import TestClient
+from requests import Response
 
 from app import app
-from fastapi.testclient import TestClient
 from feecc_workbench.states import State
 
 CLIENT = TestClient(base_url="http://127.0.0.1:5000", app=app)
@@ -22,7 +25,7 @@ def wait() -> None:
         sleep(SLOW_MODE_DELAY)
 
 
-def check_status(response, target_status: int = 200) -> None:
+def check_status(response: Response, target_status: int = 200) -> None:
     assert response.status_code in [200, target_status], f"Request status code was {response.status_code}"
     if response.status_code == 200:
         assert response.json()["status_code"] == target_status
@@ -296,7 +299,8 @@ def test_get_schema_by_id_valid() -> None:
     check_status(response, 200)
 
 
-def send_hid_event(string: str, sender: str):
+@no_type_check
+def send_hid_event(string: str, sender: str) -> Response:
     payload = {"string": string, "name": sender}
     return CLIENT.post("/workbench/hid-event", json=payload)
 

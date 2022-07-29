@@ -1,16 +1,15 @@
-import typing as tp
-
 import httpx
 from loguru import logger
 
 from .config import CONFIG
-from .utils import async_time_execution
+from .Messenger import messenger
+from .utils import async_time_execution, service_is_up
 
 YOURLS_CONFIG = CONFIG.yourls
 
 
 @async_time_execution
-async def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
+async def generate_short_url(underlying_url: str | None = None) -> str:
     """
     :return keyword: shorturl keyword. More on yourls.org. E.g. url.today/6b. 6b is a keyword
     :return link: full yourls url. E.g. url.today/6b
@@ -28,12 +27,21 @@ async def generate_short_url(underlying_url: tp.Optional[str] = None) -> str:
         "url": underlying_url or "example.com",
     }  # api call to the yourls server. More on yourls.org
 
+    if not service_is_up(url):
+        message = f"Yourls server {url} is unreachable"
+        messenger.error("Служба создания коротких ссылок недоступна")
+        raise ConnectionError(message)
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(url, params=querystring)
 
-    logger.debug(f"{YOURLS_CONFIG.server} returned: {response.text}")
+    if response.is_error:
+        messenger.error(f"Ошибка при создании короткой ссылки: {response.text}")
+        raise httpx.RequestError(response.text)
+
+    logger.debug(f"{YOURLS_CONFIG.server} returned: {response.json().get('detail', '')}")
     keyword: str = response.json()["url"]["keyword"]
-    link = "https://" + str(YOURLS_CONFIG.server) + "/" + keyword  # link of form url.today/6b
+    link = f"https://{str(YOURLS_CONFIG.server)}/{keyword}"
     logger.info(f"Assigned yourls link: {link}")
     return link
 

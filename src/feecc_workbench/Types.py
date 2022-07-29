@@ -1,4 +1,7 @@
-import typing as tp
+from typing import Any
 
-AdditionalInfo = tp.Dict[str, tp.Any]
-Document = tp.Dict[str, tp.Any]
+from pymongo import InsertOne, UpdateOne
+
+AdditionalInfo = dict[str, Any]
+Document = dict[str, Any]
+BulkWriteTask = UpdateOne | InsertOne

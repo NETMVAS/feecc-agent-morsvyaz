@@ -1,6 +1,6 @@
-<h2 align="center">Feecc Workbench Daemon</h2>
+# Feecc Workbench Daemon
 
-<p align="center">
+<p>
     <img alt="Workflow status" src="https://img.shields.io/github/workflow/status/NETMVAS/feecc-agent-morsvyaz/Python%20CI?label=CI%20checks">
     <img alt="GitHub License" src="https://img.shields.io/github/license/NETMVAS/feecc-agent-morsvyaz">
     <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2022">
@@ -11,7 +11,7 @@
 > located on employees' workbenches, providing users with
 > access to all Feecc features and a flexible configuration system to get you up and running quickly."
 
-<h2 align="center">Installation and startup</h2
+## Installation and startup
 
 > Assuming you have already installed Ubuntu (or another Linux distribution), Docker and Docker-compose.
 
@@ -19,7 +19,7 @@
 
 Clone this repository from GitHub using the `git clone` command.
 
-Go to the repository folder and change the `docker-compose.yml` file to suit your needs. The configuration 
+Go to the repository folder and change the `docker-compose.yml` file to suit your needs. The configuration
 is defined by a number of environment variables:
 
 - **DB_MONGO_CONNECTION_URL** (Required): Your MongoDB connection URI
@@ -47,6 +47,7 @@ is defined by a number of environment variables:
 - **WORKBENCH_NUMBER** (Required): Workbench number
 - **HID_DEVICES_RFID_READER** (Optional): RFID reader device name
 - **HID_DEVICES_BARCODE_READER** (Optional): Barcode reader device name
+- **LOG_ECS_ENABLE** (Optional): Emit file logs in the ECS format (defaults to "disabled")
 
 Deploy the Feecc Workbench Daemon with Docker-compose: At the root of the repository, type
 `sudo docker-compose up -d --build`.
@@ -62,7 +63,7 @@ Docker process manager: type `sudo docker ps` and make sure that you see the
 `feecc_workbench_daemon` on the container list. If not, there are probably errors in the build and run phases.
 Check the build log, fix them, and repeat the previous step.
 
-If the container is present in the table, try going to the browser and opening the `http://127.0.0.1:5000/docs` page, which should
-contain documentation on the system's REST API interface. If the page at that address is not available, then the server is 
-not started properly. You should check the logs inside the container for errors, fix them and repeat 
+If the container is present in the table, try going to the browser and opening the `http://127.0.0.1:5000/docs` page,
+which should contain documentation on the system's REST API interface. If the page at that address is not available,
+then the server is not started properly. You should check the logs inside the container for errors, fix them and repeat
 build and run steps.

@@ -1,15 +1,13 @@
-import typing as tp
-
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from starlette import status
 
 from dependencies import get_revision_pending_units, get_schema_by_id, get_unit_by_internal_id
 from feecc_workbench import models as mdl
-from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import WorkBench
 from feecc_workbench.exceptions import StateForbiddenError
 from feecc_workbench.states import State
+from feecc_workbench.Unit import Unit
+from feecc_workbench.WorkBench import WorkBench
 
 WORKBENCH = WorkBench()
 
@@ -19,10 +17,8 @@ router = APIRouter(
 )
 
 
-@router.post("/new/{schema_id}", response_model=tp.Union[mdl.UnitOut, mdl.GenericResponse])  # type: ignore
-async def create_unit(
-    schema: mdl.ProductionSchema = Depends(get_schema_by_id),
-) -> tp.Union[mdl.UnitOut, mdl.GenericResponse]:
+@router.post("/new/{schema_id}", response_model=mdl.UnitOut)
+async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.UnitOut:
     """handle new Unit creation"""
     try:
         unit: Unit = await WORKBENCH.create_new_unit(schema)
@@ -35,7 +31,7 @@ async def create_unit(
 
     except Exception as e:
         logger.error(f"Exception occurred while creating new Unit: {e}")
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 @router.get("/{unit_internal_id}/info", response_model=mdl.UnitInfo)
@@ -68,7 +64,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
 
 
 @router.get("/pending_revision", response_model=mdl.UnitOutPending)
-def get_revision_pending(units: tp.List[tp.Dict[str, str]] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
+def get_revision_pending(units: list[dict[str, str]] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
     """return all units staged for revision"""
     return mdl.UnitOutPending(
         status_code=status.HTTP_200_OK,
@@ -94,7 +90,7 @@ async def unit_upload_record() -> mdl.GenericResponse:
     except Exception as e:
         message: str = f"Can't handle unit upload. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/assign-component/{unit_internal_id}", response_model=mdl.GenericResponse)
@@ -113,4 +109,4 @@ async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl
     except Exception as e:
         message: str = f"An error occurred during component assignment: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e

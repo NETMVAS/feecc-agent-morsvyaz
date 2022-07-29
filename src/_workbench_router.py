@@ -1,5 +1,5 @@
 import asyncio
-import typing as tp
+from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
@@ -7,12 +7,13 @@ from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from feecc_workbench import models as mdl
+from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.Employee import Employee
+from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
+from feecc_workbench.Messenger import messenger
+from feecc_workbench.states import State
 from feecc_workbench.Unit import Unit
 from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
-from feecc_workbench.database import MongoDbWrapper
-from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
-from feecc_workbench.states import State
 
 WORKBENCH = WorkBench()
 
@@ -46,7 +47,7 @@ def get_workbench_status() -> mdl.WorkbenchOut:
     return get_workbench_status_data()
 
 
-async def state_update_generator(event: asyncio.Event) -> tp.AsyncGenerator[str, None]:
+async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, None]:
     """State update event generator for SSE streaming"""
     logger.info("SSE connection to state streaming endpoint established.")
 
@@ -63,7 +64,7 @@ async def state_update_generator(event: asyncio.Event) -> tp.AsyncGenerator[str,
 
 @router.get("/status/stream")
 async def stream_workbench_status() -> EventSourceResponse:
-    """Send updates on the workbench state into a SSE stream"""
+    """Send updates on the workbench state into an SSE stream"""
     status_stream = state_update_generator(STATE_SWITCH_EVENT)
     return EventSourceResponse(status_stream)
 
@@ -78,7 +79,7 @@ def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericRes
     except Exception as e:
         message: str = f"An error occurred during unit assignment: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/remove-unit", response_model=mdl.GenericResponse)
@@ -91,7 +92,7 @@ def remove_unit() -> mdl.GenericResponse:
     except Exception as e:
         message: str = f"An error occurred during unit removal: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/start-operation", response_model=mdl.GenericResponse)
@@ -107,7 +108,7 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.post("/end-operation", response_model=mdl.GenericResponse)
@@ -123,7 +124,7 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
     except Exception as e:
         message = f"Couldn't handle end record request. An error occurred: {e}"
         logger.error(message)
-        return mdl.GenericResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
@@ -134,7 +135,7 @@ async def get_schemas() -> mdl.SchemasList:
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
-        included_schemas: tp.Optional[tp.List[mdl.SchemaListEntry]] = (
+        included_schemas: list[mdl.SchemaListEntry] | None = (
             [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
             if schema.is_composite
             else None
@@ -159,14 +160,9 @@ async def get_schemas() -> mdl.SchemasList:
     )
 
 
-@router.get(
-    "/production-schemas/{schema_id}",
-    response_model=tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse],  # type: ignore
-)
-async def get_schema(
-    schema: mdl.ProductionSchema = Depends(get_schema_by_id),
-) -> tp.Union[mdl.ProductionSchemaResponse, mdl.GenericResponse]:
-    """get schema by it's ID"""
+@router.get("/production-schemas/{schema_id}", response_model=mdl.ProductionSchemaResponse)
+async def get_schema(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.ProductionSchemaResponse:
+    """get schema by its ID"""
     return mdl.ProductionSchemaResponse(
         status_code=status.HTTP_200_OK,
         detail=f"Found schema {schema.schema_id}",
@@ -187,7 +183,8 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                 try:
                     employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
                 except EmployeeNotFoundError as e:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+                    messenger.warning("Сотрудник не найден")
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
                 WORKBENCH.log_in(employee)
 
@@ -200,13 +197,16 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
                 try:
                     unit = await get_unit_by_internal_id(event.string)
                 except UnitNotFoundError as e:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
                 if WORKBENCH.state == State.AUTHORIZED_IDLING_STATE:
                     WORKBENCH.assign_unit(unit)
                 elif WORKBENCH.state == State.UNIT_ASSIGNED_IDLING_STATE:
-                    WORKBENCH.remove_unit()
-                    WORKBENCH.assign_unit(unit)
+                    if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
+                        messenger.info("Это изделие уже помещено на рабочий стол")
+                    else:
+                        WORKBENCH.remove_unit()
+                        WORKBENCH.assign_unit(unit)
                 elif WORKBENCH.state == State.GATHER_COMPONENTS_STATE:
                     await WORKBENCH.assign_component_to_unit(unit)
                 else:
@@ -216,4 +216,4 @@ async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> md
 
     except Exception as e:
         logger.error(e)
-        return mdl.GenericResponse(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e

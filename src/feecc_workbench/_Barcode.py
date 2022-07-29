@@ -17,4 +17,4 @@ class Barcode:
         dir_ = os.path.dirname(self.filename)
         if not os.path.isdir(dir_):
             os.makedirs(dir_)
-        return str(ean_code.save(self.basename, {"module_height": 8, "text_distance": 1, "font_size": 14}))
+        return str(ean_code.save(self.basename, {"module_height": 8, "text_distance": 3, "font_size": 8}))

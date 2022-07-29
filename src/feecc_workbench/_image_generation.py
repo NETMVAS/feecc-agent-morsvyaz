@@ -1,31 +1,24 @@
 import os
+import pathlib
 import time
-import typing as tp
 from datetime import datetime as dt
 
 import qrcode
-from PIL import Image, ImageDraw, ImageFont, ImageOps
 from loguru import logger
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .config import CONFIG
 from .utils import time_execution
 
 # color values
-color = tp.Tuple[int, int, int]
+color = tuple[int, int, int]
 WHITE: color = (255, 255, 255)
 BLACK: color = (0, 0, 0)
 
 
 @time_execution
-def create_qr(link: str) -> str:
-    """
-    :param link: full yourls url. E.g. https://url.today/6b
-    :type link: str
-    :return: full filename of a resulted qr-code
-    :rtype: str
-
-    This is a qr-creating submodule. Inserts a Robonomics logo inside the qr and adds logos aside if required
-    """
+def create_qr(link: str) -> pathlib.Path:
+    """This is a qr-creating submodule. Inserts a Robonomics logo inside the qr and adds logos aside if required"""
     logger.debug(f"Generating QR code image file for {link}")
 
     robonomics_logo = Image.open("media/robonomics.jpg").resize((100, 100))
@@ -39,38 +32,40 @@ def create_qr(link: str) -> str:
         (img_qr_big.size[1] - robonomics_logo.size[1]) // 2,
     )  # position to insert to logo right in the center of a qr-code
 
-    qr_size = 200  # size of the entire qr-code
-    border_s = int((554 - qr_size) / 2)
+    total_width = 554
+    qr_size = total_width // 3  # size of the entire qr-code
+    border_s = int((total_width - qr_size) / 2)
     img_qr_big.paste(robonomics_logo, pos)  # insert logo
     img_qr_big = img_qr_big.resize((qr_size, qr_size))  # resize qr
     img_qr_big = ImageOps.expand(img_qr_big, border=border_s, fill="white")
     img_qr_pos = 0, border_s - 2, qr_size + border_s * 2, border_s + qr_size + 2
     img_qr_big = img_qr_big.crop(img_qr_pos)
 
-    if CONFIG.printer.qr_add_logos:
+    # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
+    if CONFIG.printer.qr_add_logos:  # FIXME: Broken
         left_pic = Image.open("media/left_pic.jpg").resize((qr_size, qr_size))
         pos_l = (24, 2)
         img_qr_big.paste(left_pic, pos_l)
 
         right_pic = Image.open("media/right_pic.jpg").resize((qr_size, qr_size))
-        pos_r = (696 - qr_size - 24, 2)
+        pos_r = (total_width - qr_size - 24, 2)
         img_qr_big.paste(right_pic, pos_r)
-    # this is used to paste logos if needed. Position is set empirically so that logos are aside of the qr-code
+
     dir_ = "output/qr_codes"
 
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-    path_to_qr = dir_ + f"/{int(time.time())}_qr.png"
+    path_to_qr = f"{dir_}/{int(time.time())}_qr.png"
     img_qr_big.save(path_to_qr)  # saving picture for further printing with a timestamp
 
     logger.debug(f"Successfully saved QR code image file for {link} to {path_to_qr}")
 
-    return path_to_qr
+    return pathlib.Path(path_to_qr)
 
 
 @time_execution
-def create_seal_tag() -> str:
+def create_seal_tag() -> pathlib.Path:
     """generate a custom seal tag with required parameters"""
     logger.info("Generating seal tag")
 
@@ -81,10 +76,12 @@ def create_seal_tag() -> str:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-    seal_tag_path = f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
+    seal_tag_path = pathlib.Path(
+        f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
+    )
 
     # check if seal tag has already been created
-    if os.path.exists(seal_tag_path):
+    if seal_tag_path.exists():
         return seal_tag_path
 
     # make a basic security tag with needed dimensions
@@ -108,7 +105,7 @@ def create_seal_tag() -> str:
     # add a timestamp to the seal tag if needed
     if timestamp_enabled:
         txt_w, _ = seal_tag_draw.textsize(tag_timestamp, font)
-        xy: tp.Tuple[int, int] = int((image_width - txt_w) / 2), (upper_field + main_txt_h)
+        xy: tuple[int, int] = int((image_width - txt_w) / 2), (upper_field + main_txt_h)
         seal_tag_draw.text(xy=xy, text=tag_timestamp, fill=BLACK, font=font, align="center")
 
     # save the image in the output folder

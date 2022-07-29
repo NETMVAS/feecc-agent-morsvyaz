@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import datetime as dt
-import typing as tp
 from functools import reduce
 from operator import add
+from typing import no_type_check
 from uuid import uuid4
 
 from loguru import logger
 
+from ._Barcode import Barcode
 from .Employee import Employee
+from .Messenger import messenger
+from .models import ProductionSchema
 from .ProductionStage import ProductionStage
 from .Types import AdditionalInfo
-from ._Barcode import Barcode
-from .models import ProductionSchema
 from .unit_utils import UnitStatus, biography_factory
 from .utils import TIMESTAMP_FORMAT, timestamp
 
@@ -23,18 +24,18 @@ class Unit:
     def __init__(
         self,
         schema: ProductionSchema,
-        uuid: tp.Optional[str] = None,
-        internal_id: tp.Optional[str] = None,
-        is_in_db: tp.Optional[bool] = None,
-        biography: tp.Optional[tp.List[ProductionStage]] = None,
-        components_units: tp.Optional[tp.List[Unit]] = None,
-        featured_in_int_id: tp.Optional[str] = None,
-        passport_short_url: tp.Optional[str] = None,
-        passport_ipfs_cid: tp.Optional[str] = None,
-        txn_hash: tp.Optional[str] = None,
-        serial_number: tp.Optional[str] = None,
-        creation_time: tp.Optional[dt.datetime] = None,
-        status: tp.Union[UnitStatus, str] = UnitStatus.production,
+        uuid: str | None = None,
+        internal_id: str | None = None,
+        is_in_db: bool | None = None,
+        biography: list[ProductionStage] | None = None,
+        components_units: list[Unit] | None = None,
+        featured_in_int_id: str | None = None,
+        passport_short_url: str | None = None,
+        passport_ipfs_cid: str | None = None,
+        txn_hash: str | None = None,
+        serial_number: str | None = None,
+        creation_time: dt.datetime | None = None,
+        status: UnitStatus | str = UnitStatus.production,
     ) -> None:
         self.status: UnitStatus = UnitStatus(status) if isinstance(status, str) else status
 
@@ -45,23 +46,33 @@ class Unit:
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
-        self.passport_short_url: tp.Optional[str] = passport_short_url
-        self.passport_ipfs_cid: tp.Optional[str] = passport_ipfs_cid
-        self.txn_hash: tp.Optional[str] = txn_hash
-        self.serial_number: tp.Optional[str] = serial_number
-        self.components_units: tp.List[Unit] = components_units or []
-        self.featured_in_int_id: tp.Optional[str] = featured_in_int_id
-        self.employee: tp.Optional[Employee] = None
-        self.biography: tp.List[ProductionStage] = biography or biography_factory(schema, self.uuid)
+        self.passport_short_url: str | None = passport_short_url
+        self.passport_ipfs_cid: str | None = passport_ipfs_cid
+        self.txn_hash: str | None = txn_hash
+        self.serial_number: str | None = serial_number
+        self.components_units: list[Unit] = components_units or []
+        self.featured_in_int_id: str | None = featured_in_int_id
+        self.employee: Employee | None = None
+        self.biography: list[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.now()
 
+        if self.components_units:
+            slots: dict[str, Unit | None] = {u.schema.schema_id: u for u in self.components_units}
+            assert all(
+                k in (self.schema.required_components_schema_ids or []) for k in slots
+            ), "Provided components are not a part of the unit schema"
+        else:
+            slots = {schema_id: None for schema_id in (schema.required_components_schema_ids or [])}
+
+        self._component_slots: dict[str, Unit | None] = slots
+
     @property
-    def components_schema_ids(self) -> tp.List[str]:
+    def components_schema_ids(self) -> list[str]:
         return self.schema.required_components_schema_ids or []
 
     @property
-    def components_internal_ids(self) -> tp.List[str]:
+    def components_internal_ids(self) -> list[str]:
         return [c.internal_id for c in self.components_units]
 
     @property
@@ -70,22 +81,12 @@ class Unit:
 
     @property
     def components_filled(self) -> bool:
-        if self.components_schema_ids:
-            if not self.components_units:
-                return False
-
-            return len(self.components_schema_ids) == len(self.components_units)
-
-        return True
+        return None not in self._component_slots.values()
 
     @property
-    def next_pending_operation(self) -> tp.Optional[ProductionStage]:
+    def next_pending_operation(self) -> ProductionStage | None:
         """get next pending operation if any"""
-        for operation in self.biography:
-            if not operation.completed:
-                return operation
-
-        return None
+        return next((operation for operation in self.biography if not operation.completed), None)
 
     @property
     def total_assembly_time(self) -> dt.timedelta:
@@ -105,8 +106,8 @@ class Unit:
 
         return reduce(add, (stage_len(stage) for stage in self.biography)) if self.biography else dt.timedelta(0)
 
-    @tp.no_type_check
-    def assigned_components(self) -> tp.Optional[tp.Dict[str, tp.Optional[str]]]:
+    @no_type_check
+    def assigned_components(self) -> dict[str, str | None] | None:
         """get a mapping for all the currently assigned components VS the desired components"""
         assigned_components = {component.schema.schema_id: component.internal_id for component in self.components_units}
 
@@ -117,43 +118,47 @@ class Unit:
         return assigned_components or None
 
     def assign_component(self, component: Unit) -> None:
-        """acquire one of the composite unit's components"""
+        """Assign one of the composite unit's components to the unit"""
         if self.components_filled:
-            logger.error(f"Unit {self.model_name} component requirements have already been satisfied")
+            messenger.warning("Изделию уже присвоены все необходимые компоненты")
+            raise ValueError(f"Unit {self.model_name} component requirements have already been satisfied")
 
-        elif component.schema.schema_id in self.components_schema_ids:
-            if component.schema.schema_id not in (c.schema.schema_id for c in self.components_units):
-                if component.status is not UnitStatus.built:
-                    raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
-
-                elif component.featured_in_int_id is not None:
-                    raise ValueError(
-                        f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
-                    )
-
-                else:
-                    self.components_units.append(component)
-                    component.featured_in_int_id = self.internal_id
-                    logger.info(
-                        f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}"
-                    )
-
-            else:
-                message = f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
-                logger.error(message)
-                raise ValueError(message)
-
-        else:
-            message = (
+        if component.schema.schema_id not in self._component_slots:
+            messenger.warning(f'Комопнент "{component.model_name}" не явлеяется частью изделия "{self.model_name}"')
+            raise ValueError(
                 f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
             )
-            logger.error(message)
-            raise ValueError(message)
+
+        if self._component_slots.get(component.schema.schema_id, "") is not None:
+            messenger.warning(f'Компонент "{component.model_name}" уже был добавлен к этому изделию')
+            raise ValueError(
+                f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
+            )
+
+        if component.status is not UnitStatus.built:
+            messenger.warning(
+                f'Сборка компонента "{component.model_name}" не была завершена. Невозможно присвоить компонент'
+            )
+            raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
+
+        if component.featured_in_int_id is not None:
+            messenger.warning(
+                f"Компонент №{component.internal_id} уже использован в изделии №{component.featured_in_int_id}"
+            )
+            raise ValueError(
+                f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
+            )
+
+        self._component_slots[component.schema.schema_id] = component
+        self.components_units.append(component)
+        component.featured_in_int_id = self.internal_id
+        logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
+        messenger.success(f'Компонент "{component.model_name}" присвоен изделию "{self.model_name}"')
 
     def start_operation(
         self,
         employee: Employee,
-        additional_info: tp.Optional[AdditionalInfo] = None,
+        additional_info: AdditionalInfo | None = None,
     ) -> None:
         """begin the provided operation and save data about it"""
         operation = self.next_pending_operation
@@ -181,10 +186,10 @@ class Unit:
 
     async def end_operation(
         self,
-        video_hashes: tp.Optional[tp.List[str]] = None,
-        additional_info: tp.Optional[AdditionalInfo] = None,
+        video_hashes: list[str] | None = None,
+        additional_info: AdditionalInfo | None = None,
         premature: bool = False,
-        override_timestamp: tp.Optional[str] = None,
+        override_timestamp: str | None = None,
     ) -> None:
         """
         wrap up the session when video recording stops and save video data

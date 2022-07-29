@@ -1,5 +1,4 @@
 import hashlib
-import typing as tp
 from dataclasses import dataclass
 
 
@@ -11,10 +10,11 @@ class Employee:
     passport_code: str = ""
 
     def __post_init__(self) -> None:
-        self.passport_code = self.get_passport_code()
+        if not self.passport_code:
+            self.passport_code = self.get_passport_code()
 
     @property
-    def data(self) -> tp.Dict[str, str]:
+    def data(self) -> dict[str, str]:
         return {"name": self.name, "position": self.position}
 
     def get_passport_code(self) -> str:
@@ -29,5 +29,4 @@ class Employee:
 
         employee_passport_string: str = " ".join([self.rfid_card_id, self.name, self.position])
         employee_passport_string_encoded: bytes = employee_passport_string.encode()
-        employee_passport_code: str = hashlib.sha256(employee_passport_string_encoded).hexdigest()
-        return employee_passport_code
+        return hashlib.sha256(employee_passport_string_encoded).hexdigest()
