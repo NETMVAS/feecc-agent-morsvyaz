@@ -1,3 +1,5 @@
+import os
+
 import uvicorn
 from aioprometheus.asgi.middleware import MetricsMiddleware
 from aioprometheus.asgi.starlette import metrics
@@ -45,6 +47,8 @@ app.add_route("/metrics", metrics)
 def startup_event() -> None:
     check_service_connectivity()
     MongoDbWrapper()
+    app_version = os.getenv("VERSION", "Unknown")
+    logger.info(f"Runtime app version: {app_version}")
 
 
 @app.on_event("shutdown")
