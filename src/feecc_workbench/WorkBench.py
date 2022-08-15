@@ -80,7 +80,7 @@ class WorkBench(metaclass=SingletonMeta):
         """check if state transition can be performed using the map"""
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
             message = f"State transition from {self.state.value} to {new_state.value} is not allowed."
-            messenger.error(f"Переход из состояния {self.state.value} в состояние {new_state.value} невозможен")
+            messenger.error("Недопустимая смена состояния")
             raise StateForbiddenError(message)
 
     def switch_state(self, new_state: State) -> None:
@@ -143,11 +143,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         if not (override or unit.status in allowed):
             message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-            messenger.warning(
-                f"На стол могут быть помещены изделия со статусами:"
-                f" {', '.join(s.value.upper() for s in allowed)}."
-                f" Статус изделия: {unit.status.value.upper()}. Отказано."
-            )
+            messenger.warning("Сборка изделия уже была завершена, пасспорт выпущен. Отказано.")
             raise AssertionError(message)
 
         self.unit = unit
