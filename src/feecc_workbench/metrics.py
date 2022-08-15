@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import os
 import re
+from typing import TYPE_CHECKING
 
 from aioprometheus.collectors import Summary
 
 from .Employee import Employee
 from .Singleton import SingletonMeta
-from .Unit import Unit
+
+if TYPE_CHECKING:
+    from .Unit import Unit
 
 
 class Metrics(metaclass=SingletonMeta):
