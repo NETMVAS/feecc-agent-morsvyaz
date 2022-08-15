@@ -37,3 +37,9 @@ class StateForbiddenError(TrackedException):
     """Raised when state transition is forbidden"""
 
     pass
+
+
+class RobonomicsError(TrackedException):
+    """Raised when Robonmics transactions fail"""
+
+    pass

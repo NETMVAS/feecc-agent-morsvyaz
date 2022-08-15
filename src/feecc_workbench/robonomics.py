@@ -5,6 +5,7 @@ from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
 from .database import MongoDbWrapper
+from .exceptions import RobonomicsError
 from .Messenger import messenger
 from .utils import async_time_execution
 
@@ -16,9 +17,12 @@ class AsyncDatalogClient(Datalog):  # type: ignore
 
     async def record(self, data: str, nonce: int | None = None) -> str:
         async with self._client_lock:
-            loop = asyncio.get_running_loop()
-            result: str = await loop.run_in_executor(None, super().record, data)
-            return result
+            try:
+                loop = asyncio.get_running_loop()
+                result: str = await loop.run_in_executor(None, super().record, data)
+                return result
+            except Exception as e:
+                raise RobonomicsError(str(e)) from e
 
 
 ROBONOMICS_ACCOUNT: Account | None = None
@@ -54,8 +58,7 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
             raise e
 
     assert txn_hash
+    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
     messenger.success("Данные паспорта опубликованы в Даталоге сети Robonomics")
     logger.info(message)
-
-    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
