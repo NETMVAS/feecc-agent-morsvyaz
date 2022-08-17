@@ -8,6 +8,7 @@ from aioprometheus.collectors import Summary
 
 from .Employee import Employee
 from .Singleton import SingletonMeta
+from .utils import export_version
 
 if TYPE_CHECKING:
     from .Unit import Unit
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 class Metrics(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._metrics: dict[str, Summary] = {}
+        export_version()
         app_version = Summary(name="app_version", doc="Runtime application version")
         app_version.observe(labels={"app_version": os.getenv("VERSION", "Unknown")}, value=1)
 
