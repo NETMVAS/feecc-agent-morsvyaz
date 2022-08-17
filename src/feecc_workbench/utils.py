@@ -118,4 +118,4 @@ def export_version() -> None:
     if version_file.exists():
         with version_file.open("r") as f:
             version = f.read()
-            os.environ["VERSION"] = version
+            os.environ["VERSION"] = version.strip("\n")
