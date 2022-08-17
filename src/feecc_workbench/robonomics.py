@@ -26,29 +26,28 @@ class AsyncDatalogClient(Datalog):  # type: ignore
 
 
 ROBONOMICS_ACCOUNT: Account | None = None
-DATALOG_CLIENT: AsyncDatalogClient | None = None
 
 if CONFIG.robonomics.enable_datalog:
     ROBONOMICS_ACCOUNT = Account(
         seed=CONFIG.robonomics.account_seed,
         remote_ws=CONFIG.robonomics.substrate_node_uri,
     )
-    DATALOG_CLIENT = AsyncDatalogClient(
-        account=ROBONOMICS_ACCOUNT,
-        wait_for_inclusion=False,
-    )
 
 
 @async_time_execution
 async def post_to_datalog(content: str, unit_internal_id: str) -> None:
-    assert DATALOG_CLIENT is not None, "Robonomics interface client has not been initialized"
+    assert ROBONOMICS_ACCOUNT is not None, "Robonomics credentials have not been provided"
+    datalog_clent = AsyncDatalogClient(
+        account=ROBONOMICS_ACCOUNT,
+        wait_for_inclusion=False,
+    )
     logger.info(f"Posting data '{content}' to Robonomics datalog")
     retry_cnt = 3
     txn_hash: str = ""
 
     for i in range(1, retry_cnt + 1):
         try:
-            txn_hash = await DATALOG_CLIENT.record(data=content)
+            txn_hash = await datalog_clent.record(data=content)
             break
         except Exception as e:
             logger.error(f"Failed to post to the Datalog (attempt {i}/{retry_cnt}): {e}")
