@@ -1,7 +1,9 @@
 import datetime as dt
+import os
 import re
 import socket
 import sys
+from pathlib import Path
 from time import time
 from typing import Any
 
@@ -108,3 +110,12 @@ def check_service_connectivity() -> None:
 
     if checked_cnt:
         logger.info(f"{checked_cnt - failed_cnt}/{checked_cnt} service connectivity checks passed")
+
+
+def export_version() -> None:
+    """Parse app version and export it into environment variables at runtime"""
+    version_file = Path("version.txt")
+    if version_file.exists():
+        with version_file.open("r") as f:
+            version = f.read()
+            os.environ["VERSION"] = version.strip("\n")

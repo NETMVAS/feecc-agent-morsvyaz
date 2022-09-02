@@ -152,6 +152,7 @@ async def get_schemas() -> mdl.SchemasList:
         for schema in sorted(all_schemas.values(), key=lambda s: bool(s.is_composite), reverse=True)
         if schema.schema_id not in handled_schemas
     ]
+    available_schemas.sort(key=lambda le: len(le.schema_name))
 
     return mdl.SchemasList(
         status_code=status.HTTP_200_OK,

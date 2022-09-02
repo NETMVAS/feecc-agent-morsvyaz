@@ -11,6 +11,7 @@ from loguru import logger
 from ._Barcode import Barcode
 from .Employee import Employee
 from .Messenger import messenger
+from .metrics import metrics
 from .models import ProductionSchema
 from .ProductionStage import ProductionStage
 from .Types import AdditionalInfo
@@ -230,5 +231,6 @@ class Unit:
                 f"Unit has no more pending production stages. Unit status changed: {prev_status.value} -> "
                 f"{self.status.value}"
             )
+            metrics.register_complete_unit(None, self)
 
         self.employee = None
