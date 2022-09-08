@@ -9,7 +9,7 @@ from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sen
 from feecc_workbench import models as mdl
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.Employee import Employee
-from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
+from feecc_workbench.exceptions import EmployeeNotFoundError
 from feecc_workbench.Messenger import messenger
 from feecc_workbench.states import State
 from feecc_workbench.Unit import Unit
@@ -70,7 +70,7 @@ async def stream_workbench_status() -> EventSourceResponse:
 
 
 @router.post("/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)
-def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:  # noqa: B008
     """assign the provided unit to the workbench"""
     try:
         WORKBENCH.assign_unit(unit)
@@ -162,7 +162,9 @@ async def get_schemas() -> mdl.SchemasList:
 
 
 @router.get("/production-schemas/{schema_id}", response_model=mdl.ProductionSchemaResponse)
-async def get_schema(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.ProductionSchemaResponse:
+async def get_schema(
+    schema: mdl.ProductionSchema = Depends(get_schema_by_id),  # noqa: B008
+) -> mdl.ProductionSchemaResponse:
     """get schema by its ID"""
     return mdl.ProductionSchemaResponse(
         status_code=status.HTTP_200_OK,
@@ -171,47 +173,57 @@ async def get_schema(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -
     )
 
 
+async def handle_barcode_event(event_string: str) -> None:
+    """Handle HID event produced by the barcode reader"""
+    if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
+        await WORKBENCH.end_operation()
+        return
+
+    unit = await get_unit_by_internal_id(event_string)
+
+    match WORKBENCH.state:
+        case State.AUTHORIZED_IDLING_STATE:
+            WORKBENCH.assign_unit(unit)
+        case State.UNIT_ASSIGNED_IDLING_STATE:
+            if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
+                messenger.info("Это изделие уже помещено на рабочий стол")
+                return
+            WORKBENCH.remove_unit()
+            WORKBENCH.assign_unit(unit)
+        case State.GATHER_COMPONENTS_STATE:
+            await WORKBENCH.assign_component_to_unit(unit)
+        case _:
+            logger.error(f"Received input {event_string}. Ignoring event since no one is authorized.")
+
+
+async def handle_rfid_event(event_string: str) -> None:
+    """Handle HID event produced by the RFID reader"""
+    if WORKBENCH.employee is not None:
+        WORKBENCH.log_out()
+        return
+
+    try:
+        employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event_string)
+    except EmployeeNotFoundError as e:
+        messenger.warning("Сотрудник не найден")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+    WORKBENCH.log_in(employee)
+
+
 @router.post("/hid-event", response_model=mdl.GenericResponse)
-async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:
+async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:  # noqa: B008
     """Parse the event dict JSON"""
     try:
-        if event.name == "rfid_reader":
-            logger.debug(f"Handling RFID event. String: {event.string}")
-
-            if WORKBENCH.employee is not None:
-                WORKBENCH.log_out()
-            else:
-                try:
-                    employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event.string)
-                except EmployeeNotFoundError as e:
-                    messenger.warning("Сотрудник не найден")
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-
-                WORKBENCH.log_in(employee)
-
-        elif event.name == "barcode_reader":
-            logger.debug(f"Handling barcode event. String: {event.string}")
-
-            if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
-                await WORKBENCH.end_operation()
-            else:
-                try:
-                    unit = await get_unit_by_internal_id(event.string)
-                except UnitNotFoundError as e:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-
-                if WORKBENCH.state == State.AUTHORIZED_IDLING_STATE:
-                    WORKBENCH.assign_unit(unit)
-                elif WORKBENCH.state == State.UNIT_ASSIGNED_IDLING_STATE:
-                    if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
-                        messenger.info("Это изделие уже помещено на рабочий стол")
-                    else:
-                        WORKBENCH.remove_unit()
-                        WORKBENCH.assign_unit(unit)
-                elif WORKBENCH.state == State.GATHER_COMPONENTS_STATE:
-                    await WORKBENCH.assign_component_to_unit(unit)
-                else:
-                    logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
+        match event.name:
+            case "rfid_reader":
+                logger.debug(f"Handling RFID event. String: {event.string}")
+                await handle_rfid_event(event.string)
+            case "barcode_reader":
+                logger.debug(f"Handling barcode event. String: {event.string}")
+                await handle_barcode_event(event.string)
+            case _:
+                raise KeyError(f"Unknown sender: {event.name}")
 
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
 

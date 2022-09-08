@@ -1,5 +1,5 @@
 import asyncio
-import os
+import pathlib
 from pathlib import Path
 
 from loguru import logger
@@ -22,7 +22,7 @@ from .Singleton import SingletonMeta
 from .states import STATE_TRANSITION_MAP, State
 from .Types import AdditionalInfo
 from .Unit import Unit
-from .unit_utils import UnitStatus
+from .unit_utils import UnitStatus, get_first_unit_matching_status
 from .utils import timestamp
 
 STATE_SWITCH_EVENT = asyncio.Event()
@@ -46,6 +46,22 @@ class WorkBench(metaclass=SingletonMeta):
 
         logger.info(f"Workbench {self.number} was initialized")
 
+    async def _print_unit_barcode(self, unit: Unit) -> None:
+        """Print unit barcode"""
+        if (schema := unit.schema).parent_schema_id is None:
+            annotation = schema.unit_name
+        else:
+            parent_schema = await self._database.get_schema_by_id(schema.parent_schema_id)
+            annotation = f"{parent_schema.unit_name}. {unit.model_name}."
+        assert self.employee is not None
+        try:
+            await print_image(Path(unit.barcode.filename), self.employee.rfid_card_id, annotation=annotation)
+        except Exception as e:
+            messenger.error("Ошибка при печати этикетки")
+            raise e
+        finally:
+            pathlib.Path(unit.barcode.filename).unlink()
+
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def create_new_unit(self, schema: ProductionSchema) -> Unit:
         """initialize a new instance of the Unit class"""
@@ -53,26 +69,9 @@ class WorkBench(metaclass=SingletonMeta):
             message = "Cannot create a new unit unless workbench has state AuthorizedIdling"
             messenger.error("Для создания нового изделия рабочий стол должен иметь состояние AuthorizedIdling")
             raise StateForbiddenError(message)
-
         unit = Unit(schema)
-
         if CONFIG.printer.print_barcode and CONFIG.printer.enable:
-            if unit.schema.parent_schema_id is None:
-                annotation = unit.schema.unit_name
-            else:
-                parent_schema = await self._database.get_schema_by_id(unit.schema.parent_schema_id)
-                annotation = f"{parent_schema.unit_name}. {unit.model_name}."
-
-            assert self.employee is not None
-
-            try:
-                await print_image(Path(unit.barcode.filename), self.employee.rfid_card_id, annotation=annotation)
-            except Exception as e:
-                messenger.error("Ошибка при печати этикетки")
-                raise e
-            finally:
-                os.remove(unit.barcode.filename)
-
+            await self._print_unit_barcode(unit)
         await self._database.push_unit(unit)
         metrics.register_create_unit(self.employee, unit)
 
@@ -128,27 +127,16 @@ class WorkBench(metaclass=SingletonMeta):
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
-        def _get_unit_list(unit_: Unit) -> list[Unit]:
-            """list all the units in the component tree"""
-            units_tree = [unit_]
-            for component_ in unit_.components_units:
-                nested = _get_unit_list(component_)
-                units_tree.extend(nested)
-            return units_tree
-
-        allowed = (UnitStatus.production, UnitStatus.revision)
         override = unit.status == UnitStatus.built and unit.passport_ipfs_cid is None
-
-        if unit.status not in allowed:
-            for component in _get_unit_list(unit):
-                if component.status in allowed:
-                    unit = component
-                    break
+        allowed = (UnitStatus.production, UnitStatus.revision)
 
         if not (override or unit.status in allowed):
-            message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-            messenger.warning("Сборка изделия уже была завершена, пасспорт выпущен. Отказано.")
-            raise AssertionError(message)
+            try:
+                unit = get_first_unit_matching_status(unit, *allowed)
+            except AssertionError as e:
+                message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
+                messenger.warning("Сборка изделия уже была завершена, паспорт выпущен. Отказано.")
+                raise AssertionError(message) from e
 
         self.unit = unit
 
@@ -218,6 +206,39 @@ class WorkBench(metaclass=SingletonMeta):
             await self._database.push_unit(self.unit)
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
+    async def _end_record(self) -> tuple[list[str], str]:  # noqa: CAC001
+        """End ongoing records and publish them to IPFS"""
+        assert self.camera is not None and self.employee is not None
+        override_timestamp = timestamp()
+        ipfs_hashes: list[str] = []
+
+        try:
+            await self.camera.end(self.employee.rfid_card_id)
+            override_timestamp = timestamp()
+            assert self.camera.record is not None, "No record found"
+            file: str | None = self.camera.record.remote_file_path
+        except Exception as e:
+            logger.error(f"Failed to end record: {e}")
+            messenger.warning("Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.")
+            file = None
+
+        if file is not None:
+            try:
+                data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
+
+                if data is not None:
+                    cid, link = data
+                    ipfs_hashes.append(cid)
+            except Exception as e:
+                logger.error(f"Failed to publish record: {e}")
+                messenger.warning(
+                    "Этап завершен, однако опубликовать видеозапись в сети IPFS не удалось. "
+                    "Видеозапись сохранена локально. Обратитесь к администратору."
+                )
+                ipfs_hashes = []
+
+        return ipfs_hashes, override_timestamp
+
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
         """end work on the provided unit"""
@@ -233,30 +254,7 @@ class WorkBench(metaclass=SingletonMeta):
         ipfs_hashes: list[str] = []
 
         if self.camera is not None and self.employee is not None:
-            try:
-                await self.camera.end(self.employee.rfid_card_id)
-                override_timestamp = timestamp()
-                assert self.camera.record is not None, "No record found"
-                file: str | None = self.camera.record.remote_file_path
-            except Exception as e:
-                logger.error(f"Failed to end record: {e}")
-                messenger.warning("Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.")
-                file = None
-
-            if file is not None:
-                try:
-                    data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
-
-                    if data is not None:
-                        cid, link = data
-                        ipfs_hashes.append(cid)
-                except Exception as e:
-                    logger.error(f"Failed to publish record: {e}")
-                    messenger.warning(
-                        "Этап завершен, однако опубликовать видеозапись в сети IPFS не удалось. "
-                        "Видеозапись сохранена локально. Обратитесь к администратору."
-                    )
-                    ipfs_hashes = []
+            ipfs_hashes, override_timestamp = await self._end_record()
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
@@ -269,75 +267,111 @@ class WorkBench(metaclass=SingletonMeta):
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
         metrics.register_complete_operation(self.employee, self.unit)
 
+    async def _print_security_tag(self) -> None:
+        """Print security tag for the unit"""
+        assert self.employee is not None
+        seal_tag_img: Path = create_seal_tag()
+        try:
+            await print_image(seal_tag_img, self.employee.rfid_card_id)
+        except Exception as e:
+            messenger.error("Ошибка при печати пломбы")
+            logger.error(str(e))
+        finally:
+            pathlib.Path(seal_tag_img).unlink()
+
+    async def _print_qr(self, short_url: str) -> None:
+        """Print passport QR-code tag for the unit"""
+        assert self.employee is not None
+        assert self.unit is not None
+        self.unit.passport_short_url = short_url
+        qrcode_path = create_qr(short_url)
+        try:
+            if self.unit.schema.parent_schema_id is None:
+                annotation = f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
+            else:
+                parent_schema = await self._database.get_schema_by_id(self.unit.schema.parent_schema_id)
+                annotation = (
+                    f"{parent_schema.unit_name}. {self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
+                )
+
+            await print_image(
+                qrcode_path,
+                self.employee.rfid_card_id,
+                annotation=annotation,
+            )
+        except Exception as e:
+            messenger.error("Ошибка при печати QR-кода")
+            logger.error(str(e))
+            raise e
+        finally:
+            pathlib.Path(qrcode_path).unlink()
+
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    async def upload_unit_passport(self) -> None:
-        """upload passport file into IPFS and pin it to Pinata, publish hash to Robonomics"""
+    async def upload_unit_passport(self) -> None:  # noqa: CAC001,CCR001
+        """Finalize the Unit's assembly by producing and publishing its passport"""
+
+        # Make sure nothing needed for this operation is missing
         if self.unit is None:
-            message = "No unit is assigned to the workbench"
             messenger.error("На рабочем столе отсутсвует изделие")
-            raise AssertionError(message)
+            raise AssertionError("No unit is assigned to the workbench")
 
         if self.employee is None:
-            message = "No employee is logged in at the workbench"
             messenger.error("Необходима авторизация")
-            raise AssertionError(message)
+            raise AssertionError("No employee is logged in at the workbench")
 
+        # Generate and save passport YAML file
         passport_file_path: Path = await construct_unit_passport(self.unit)
 
+        # Determine if QR-code has to be printed -> short link is needed right now
+        print_qr = CONFIG.printer.print_qr and (
+            not CONFIG.printer.print_qr_only_for_composite
+            or self.unit.schema.is_composite
+            or not self.unit.schema.is_a_component
+        )
+
+        # Publish passport YAML file into IPFS
         if CONFIG.ipfs_gateway.enable:
-            res = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
-            cid, link = res
+            cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
             self.unit.passport_ipfs_cid = cid
 
-            print_qr = CONFIG.printer.print_qr and (
-                not CONFIG.printer.print_qr_only_for_composite
-                or self.unit.schema.is_composite
-                or not self.unit.schema.is_a_component
-            )
-
+            # Generate a short link pointing to the unit's passport to use it for a QR-code
             if print_qr:
-                short_url: str = await generate_short_url(link)
-                self.unit.passport_short_url = short_url
-                qrcode_path = create_qr(short_url)
                 try:
-                    if self.unit.schema.parent_schema_id is None:
-                        annotation = f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
-                    else:
-                        parent_schema = await self._database.get_schema_by_id(self.unit.schema.parent_schema_id)
-                        annotation = f"{parent_schema.unit_name}. {self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
-
-                    await print_image(
-                        qrcode_path,
-                        self.employee.rfid_card_id,
-                        annotation=annotation,
-                    )
+                    self.unit.passport_short_url = await generate_short_url(link)
                 except Exception as e:
-                    messenger.error("Ошибка при печати QR-кода")
+                    messenger.error("Ошибка при создании короткой ссылки для QR-кода")
                     logger.error(str(e))
-                finally:
-                    os.remove(qrcode_path)
             else:
 
                 async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
-                    short_link = await generate_short_url(url)
+                    try:
+                        short_link = await generate_short_url(url)
+                    except Exception as e:
+                        messenger.error("Ошибка при создании короткой ссылки для QR-кода")
+                        logger.error(str(e))
+                        return
                     await MongoDbWrapper().unit_update_single_field(unit_internal_id, "passport_short_url", short_link)
 
                 asyncio.create_task(_bg_generate_short_url(link, self.unit.internal_id))
 
-            if CONFIG.printer.print_security_tag:
-                seal_tag_img: Path = create_seal_tag()
+        # Generate a QR-code pointing to the unit's passport and print it
+        if print_qr and (short_url := self.unit.passport_short_url):
+            try:
+                await self._print_qr(short_url)
+            except Exception as e:
+                messenger.error("Выпуск паспорта отменён поскольку печать экикетки невозможна")
+                logger.error(f"Failed to print QR code. Passport not saved. {e}")
+                raise e
 
-                try:
-                    await print_image(seal_tag_img, self.employee.rfid_card_id)
-                except Exception as e:
-                    messenger.error("Ошибка при печати пломбы")
-                    logger.error(str(e))
-                finally:
-                    os.remove(seal_tag_img)
+        # Print a security tag sticker if needed
+        if CONFIG.printer.print_security_tag:
+            await self._print_security_tag()
 
-            if CONFIG.robonomics.enable_datalog and res is not None:
-                asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
+        # Publish passport file's IPFS CID to Robonomics Datalog
+        if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
+            asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
+        # Update unit data saved in the DB
         await self._database.push_unit(self.unit)
         metrics.register_generate_passport(self.employee, self.unit)
 

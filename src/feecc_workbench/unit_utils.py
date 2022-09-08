@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 import enum
+from typing import TYPE_CHECKING
 
 from .models import ProductionSchema
 from .ProductionStage import ProductionStage
+
+if TYPE_CHECKING:
+    from .Unit import Unit
 
 
 def biography_factory(production_schema: ProductionSchema, parent_unit_uuid: str) -> list[ProductionStage]:
@@ -28,3 +34,20 @@ class UnitStatus(enum.Enum):
     revision = "revision"
     approved = "approved"
     finalized = "finalized"
+
+
+def _get_unit_list(unit_: Unit) -> list[Unit]:
+    """list all the units in the component tree"""
+    units_tree = [unit_]
+    for component_ in unit_.components_units:
+        nested = _get_unit_list(component_)
+        units_tree.extend(nested)
+    return units_tree
+
+
+def get_first_unit_matching_status(unit: Unit, *target_statuses: UnitStatus) -> Unit:
+    """get first unit matching having target status in unit tree"""
+    for component in _get_unit_list(unit):
+        if component.status in target_statuses:
+            return component
+    raise AssertionError("Unit features no components that are in allowed states")

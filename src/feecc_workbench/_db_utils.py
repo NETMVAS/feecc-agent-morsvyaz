@@ -14,9 +14,9 @@ def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:
         db_client.server_info()
         return db_client
 
-    except Exception as E:
+    except Exception as e:
         message = (
-            f"Failed to establish database connection: {E}. "
+            f"Failed to establish database connection: {e}. "
             f"Is the provided URI correct? {mongo_connection_uri=} Exiting."
         )
         logger.critical(message)

@@ -39,8 +39,9 @@ async def print_image_task(file_path: Path, rfid_card_id: str, annotation: str |
         url = f"{PRINT_SERVER_ADDRESS}/print_image"
         headers: dict[str, str] = get_headers(rfid_card_id)
         data = {"annotation": annotation}
-        files = {"image_file": open(file_path, "rb")}
-        response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
+        with file_path.open("rb") as f:
+            files = {"image_file": f}
+            response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
 
     if response.is_error:
         raise httpx.RequestError(response.json().get("detail", ""))

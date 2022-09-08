@@ -18,7 +18,7 @@ router = APIRouter(
 
 
 @router.post("/new/{schema_id}", response_model=mdl.UnitOut)
-async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.UnitOut:
+async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.UnitOut:  # noqa: B008
     """handle new Unit creation"""
     try:
         unit: Unit = await WORKBENCH.create_new_unit(schema)
@@ -35,7 +35,7 @@ async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) 
 
 
 @router.get("/{unit_internal_id}/info", response_model=mdl.UnitInfo)
-def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo:
+def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo:  # noqa: B008
     """return data for a Unit with matching ID"""
     return mdl.UnitInfo(
         status_code=status.HTTP_200_OK,
@@ -64,7 +64,9 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
 
 
 @router.get("/pending_revision", response_model=mdl.UnitOutPending)
-def get_revision_pending(units: list[dict[str, str]] = Depends(get_revision_pending_units)) -> mdl.UnitOutPending:
+def get_revision_pending(
+    units: list[dict[str, str]] = Depends(get_revision_pending_units)  # noqa: B008
+) -> mdl.UnitOutPending:
     """return all units staged for revision"""
     return mdl.UnitOutPending(
         status_code=status.HTTP_200_OK,
@@ -94,7 +96,7 @@ async def unit_upload_record() -> mdl.GenericResponse:
 
 
 @router.post("/assign-component/{unit_internal_id}", response_model=mdl.GenericResponse)
-async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+async def assign_component(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:  # noqa: B008
     """assign a unit as a component to the composite unit"""
     if WORKBENCH.state != State.GATHER_COMPONENTS_STATE:
         raise HTTPException(

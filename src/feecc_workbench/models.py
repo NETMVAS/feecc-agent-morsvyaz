@@ -85,7 +85,7 @@ class HidEvent(BaseModel):
 class ProductionSchemaStage(BaseModel):
     name: str
     stage_id: str
-    type: str | None = None
+    type: str | None = None  # noqa: A003
     description: str | None = None
     equipment: list[str] | None = None
     workplace: str | None = None

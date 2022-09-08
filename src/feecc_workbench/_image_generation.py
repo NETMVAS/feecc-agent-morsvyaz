@@ -1,4 +1,3 @@
-import os
 import pathlib
 import time
 from datetime import datetime as dt
@@ -51,17 +50,18 @@ def create_qr(link: str) -> pathlib.Path:
         pos_r = (total_width - qr_size - 24, 2)
         img_qr_big.paste(right_pic, pos_r)
 
-    dir_ = "output/qr_codes"
+    dir_ = pathlib.Path("output/qr_codes")
 
-    if not os.path.isdir(dir_):
-        os.mkdir(dir_)
+    if not dir_.is_dir():
+        dir_.mkdir()
 
-    path_to_qr = f"{dir_}/{int(time.time())}_qr.png"
+    filename = f"{int(time.time())}_qr.png"
+    path_to_qr = pathlib.Path(dir_ / filename)
     img_qr_big.save(path_to_qr)  # saving picture for further printing with a timestamp
 
     logger.debug(f"Successfully saved QR code image file for {link} to {path_to_qr}")
 
-    return pathlib.Path(path_to_qr)
+    return path_to_qr
 
 
 @time_execution
@@ -71,14 +71,12 @@ def create_seal_tag() -> pathlib.Path:
 
     timestamp_enabled: bool = CONFIG.printer.security_tag_add_timestamp
     tag_timestamp: str = dt.now().strftime("%d.%m.%Y")
-    dir_: str = "output/seal_tags"
+    dir_ = pathlib.Path("output/seal_tags")
 
-    if not os.path.isdir(dir_):
-        os.mkdir(dir_)
+    if not dir_.is_dir():
+        dir_.mkdir()
 
-    seal_tag_path = pathlib.Path(
-        f"{dir_}/seal_tag_{tag_timestamp}.png" if timestamp_enabled else f"{dir_}/seal_tag_base.png"
-    )
+    seal_tag_path = dir_ / pathlib.Path(f"seal_tag_{tag_timestamp}.png" if timestamp_enabled else "seal_tag_base.png")
 
     # check if seal tag has already been created
     if seal_tag_path.exists():

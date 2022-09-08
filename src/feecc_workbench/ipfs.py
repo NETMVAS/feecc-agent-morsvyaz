@@ -1,5 +1,4 @@
-import os
-from typing import AnyStr
+import pathlib
 
 import httpx
 from loguru import logger
@@ -12,7 +11,7 @@ IPFS_GATEWAY_ADDRESS: str = CONFIG.ipfs_gateway.ipfs_server_uri
 
 
 @async_time_execution
-async def publish_file(rfid_card_id: str, file_path: os.PathLike[AnyStr]) -> tuple[str, str]:
+async def publish_file(rfid_card_id: str, file_path: pathlib.Path) -> tuple[str, str]:
     """publish a provided file to IPFS using the Feecc gateway and return it's CID and URL"""
     if not CONFIG.ipfs_gateway.enable:
         raise ValueError("IPFS Gateway disabled in config")
@@ -22,14 +21,15 @@ async def publish_file(rfid_card_id: str, file_path: os.PathLike[AnyStr]) -> tup
         messenger.error("IPFS шлюз недоступен")
         raise ConnectionError(message)
 
-    is_local_path: bool = os.path.exists(file_path)
+    file_path = pathlib.Path(file_path)
     headers: dict[str, str] = get_headers(rfid_card_id)
     base_url = f"{IPFS_GATEWAY_ADDRESS}/publish-to-ipfs"
 
     async with httpx.AsyncClient(base_url=base_url, timeout=None) as client:
-        if is_local_path:
-            files = {"file_data": open(file_path, "rb")}
-            response: httpx.Response = await client.post(url="/upload-file", headers=headers, files=files)
+        if file_path.exists():
+            with file_path.open("rb") as f:
+                files = {"file_data": f}
+                response: httpx.Response = await client.post(url="/upload-file", headers=headers, files=files)
         else:
             json = {"absolute_path": str(file_path)}
             response = await client.post(url="/by-path", headers=headers, json=json)

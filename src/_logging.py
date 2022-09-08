@@ -48,7 +48,7 @@ if os.getenv("LOG_ECS_ENABLE", False):
 class EndpointAccessFilter(logging.Filter):
     excluded_endpoints = {"/docs", "/openapi.json", "/health", "/metrics", "/robots.txt"}
 
-    def filter(self, record: logging.LogRecord) -> bool:
+    def filter(self, record: logging.LogRecord) -> bool:  # noqa: A003
         # complete query string (so parameter and other value included)
         query_string: str = record.args[2]  # type: ignore
         endpoint = query_string.split("?")[0]

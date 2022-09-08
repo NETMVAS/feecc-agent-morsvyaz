@@ -4,7 +4,7 @@ from typing import Any
 from .metrics import Metrics
 
 
-class TrackedException(Exception):
+class TrackedException(Exception):  # noqa: N818
     """An exception that increments Prometheus metric counter for itself"""
 
     _labels: dict[str, str] = {}
@@ -24,22 +24,14 @@ class TrackedException(Exception):
 class UnitNotFoundError(TrackedException):
     """An error raised when no unit can be found with the provided key"""
 
-    pass
-
 
 class EmployeeNotFoundError(TrackedException):
     """An error raised when no employee can be found with the provided key"""
-
-    pass
 
 
 class StateForbiddenError(TrackedException):
     """Raised when state transition is forbidden"""
 
-    pass
-
 
 class RobonomicsError(TrackedException):
     """Raised when Robonmics transactions fail"""
-
-    pass
