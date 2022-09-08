@@ -361,6 +361,7 @@ class WorkBench(metaclass=SingletonMeta):
             except Exception as e:
                 messenger.error("Выпуск паспорта отменён поскольку печать экикетки невозможна")
                 logger.error(f"Failed to print QR code. Passport not saved. {e}")
+                raise e
 
         # Print a security tag sticker if needed
         if CONFIG.printer.print_security_tag:
