@@ -302,6 +302,7 @@ class WorkBench(metaclass=SingletonMeta):
         except Exception as e:
             messenger.error("Ошибка при печати QR-кода")
             logger.error(str(e))
+            raise e
         finally:
             pathlib.Path(qrcode_path).unlink()
 
@@ -321,32 +322,53 @@ class WorkBench(metaclass=SingletonMeta):
         # Generate and save passport YAML file
         passport_file_path: Path = await construct_unit_passport(self.unit)
 
-        # Publish passport YAML file into IPFS
-        if CONFIG.ipfs_gateway.enable:
-            cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
-            self.unit.passport_ipfs_cid = cid
-            try:
-                self.unit.passport_short_url = await generate_short_url(link)
-            except Exception as e:
-                messenger.error("Ошибка при создании короткой ссылки для QR-кода")
-                logger.error(str(e))
-
-        # Publish passport file's IPFS CID to Robonomics Datalog
-        if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
-            asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
-
-        # Generate a QR-code pointing to the unit's passport and print it
+        # Determine if QR-code has to be printed -> short link is needed right now
         print_qr = CONFIG.printer.print_qr and (
             not CONFIG.printer.print_qr_only_for_composite
             or self.unit.schema.is_composite
             or not self.unit.schema.is_a_component
         )
+
+        # Publish passport YAML file into IPFS
+        if CONFIG.ipfs_gateway.enable:
+            cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
+            self.unit.passport_ipfs_cid = cid
+
+            # Generate a short link pointing to the unit's passport to use it for a QR-code
+            if print_qr:
+                try:
+                    self.unit.passport_short_url = await generate_short_url(link)
+                except Exception as e:
+                    messenger.error("Ошибка при создании короткой ссылки для QR-кода")
+                    logger.error(str(e))
+            else:
+
+                async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
+                    try:
+                        short_link = await generate_short_url(url)
+                    except Exception as e:
+                        messenger.error("Ошибка при создании короткой ссылки для QR-кода")
+                        logger.error(str(e))
+                        return
+                    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "passport_short_url", short_link)
+
+                asyncio.create_task(_bg_generate_short_url(link, self.unit.internal_id))
+
+        # Generate a QR-code pointing to the unit's passport and print it
         if print_qr and (short_url := self.unit.passport_short_url):
-            await self._print_qr(short_url)
+            try:
+                await self._print_qr(short_url)
+            except Exception as e:
+                messenger.error("Выпуск паспорта отменён поскольку печать экикетки невозможна")
+                logger.error(f"Failed to print QR code. Passport not saved. {e}")
 
         # Print a security tag sticker if needed
         if CONFIG.printer.print_security_tag:
             await self._print_security_tag()
+
+        # Publish passport file's IPFS CID to Robonomics Datalog
+        if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
+            asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         # Update unit data saved in the DB
         await self._database.push_unit(self.unit)
