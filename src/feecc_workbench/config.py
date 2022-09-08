@@ -1,5 +1,6 @@
 import os
 import sys
+from collections.abc import Iterable
 
 import environ
 from dotenv import load_dotenv
@@ -79,10 +80,29 @@ class AppConfig:
     hid_devices = environ.group(HidDevicesNames)
 
 
+def export_docker_secrets(secret_names: Iterable[str]) -> None:
+    """
+    Export all the requested docker secrets into the environment
+
+    A secret and the corresponding variable are expected to have the same name,
+    but uppercase for the variable and lowercase for the secret file.
+    """
+    for secret in secret_names:
+        secret_path = f"/run/secrets/{secret.lower()}"
+        if not os.path.exists(secret_path):
+            continue
+        with open(secret_path) as f:
+            content = f.read()
+        os.environ[secret.upper()] = content
+        logger.debug(f"Loaded up {secret.upper()} secret from Docker secrets")
+
+
 if __name__ == "__main__":
     print(environ.generate_help(AppConfig))
 
 try:
+    docker_secrets = ["mongodb_uri", "robonomics_account_seed", "yourls_username", "yourls_password"]
+    export_docker_secrets(docker_secrets)
     CONFIG = environ.to_config(AppConfig)
 except environ.MissingEnvValueError as e:
     logger.critical(f"Missing required environment variable '{e}'. Exiting.")

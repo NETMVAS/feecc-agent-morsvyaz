@@ -13,6 +13,7 @@ from .Employee import Employee
 from .exceptions import StateForbiddenError
 from .ipfs import publish_file
 from .Messenger import messenger
+from .metrics import metrics
 from .models import ProductionSchema
 from .passport_generator import construct_unit_passport
 from .printer import print_image
@@ -73,6 +74,7 @@ class WorkBench(metaclass=SingletonMeta):
                 os.remove(unit.barcode.filename)
 
         await self._database.push_unit(unit)
+        metrics.register_create_unit(self.employee, unit)
 
         return unit
 
@@ -80,7 +82,7 @@ class WorkBench(metaclass=SingletonMeta):
         """check if state transition can be performed using the map"""
         if new_state not in STATE_TRANSITION_MAP.get(self.state, []):
             message = f"State transition from {self.state.value} to {new_state.value} is not allowed."
-            messenger.error(f"Переход из состояния {self.state.value} в состояние {new_state.value} невозможен")
+            messenger.error("Недопустимая смена состояния")
             raise StateForbiddenError(message)
 
     def switch_state(self, new_state: State) -> None:
@@ -102,6 +104,7 @@ class WorkBench(metaclass=SingletonMeta):
         messenger.success(f"Авторизован {employee.position} {employee.name}")
 
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
+        metrics.register_log_in(employee)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     def log_out(self) -> None:
@@ -115,6 +118,7 @@ class WorkBench(metaclass=SingletonMeta):
         message = f"Employee {self.employee.name} was logged out at the workbench no. {self.number}"
         logger.info(message)
         messenger.success(f"{self.employee.name} вышел из системы")
+        metrics.register_log_out(self.employee)
         self.employee = None
 
         self.switch_state(State.AWAIT_LOGIN_STATE)
@@ -143,11 +147,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         if not (override or unit.status in allowed):
             message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-            messenger.warning(
-                f"На стол могут быть помещены изделия со статусами:"
-                f" {', '.join(s.value.upper() for s in allowed)}."
-                f" Статус изделия: {unit.status.value.upper()}. Отказано."
-            )
+            messenger.warning("Сборка изделия уже была завершена, пасспорт выпущен. Отказано.")
             raise AssertionError(message)
 
         self.unit = unit
@@ -267,6 +267,7 @@ class WorkBench(metaclass=SingletonMeta):
         await self._database.push_unit(self.unit, include_components=False)
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
+        metrics.register_complete_operation(self.employee, self.unit)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def upload_unit_passport(self) -> None:
@@ -338,6 +339,7 @@ class WorkBench(metaclass=SingletonMeta):
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         await self._database.push_unit(self.unit)
+        metrics.register_generate_passport(self.employee, self.unit)
 
     async def shutdown(self) -> None:
         logger.info("Workbench shutdown sequence initiated")
