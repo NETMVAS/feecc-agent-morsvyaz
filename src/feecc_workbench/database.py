@@ -181,9 +181,9 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         try:
             result: list[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=1)
-        except Exception as E:
-            logger.error(E)
-            raise E
+        except Exception as e:
+            logger.error(e)
+            raise e
 
         if not result:
             message = f"Unit with internal id {unit_internal_id} not found"

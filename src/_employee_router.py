@@ -17,7 +17,9 @@ router = APIRouter(
 
 
 @router.post("/info", response_model=mdl.EmployeeOut)
-def get_employee_data(employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
+def get_employee_data(
+    employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id),  # noqa: B008
+) -> mdl.EmployeeOut:
     """return data for an Employee with matching ID card"""
     return mdl.EmployeeOut(
         status_code=status.HTTP_200_OK, detail="Employee retrieved successfully", employee_data=employee
@@ -25,7 +27,9 @@ def get_employee_data(employee: mdl.EmployeeWCardModel = Depends(get_employee_by
 
 
 @router.post("/log-in", response_model=mdl.EmployeeOut)
-def log_in_employee(employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id)) -> mdl.EmployeeOut:
+def log_in_employee(
+    employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id),  # noqa: B008
+) -> mdl.EmployeeOut:
     """handle logging in the Employee at a given Workbench"""
     try:
         WORKBENCH.log_in(Employee(rfid_card_id=employee.rfid_card_id, name=employee.name, position=employee.position))

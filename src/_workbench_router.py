@@ -70,7 +70,7 @@ async def stream_workbench_status() -> EventSourceResponse:
 
 
 @router.post("/assign-unit/{unit_internal_id}", response_model=mdl.GenericResponse)
-def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:
+def assign_unit(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.GenericResponse:  # noqa: B008
     """assign the provided unit to the workbench"""
     try:
         WORKBENCH.assign_unit(unit)
@@ -162,7 +162,9 @@ async def get_schemas() -> mdl.SchemasList:
 
 
 @router.get("/production-schemas/{schema_id}", response_model=mdl.ProductionSchemaResponse)
-async def get_schema(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.ProductionSchemaResponse:
+async def get_schema(
+    schema: mdl.ProductionSchema = Depends(get_schema_by_id),  # noqa: B008
+) -> mdl.ProductionSchemaResponse:
     """get schema by its ID"""
     return mdl.ProductionSchemaResponse(
         status_code=status.HTTP_200_OK,
@@ -172,7 +174,7 @@ async def get_schema(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -
 
 
 @router.post("/hid-event", response_model=mdl.GenericResponse)
-async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:
+async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:  # noqa: B008
     """Parse the event dict JSON"""
     try:
         if event.name == "rfid_reader":

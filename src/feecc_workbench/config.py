@@ -99,7 +99,7 @@ def export_docker_secrets(secret_names: Iterable[str]) -> None:
 
 
 if __name__ == "__main__":
-    print(environ.generate_help(AppConfig))
+    print(environ.generate_help(AppConfig))  # noqa: T201
 
 try:
     docker_secrets = ["mongodb_uri", "robonomics_account_seed", "yourls_username", "yourls_password"]

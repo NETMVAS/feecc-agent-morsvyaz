@@ -17,7 +17,7 @@ class ProductionStage:
     ended_prematurely: bool = False
     video_hashes: list[str] | None = None
     additional_info: AdditionalInfo | None = None
-    id: str = field(default_factory=lambda: uuid4().hex)
+    id: str = field(default_factory=lambda: uuid4().hex)  # noqa: A003
     is_in_db: bool = False
     creation_time: dt.datetime = field(default_factory=lambda: dt.datetime.now())
     completed: bool = False

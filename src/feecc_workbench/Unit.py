@@ -22,7 +22,7 @@ from .utils import TIMESTAMP_FORMAT, timestamp
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    def __init__(
+    def __init__(  # noqa: CFQ002
         self,
         schema: ProductionSchema,
         uuid: str | None = None,
