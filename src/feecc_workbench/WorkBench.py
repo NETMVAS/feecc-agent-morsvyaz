@@ -135,7 +135,7 @@ class WorkBench(metaclass=SingletonMeta):
                 unit = get_first_unit_matching_status(unit, *allowed)
             except AssertionError as e:
                 message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-                messenger.warning("Сборка изделия уже была завершена, пасспорт выпущен. Отказано.")
+                messenger.warning("Сборка изделия уже была завершена, паспорт выпущен. Отказано.")
                 raise AssertionError(message) from e
 
         self.unit = unit
