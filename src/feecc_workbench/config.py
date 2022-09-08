@@ -1,4 +1,5 @@
 import os
+import pathlib
 import sys
 from collections.abc import Iterable
 
@@ -6,10 +7,10 @@ import environ
 from dotenv import load_dotenv
 from loguru import logger
 
-dotenv_file = "../.env"
-if os.path.exists(dotenv_file):
+dotenv_file = pathlib.Path("../.env")
+if dotenv_file.exists():
     load_dotenv(dotenv_file)
-    logger.info(f"Loaded env vars from file '{os.path.abspath(dotenv_file)}'")
+    logger.info(f"Loaded env vars from file '{dotenv_file.absolute()}'")
 
 
 @environ.config(prefix="", frozen=True)
@@ -88,10 +89,10 @@ def export_docker_secrets(secret_names: Iterable[str]) -> None:
     but uppercase for the variable and lowercase for the secret file.
     """
     for secret in secret_names:
-        secret_path = f"/run/secrets/{secret.lower()}"
-        if not os.path.exists(secret_path):
+        secret_path = pathlib.Path(f"/run/secrets/{secret.lower()}")
+        if not secret_path.exists():
             continue
-        with open(secret_path) as f:
+        with secret_path.open() as f:
             content = f.read()
         os.environ[secret.upper()] = content
         logger.debug(f"Loaded up {secret.upper()} secret from Docker secrets")

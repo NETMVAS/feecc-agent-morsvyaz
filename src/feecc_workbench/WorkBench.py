@@ -1,5 +1,5 @@
 import asyncio
-import os
+import pathlib
 from pathlib import Path
 
 from loguru import logger
@@ -71,7 +71,7 @@ class WorkBench(metaclass=SingletonMeta):
                 messenger.error("Ошибка при печати этикетки")
                 raise e
             finally:
-                os.remove(unit.barcode.filename)
+                pathlib.Path(unit.barcode.filename).unlink()
 
         await self._database.push_unit(unit)
         metrics.register_create_unit(self.employee, unit)
@@ -315,7 +315,7 @@ class WorkBench(metaclass=SingletonMeta):
                     messenger.error("Ошибка при печати QR-кода")
                     logger.error(str(e))
                 finally:
-                    os.remove(qrcode_path)
+                    pathlib.Path(qrcode_path).unlink()
             else:
 
                 async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
@@ -333,7 +333,7 @@ class WorkBench(metaclass=SingletonMeta):
                     messenger.error("Ошибка при печати пломбы")
                     logger.error(str(e))
                 finally:
-                    os.remove(seal_tag_img)
+                    pathlib.Path(seal_tag_img).unlink()
 
             if CONFIG.robonomics.enable_datalog and res is not None:
                 asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))

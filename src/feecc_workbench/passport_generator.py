@@ -1,5 +1,4 @@
 import datetime as dt
-import os
 import pathlib
 from typing import Any
 
@@ -70,10 +69,12 @@ def _get_passport_dict(unit: Unit) -> dict[str, Any]:
 
 def _save_passport(unit: Unit, passport_dict: dict[str, Any], path: str) -> None:
     """makes a unit passport and dumps it in a form of a YAML file"""
-    if not os.path.isdir("unit-passports"):
-        os.mkdir("unit-passports")
-    with open(path, "w") as passport_file:
-        yaml.dump(passport_dict, passport_file, allow_unicode=True, sort_keys=False)
+    dir_ = pathlib.Path("unit-passports")
+    if not dir_.is_dir():
+        dir_.mkdir()
+    passport_file = pathlib.Path(path)
+    with passport_file.open("w") as f:
+        yaml.dump(passport_dict, f, allow_unicode=True, sort_keys=False)
     logger.info(f"Unit passport with UUID {unit.uuid} has been dumped successfully")
 
 

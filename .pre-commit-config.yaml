@@ -90,6 +90,7 @@ repos:
           - --count
           - --max-line-length=130
           - --exclude=*test*
+          - --exit-zero
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
