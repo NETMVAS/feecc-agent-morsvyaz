@@ -22,7 +22,7 @@ from .utils import TIMESTAMP_FORMAT, timestamp
 class Unit:
     """Unit class corresponds to one uniquely identifiable physical production unit"""
 
-    def __init__(  # noqa: CFQ002
+    def __init__(  # noqa: CFQ002,CCR001
         self,
         schema: ProductionSchema,
         uuid: str | None = None,
@@ -212,14 +212,8 @@ class Unit:
         if video_hashes:
             operation.video_hashes = video_hashes
 
-        if additional_info:
-            if operation.additional_info is not None:
-                operation.additional_info = {
-                    **operation.additional_info,
-                    **additional_info,
-                }
-            else:
-                operation.additional_info = additional_info
+        if operation.additional_info is not None:
+            operation.additional_info = {**operation.additional_info, **(additional_info or {})}
 
         operation.completed = True
         self.biography[operation.number] = operation

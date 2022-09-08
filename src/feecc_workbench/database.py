@@ -122,7 +122,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
     @async_time_execution
     async def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
-        pipeline = [
+        pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"status": status.value}},
             {
                 "$lookup": {
@@ -162,7 +162,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
     @async_time_execution
     async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
-        pipeline = [
+        pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"internal_id": unit_internal_id}},
             {
                 "$lookup": {

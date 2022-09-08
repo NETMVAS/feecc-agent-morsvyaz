@@ -56,18 +56,14 @@ def timestamp() -> str:
     return dt.datetime.now().strftime(TIMESTAMP_FORMAT)
 
 
-def service_is_up(service_endpoint: str | URL) -> bool:
+def service_is_up(service_endpoint: str | URL) -> bool:  # noqa: CAC001
     """Check if the provided host is reachable"""
     if isinstance(service_endpoint, str):
-        uri = URL(service_endpoint)
-    elif isinstance(service_endpoint, URL):
-        uri = service_endpoint
-    else:
-        raise ValueError(f"Cannot check endpoint {service_endpoint}. Wrong format")
+        service_endpoint = URL(service_endpoint)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
-            result = sock.connect_ex((uri.host, uri.port))
+            result = sock.connect_ex((service_endpoint.host, service_endpoint.port))
         except Exception as e:
             logger.debug(f"An error occured during socket connection attempt: {e}")
             result = 1
@@ -75,20 +71,16 @@ def service_is_up(service_endpoint: str | URL) -> bool:
     return result == 0
 
 
-def check_service_connectivity() -> None:
+def check_service_connectivity() -> None:  # noqa: CAC001,CCR001
     """check if all requsted external services are reachable"""
     services = (
         (CONFIG.camera.enable, CONFIG.camera.cameraman_uri),
         (CONFIG.ipfs_gateway.enable, CONFIG.ipfs_gateway.ipfs_server_uri),
         (CONFIG.printer.enable, CONFIG.printer.print_server_uri),
     )
-    failed_cnt = 0
-    checked_cnt = 0
+    failed_cnt, checked_cnt = 0, 0
 
-    for enabled, service_endpoint in services:
-        if not enabled:
-            continue
-
+    for _, service_endpoint in filter(lambda s: s[0], services):
         logger.info(f"Checking connection for service endpoint {service_endpoint}")
         checked_cnt += 1
 
