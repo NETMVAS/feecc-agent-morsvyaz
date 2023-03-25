@@ -1,30 +1,32 @@
 import asyncio
+import os
+import textwrap
 from pathlib import Path
+from statistics import mean
+from string import ascii_letters
+from time import sleep
 
-import httpx
+import cups
 from loguru import logger
+from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageFont import FreeTypeFont
 
 from .config import CONFIG
 from .Messenger import messenger
-from .utils import async_time_execution, get_headers, service_is_up
+from .utils import async_time_execution
 
 PRINT_SERVER_ADDRESS: str = CONFIG.printer.print_server_uri
 
 
-async def print_image(file_path: Path, rfid_card_id: str, annotation: str | None = None) -> None:
+async def print_image(file_path: Path, annotation: str | None = None) -> None:
     """print the provided image file"""
     if not CONFIG.printer.enable:
         logger.warning("Printer disabled, task dropped")
         return
-    else:
-        if not service_is_up(PRINT_SERVER_ADDRESS):
-            message = "Printer is not available"
-            messenger.error("Нет связи с сервером печати")
-            raise ConnectionError(message)
 
     assert file_path.exists(), f"Image file {file_path} doesn't exist"
     assert file_path.is_file(), f"{file_path} is not an image file"
-    task = print_image_task(file_path, rfid_card_id, annotation)
+    task = _print_image_task(file_path, annotation)
 
     if CONFIG.printer.skip_ack:
         logger.info(f"Printing task will be executed in the background ({CONFIG.printer.skip_ack=})")
@@ -34,16 +36,61 @@ async def print_image(file_path: Path, rfid_card_id: str, annotation: str | None
 
 
 @async_time_execution
-async def print_image_task(file_path: Path, rfid_card_id: str, annotation: str | None = None) -> None:
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        url = f"{PRINT_SERVER_ADDRESS}/print_image"
-        headers: dict[str, str] = get_headers(rfid_card_id)
-        data = {"annotation": annotation}
-        with file_path.open("rb") as f:
-            files = {"image_file": f}
-            response: httpx.Response = await client.post(url=url, headers=headers, data=data, files=files)
+async def _print_image_task(file_path: Path, annotation: str | None = None) -> None:
+    """print image via cups"""
 
-    if response.is_error:
-        raise httpx.RequestError(response.json().get("detail", ""))
+    try:
+        if annotation:
+            image: Image = Image.open(file_path)
+            image = _annotate_image(image, annotation)
+            image.save(file_path)
 
-    logger.info(f"Printed image '{file_path}'")
+        cups.setUser("feecc")
+        conn: cups.Connection = cups.Connection()
+        printer_name: str = conn.getPrinters().keys()[0]
+        print_id: int = conn.printFile(printer_name, str(file_path.absolute()), file_path.stem, {})
+        while conn.getJobs().get(print_id, None):
+            sleep(1)
+
+        logger.info(f"Printed image '{file_path}'")
+    except Exception as e:
+        logger.error(f"Print task failed: {e}")
+        messenger.error("Ошибка печати")
+
+
+def _annotate_image(image: Image, text: str) -> Image:
+    """add an annotation to the bottom of the image"""
+    # wrap the message
+    font_path = "../media/helvetica-cyrillic-bold.ttf"
+    assert os.path.exists(font_path), f"Cannot open font at {font_path=}. No such file."
+    font: FreeTypeFont = ImageFont.truetype(font_path, 24)
+    avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))
+    img_w, img_h = image.size
+    max_chars_in_line: int = int(img_w * 0.95 / avg_char_width)
+    wrapped_text: str = textwrap.fill(text, max_chars_in_line)
+
+    # get message size
+    sample_draw: ImageDraw.Draw = ImageDraw.Draw(image)
+    _, txt_h = sample_draw.textsize(wrapped_text, font)
+    # https://stackoverflow.com/questions/59008322/pillow-imagedraw-text-coordinates-to-center/59008967#59008967
+    txt_h += font.getoffset(text)[1]
+
+    # draw the message
+    annotated_image: Image = Image.new(mode="RGB", size=(img_w, img_h + txt_h + 5), color=(255, 255, 255))
+    annotated_image.paste(image, (0, 0))
+    new_img_w, new_img_h = annotated_image.size
+    txt_draw: ImageDraw.Draw = ImageDraw.Draw(annotated_image)
+    text_pos: (int, int) = (
+        int(new_img_w / 2),
+        int((new_img_h - img_h) / 2 + img_h),
+    )
+    txt_draw.text(
+        text_pos,
+        wrapped_text,
+        font=font,
+        fill=(0, 0, 0),
+        anchor="mm",
+        align="center",
+    )
+
+    return annotated_image
