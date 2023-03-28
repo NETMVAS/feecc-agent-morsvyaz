@@ -37,7 +37,7 @@ if CONFIG.robonomics.enable_datalog:
 @async_time_execution
 async def post_to_datalog(content: str, unit_internal_id: str) -> None:
     assert ROBONOMICS_ACCOUNT is not None, "Robonomics credentials have not been provided"
-    datalog_clent = AsyncDatalogClient(
+    datalog_client = AsyncDatalogClient(
         account=ROBONOMICS_ACCOUNT,
         wait_for_inclusion=False,
     )
@@ -47,7 +47,7 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
 
     for i in range(1, retry_cnt + 1):
         try:
-            txn_hash = await datalog_clent.record(data=content)
+            txn_hash = await datalog_client.record(data=content)
             break
         except Exception as e:
             logger.error(f"Failed to post to the Datalog (attempt {i}/{retry_cnt}): {e}")

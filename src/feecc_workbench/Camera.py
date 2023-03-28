@@ -109,24 +109,24 @@ class Camera:
         self._is_up()
 
     @staticmethod
-    def _is_up() -> None:
+    def _is_up() -> bool:
         """Check if camera is connected to the workbench computer"""
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(0.25)
             pattern: re.Pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d{1,5}')
             addr, port = pattern.search(CONFIG.camera.ffmpeg_command)[0].split(":")
-            s.connect((addr, port))
+            s.connect((addr, int(port)))
             logger.debug("Camera is up")
-            return
+            return True
         except Exception as e:
             logger.error(f"No response from camera. Is it up? Error: {e}")
             messenger.error("Нет связи с камерой")
-            return
+            return False
 
     async def start_record(self) -> None:
         """start the provided record"""
-        self.record = Record
+        self.record = Record()
 
         try:
             if not self._is_up():

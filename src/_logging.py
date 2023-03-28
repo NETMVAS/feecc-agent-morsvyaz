@@ -28,20 +28,8 @@ FILE_LOGGING_CONFIG = {
     "rotation": "10 MB",
     "compression": "zip",
 }
-
-# Elastic Common Schema (ECS) logging sink
-ecs_handler = logging.FileHandler("ecs_log.json")
-ecs_handler.setFormatter(ecs_logging.StdlibFormatter())
-ECS_LOGGING_CONFIG = {
-    "sink": ecs_handler,
-    "format": "{message}",
-}
-
 # Set up handlers list
 HANDLERS: list[dict[str, Any]] = [FILE_LOGGING_CONFIG, CONSOLE_LOGGING_CONFIG]
-
-if os.getenv("LOG_ECS_ENABLE", False):
-    HANDLERS.append(ECS_LOGGING_CONFIG)
 
 
 # disable Uvicorn's access logs for specified endpoints

@@ -1,10 +1,8 @@
-import asyncio
 import os
 import textwrap
 from pathlib import Path
 from statistics import mean
 from string import ascii_letters
-from time import sleep
 
 import cups
 from loguru import logger
@@ -15,8 +13,6 @@ from .config import CONFIG
 from .Messenger import messenger
 from .utils import async_time_execution
 
-PRINT_SERVER_ADDRESS: str = CONFIG.printer.print_server_uri
-
 
 async def print_image(file_path: Path, annotation: str | None = None) -> None:
     """print the provided image file"""
@@ -26,33 +22,29 @@ async def print_image(file_path: Path, annotation: str | None = None) -> None:
 
     assert file_path.exists(), f"Image file {file_path} doesn't exist"
     assert file_path.is_file(), f"{file_path} is not an image file"
-    task = _print_image_task(file_path, annotation)
-
-    if CONFIG.printer.skip_ack:
-        logger.info(f"Printing task will be executed in the background ({CONFIG.printer.skip_ack=})")
-        asyncio.create_task(task)
-    else:
-        await task
-
-
-@async_time_execution
-async def _print_image_task(file_path: Path, annotation: str | None = None) -> None:
-    """print image via cups"""
 
     try:
         if annotation:
             image: Image = Image.open(file_path)
             image = _annotate_image(image, annotation)
             image.save(file_path)
+    except Exception as e:
+        logger.error(f"Error annotating image: {e}")
+    task = _print_image_task(file_path)
+    logger.info(f"Printing...")
+    await task
 
+
+@async_time_execution
+async def _print_image_task(file_path: Path) -> None:
+    """print image via cups"""
+
+    try:
         cups.setUser("feecc")
         conn: cups.Connection = cups.Connection()
-        printer_name: str = conn.getPrinters().keys()[0]
-        print_id: int = conn.printFile(printer_name, str(file_path.absolute()), file_path.stem, {})
-        while conn.getJobs().get(print_id, None):
-            sleep(1)
-
-        logger.info(f"Printed image '{file_path}'")
+        printer_name: str = list(conn.getPrinters().keys())[0]
+        print_id: int = conn.printFile(printer_name, str(Path.absolute(file_path)), file_path.stem, {})
+        logger.info(f"Printed image '{file_path=}', {print_id=}")
     except Exception as e:
         logger.error(f"Print task failed: {e}")
         messenger.error("Ошибка печати")
@@ -61,7 +53,7 @@ async def _print_image_task(file_path: Path, annotation: str | None = None) -> N
 def _annotate_image(image: Image, text: str) -> Image:
     """add an annotation to the bottom of the image"""
     # wrap the message
-    font_path = "../media/helvetica-cyrillic-bold.ttf"
+    font_path = "media/helvetica-cyrillic-bold.ttf"
     assert os.path.exists(font_path), f"Cannot open font at {font_path=}. No such file."
     font: FreeTypeFont = ImageFont.truetype(font_path, 24)
     avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))

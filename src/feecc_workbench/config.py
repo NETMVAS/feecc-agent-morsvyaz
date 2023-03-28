@@ -18,6 +18,7 @@ class AppConfig:
     @environ.config(frozen=True)
     class MongoDB:
         mongo_connection_uri: str = environ.var(name="MONGODB_URI", help="Your MongoDB connection URI")
+        mongo_db_name: str = environ.var(name="MONGODB_DB_NAME", help="Your MongoDB DB name")
 
     @environ.config(frozen=True)
     class RobonomicsNetwork:
@@ -33,9 +34,6 @@ class AppConfig:
     @environ.config(frozen=True)
     class Printer:
         enable: bool = environ.bool_var(default=False, help="Whether to enable printing or not")
-        skip_ack: bool = environ.bool_var(
-            default=False, help="Whether to wait for the task acknowledgement (slow) or not"
-        )
         print_barcode: bool = environ.bool_var(default=True, help="Whether to print barcodes or not")
         print_qr: bool = environ.bool_var(default=True, help="Whether to print QR codes or not")
         print_qr_only_for_composite: bool = environ.bool_var(
