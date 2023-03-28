@@ -11,6 +11,7 @@ services:
       IPFS_GATEWAY_ENABLE: false  # Whether to enable IPFS posting or not
       IPFS_GATEWAY_IPFS_SERVER_URI: ""  # Your IPFS gateway deployment URI
       PRINTER_ENABLE: false  # Whether to enable printing or not
+      PRINTER_PAPER_ASPECT_RATIO: 40:25  # Printer labels aspect ratio (size in mm in form of width:height)
       PRINTER_PRINT_BARCODE: false  # Whether to print barcodes or not
       PRINTER_PRINT_QR: false  # Whether to print QR codes or not
       PRINTER_PRINT_QR_ONLY_FOR_COMPOSITE: false  # Whether to enable QR code printing for non-composite units or note or not

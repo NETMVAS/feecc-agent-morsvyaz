@@ -12,6 +12,7 @@ from PIL.ImageFont import FreeTypeFont
 from .config import CONFIG
 from .Messenger import messenger
 from .utils import async_time_execution
+from ._label_generation import _resize_to_paper_aspect_ratio
 
 
 async def print_image(file_path: Path, annotation: str | None = None) -> None:
@@ -27,9 +28,11 @@ async def print_image(file_path: Path, annotation: str | None = None) -> None:
         if annotation:
             image: Image = Image.open(file_path)
             image = _annotate_image(image, annotation)
+            image = _resize_to_paper_aspect_ratio(image)
             image.save(file_path)
     except Exception as e:
         logger.error(f"Error annotating image: {e}")
+
     task = _print_image_task(file_path)
     logger.info(f"Printing...")
     await task
@@ -55,9 +58,10 @@ def _annotate_image(image: Image, text: str) -> Image:
     # wrap the message
     font_path = "media/helvetica-cyrillic-bold.ttf"
     assert os.path.exists(font_path), f"Cannot open font at {font_path=}. No such file."
-    font: FreeTypeFont = ImageFont.truetype(font_path, 24)
+    font: FreeTypeFont = ImageFont.truetype(font_path, 35)
     avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))
     img_w, img_h = image.size
+    logger.debug(f"Image size before annotation: {img_w, img_h}")
     max_chars_in_line: int = int(img_w * 0.95 / avg_char_width)
     wrapped_text: str = textwrap.fill(text, max_chars_in_line)
 
@@ -69,12 +73,12 @@ def _annotate_image(image: Image, text: str) -> Image:
 
     # draw the message
     annotated_image: Image = Image.new(mode="RGB", size=(img_w, img_h + txt_h + 5), color=(255, 255, 255))
-    annotated_image.paste(image, (0, 0))
+    annotated_image.paste(image, (0, txt_h + 5))
     new_img_w, new_img_h = annotated_image.size
     txt_draw: ImageDraw.Draw = ImageDraw.Draw(annotated_image)
     text_pos: (int, int) = (
         int(new_img_w / 2),
-        int((new_img_h - img_h) / 2 + img_h),
+        int((new_img_h - img_h) / 2),
     )
     txt_draw.text(
         text_pos,

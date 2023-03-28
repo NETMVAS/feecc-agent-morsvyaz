@@ -1,9 +1,7 @@
 import logging
-import os
 import sys
 from typing import Any
 
-import ecs_logging
 
 # set up logging configurations
 BASE_LOGGING_CONFIG = {

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from ._image_generation import create_qr, create_seal_tag
+from ._label_generation import create_qr, create_seal_tag
 from .Camera import Camera
 from .config import CONFIG
 from .database import MongoDbWrapper

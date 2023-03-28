@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from ._Barcode import Barcode
+from ._label_generation import Barcode
 from .Employee import Employee
 from .Messenger import messenger
 from .metrics import metrics

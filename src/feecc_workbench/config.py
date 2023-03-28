@@ -34,6 +34,8 @@ class AppConfig:
     @environ.config(frozen=True)
     class Printer:
         enable: bool = environ.bool_var(default=False, help="Whether to enable printing or not")
+        paper_aspect_ratio: str = environ.var(default=False, help="Printer labels aspect ratio (size in mm in "
+                                                                       "form of width:height)")
         print_barcode: bool = environ.bool_var(default=True, help="Whether to print barcodes or not")
         print_qr: bool = environ.bool_var(default=True, help="Whether to print QR codes or not")
         print_qr_only_for_composite: bool = environ.bool_var(
