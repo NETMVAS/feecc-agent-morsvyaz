@@ -30,6 +30,5 @@ services:
       - "/etc/localtime:/etc/localtime:ro"
       - "./unit-passports/:/src/unit-passports/"
       - "./workbench.log:/src/workbench.log"
-      - "./ecs_log.json:/src/ecs_log.json"
     network_mode: host
     restart: always
