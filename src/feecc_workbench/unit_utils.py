@@ -32,7 +32,6 @@ class UnitStatus(enum.Enum):
     production = "production"
     built = "built"
     revision = "revision"
-    approved = "approved"
     finalized = "finalized"
 
 

@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from ._Barcode import Barcode
+from ._label_generation import Barcode
 from .Employee import Employee
 from .Messenger import messenger
 from .metrics import metrics
@@ -31,7 +31,6 @@ class Unit:
         biography: list[ProductionStage] | None = None,
         components_units: list[Unit] | None = None,
         featured_in_int_id: str | None = None,
-        passport_short_url: str | None = None,
         passport_ipfs_cid: str | None = None,
         txn_hash: str | None = None,
         serial_number: str | None = None,
@@ -47,7 +46,6 @@ class Unit:
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
-        self.passport_short_url: str | None = passport_short_url
         self.passport_ipfs_cid: str | None = passport_ipfs_cid
         self.txn_hash: str | None = txn_hash
         self.serial_number: str | None = serial_number

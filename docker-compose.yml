@@ -5,40 +5,30 @@ services:
       # Use these environment variables to configure your deployment
       MONGODB_URI: ""  # Your MongoDB connection URI
       MONGODB_DB_NAME: ""
-      ROBONOMICS_ENABLE_DATALOG: "no"  # Whether to enable datalog posting or not
+      ROBONOMICS_ENABLE_DATALOG: false  # Whether to enable datalog posting or not
       ROBONOMICS_ACCOUNT_SEED: ""  # Your Robonomics network account seed phrase
-      ROBONOMICS_SUBSTRATE_NODE_URI: "no"  # Robonomics network node URI
-      YOURLS_SERVER: ""  # Your Yourls server URL
-      YOURLS_USERNAME: ""  # Your Yourls server username
-      YOURLS_PASSWORD: ""  # Your Yourls server password
-      IPFS_GATEWAY_ENABLE: "no"  # Whether to enable IPFS posting or not
-      IPFS_GATEWAY_IPFS_SERVER_URI: http://127.0.0.1:8082  # Your IPFS gateway deployment URI
-      PRINTER_ENABLE: "no"  # Whether to enable printing or not
-      PRINTER_PRINT_SERVER_URI: http://127.0.0.1:8083  # Your Print-server deployment URI
-      PRINTER_SKIP_ACK: "no"  # Whether to wait for the task acknowledgement (slow) or not
-      PRINTER_PRINT_BARCODE: "yes"  # Whether to print barcodes or not
-      PRINTER_PRINT_QR: "yes"  # Whether to print QR codes or not
-      PRINTER_PRINT_QR_ONLY_FOR_COMPOSITE: "no"  # Whether to enable QR code printing for non-composite units or note or not
-      PRINTER_QR_ADD_LOGOS: "no"  # Whether to add logos to the QR code or not
-      PRINTER_PRINT_SECURITY_TAG: "no"  # Whether to enable printing security tags or not
-      PRINTER_SECURITY_TAG_ADD_TIMESTAMP: "yes"  # Whether to enable timestamps on security tags or not
-      CAMERA_ENABLE: "no"  # Whether to enable Cameraman or not
-      CAMERA_CAMERAMAN_URI: http://127.0.0.1:8081  # Your Cameraman deployment URI
-      CAMERA_CAMERA_NO: 1  # Camera number
+      ROBONOMICS_SUBSTRATE_NODE_URI: ""  # Robonomics network node URI
+      IPFS_GATEWAY_ENABLE: false  # Whether to enable IPFS posting or not
+      IPFS_GATEWAY_IPFS_SERVER_URI: ""  # Your IPFS gateway deployment URI
+      PRINTER_ENABLE: false  # Whether to enable printing or not
+      PRINTER_PAPER_ASPECT_RATIO: 40:25  # Printer labels aspect ratio (size in mm in form of width:height)
+      PRINTER_PRINT_BARCODE: false  # Whether to print barcodes or not
+      PRINTER_PRINT_QR: false  # Whether to print QR codes or not
+      PRINTER_PRINT_QR_ONLY_FOR_COMPOSITE: false  # Whether to enable QR code printing for non-composite units or note or not
+      PRINTER_PRINT_SECURITY_TAG: false  # Whether to enable printing security tags or not
+      PRINTER_SECURITY_TAG_ADD_TIMESTAMP: false  # Whether to enable timestamps on security tags or not
+      CAMERA_ENABLE: false  # Whether to enable Cameraman or not
+      CAMERA_FFMPEG_COMMAND: ""
       WORKBENCH_NUMBER: 1  # Workbench number
-      HID_DEVICES_RFID_READER: IC Reader IC Reader  # RFID reader device name
-      HID_DEVICES_BARCODE_READER: Newtologic  NT1640S  # Barcode reader device name
-      LOG_ECS_ENABLE: null  # Dump ECS formatted logs to ecs_log.json file
+      HID_DEVICES_RFID_READER: ""  # RFID reader device name
+      HID_DEVICES_BARCODE_READER: ""  # Barcode reader device name
     build:
       context: ./
       dockerfile: Dockerfile
-    ports:
-      - "0.0.0.0:5000:5000"
     volumes:
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
       - "./unit-passports/:/src/unit-passports/"
       - "./workbench.log:/src/workbench.log"
-      - "./ecs_log.json:/src/ecs_log.json"
     network_mode: host
     restart: always

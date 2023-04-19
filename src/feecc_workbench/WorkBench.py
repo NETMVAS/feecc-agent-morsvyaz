@@ -4,8 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from ._image_generation import create_qr, create_seal_tag
-from ._short_url_generator import generate_short_url
+from ._label_generation import create_qr, create_seal_tag
 from .Camera import Camera
 from .config import CONFIG
 from .database import MongoDbWrapper
@@ -38,8 +37,7 @@ class WorkBench(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
         self.number: int = CONFIG.workbench.number
-        camera_number: int | None = CONFIG.camera.camera_no
-        self.camera: Camera | None = Camera(camera_number) if camera_number and CONFIG.camera.enable else None
+        self.camera: Camera | None = Camera() if CONFIG.camera.enable else None
         self.employee: Employee | None = None
         self.unit: Unit | None = None
         self.state: State = State.AWAIT_LOGIN_STATE
@@ -55,7 +53,7 @@ class WorkBench(metaclass=SingletonMeta):
             annotation = f"{parent_schema.unit_name}. {unit.model_name}."
         assert self.employee is not None
         try:
-            await print_image(Path(unit.barcode.filename), self.employee.rfid_card_id, annotation=annotation)
+            await print_image(Path(unit.barcode.filename), annotation=annotation)
         except Exception as e:
             messenger.error("Ошибка при печати этикетки")
             raise e
@@ -186,7 +184,7 @@ class WorkBench(metaclass=SingletonMeta):
             raise AssertionError(message)
 
         if self.camera is not None:
-            await self.camera.start(self.employee.rfid_card_id)
+            await self.camera.start_record()
 
         self.unit.start_operation(self.employee, additional_info)
 
@@ -213,10 +211,10 @@ class WorkBench(metaclass=SingletonMeta):
         ipfs_hashes: list[str] = []
 
         try:
-            await self.camera.end(self.employee.rfid_card_id)
+            await self.camera.end_record()
             override_timestamp = timestamp()
             assert self.camera.record is not None, "No record found"
-            file: str | None = self.camera.record.remote_file_path
+            file: str | None = self.camera.record.filename
         except Exception as e:
             logger.error(f"Failed to end record: {e}")
             messenger.warning("Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.")
@@ -279,24 +277,23 @@ class WorkBench(metaclass=SingletonMeta):
         finally:
             pathlib.Path(seal_tag_img).unlink()
 
-    async def _print_qr(self, short_url: str) -> None:
+    async def _print_qr(self, url: str) -> None:
         """Print passport QR-code tag for the unit"""
         assert self.employee is not None
         assert self.unit is not None
-        self.unit.passport_short_url = short_url
-        qrcode_path = create_qr(short_url)
+        self.unit.passport_short_url = url
+        qrcode_path = create_qr(url)
         try:
             if self.unit.schema.parent_schema_id is None:
-                annotation = f"{self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
+                annotation = f"{self.unit.model_name} (ID: {self.unit.internal_id})."
             else:
                 parent_schema = await self._database.get_schema_by_id(self.unit.schema.parent_schema_id)
                 annotation = (
-                    f"{parent_schema.unit_name}. {self.unit.model_name} (ID: {self.unit.internal_id}). {short_url}"
+                    f"{parent_schema.unit_name}. {self.unit.model_name} (ID: {self.unit.internal_id})."
                 )
 
             await print_image(
                 qrcode_path,
-                self.employee.rfid_card_id,
                 annotation=annotation,
             )
         except Exception as e:
@@ -334,34 +331,14 @@ class WorkBench(metaclass=SingletonMeta):
             cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
             self.unit.passport_ipfs_cid = cid
 
-            # Generate a short link pointing to the unit's passport to use it for a QR-code
+            # Generate a QR-code pointing to the unit's passport and print it
             if print_qr:
                 try:
-                    self.unit.passport_short_url = await generate_short_url(link)
+                    await self._print_qr(link)
                 except Exception as e:
-                    messenger.error("Ошибка при создании короткой ссылки для QR-кода")
-                    logger.error(str(e))
-            else:
-
-                async def _bg_generate_short_url(url: str, unit_internal_id: str) -> None:
-                    try:
-                        short_link = await generate_short_url(url)
-                    except Exception as e:
-                        messenger.error("Ошибка при создании короткой ссылки для QR-кода")
-                        logger.error(str(e))
-                        return
-                    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "passport_short_url", short_link)
-
-                asyncio.create_task(_bg_generate_short_url(link, self.unit.internal_id))
-
-        # Generate a QR-code pointing to the unit's passport and print it
-        if print_qr and (short_url := self.unit.passport_short_url):
-            try:
-                await self._print_qr(short_url)
-            except Exception as e:
-                messenger.error("Выпуск паспорта отменён поскольку печать экикетки невозможна")
-                logger.error(f"Failed to print QR code. Passport not saved. {e}")
-                raise e
+                    messenger.error("Выпуск паспорта отменён поскольку печать экикетки невозможна")
+                    logger.error(f"Failed to print QR code. Passport not saved. {e}")
+                    raise e
 
         # Print a security tag sticker if needed
         if CONFIG.printer.print_security_tag:

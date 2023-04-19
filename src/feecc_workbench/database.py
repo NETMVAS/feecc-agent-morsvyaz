@@ -5,7 +5,6 @@ import pydantic
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from pymongo import InsertOne, UpdateOne
-from yarl import URL
 
 from ._db_utils import _get_database_client, _get_unit_dict_data
 from .config import CONFIG
@@ -27,9 +26,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        uri = CONFIG.db.mongo_connection_uri
-
-        self._client: AsyncIOMotorClient = _get_database_client(uri)
+        self._client: AsyncIOMotorClient = _get_database_client(CONFIG.db.mongo_connection_uri)
         db_name: str = CONFIG.db.mongo_db_name
         self._database: AsyncIOMotorDatabase = self._client[db_name]
 
@@ -112,7 +109,6 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             biography=biography or None,
             components_units=components_units or None,
             featured_in_int_id=unit_dict.get("featured_in_int_id"),
-            passport_short_url=unit_dict.get("passport_short_url"),
             passport_ipfs_cid=unit_dict.get("passport_ipfs_cid"),
             txn_hash=unit_dict.get("txn_hash"),
             serial_number=unit_dict.get("serial_number"),

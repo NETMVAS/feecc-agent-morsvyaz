@@ -15,6 +15,7 @@ RUN poetry version | grep -o [0-9.]* > version.txt
 FROM python:3.10
 WORKDIR /src
 COPY --from=requirements-stage /tmp/requirements.txt /src/requirements.txt
+RUN apt-get update && apt-get install libcups2-dev -y && apt-get install -y ffmpeg
 RUN pip install --no-cache-dir --upgrade -r /src/requirements.txt
 COPY ./src /src
 COPY --from=requirements-stage /tmp/version.txt /src/version.txt
