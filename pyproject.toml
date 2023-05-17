@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Feecc-Workbench-Daemon"
-version = "1.3.3"
+version = "2.0"
 description = "Workbench software for the Feecc QA system"
 authors = ["arseniiarsenii <arseniivelichko2@gmail.com>"]
 license = "Apache 2.0"
