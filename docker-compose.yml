@@ -30,5 +30,7 @@ services:
       - "/etc/localtime:/etc/localtime:ro"
       - "./unit-passports/:/src/unit-passports/"
       - "./workbench.log:/src/workbench.log"
+      - "./rootCA.pem:/src/rootCA.pem:ro"
+      - "./workbench.pem:/src/workbench.pem:ro"
     network_mode: host
     restart: always
