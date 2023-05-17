@@ -1,11 +1,16 @@
 # Feecc Workbench Daemon
 
-<p>
-    <img alt="Workflow status" src="https://img.shields.io/github/workflow/status/NETMVAS/feecc-agent-morsvyaz/Python%20CI?label=CI%20checks">
-    <img alt="GitHub License" src="https://img.shields.io/github/license/NETMVAS/feecc-agent-morsvyaz">
-    <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2022">
-    <img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000.svg">
-</p>
+[//]: # (<p>)
+
+[//]: # (    <img alt="Workflow status" src="https://img.shields.io/github/workflow/status/NETMVAS/feecc-agent-morsvyaz/Python%20CI?label=CI%20checks">)
+
+[//]: # (    <img alt="GitHub License" src="https://img.shields.io/github/license/NETMVAS/feecc-agent-morsvyaz">)
+
+[//]: # (    <img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2022">)
+
+[//]: # (    <img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000.svg">)
+
+[//]: # (</p>)
 
 > "The Feecc Workbench Daemon is the heart of the Feecc QA system. It is installed on client devices,
 > located on employees' workbenches, providing users with

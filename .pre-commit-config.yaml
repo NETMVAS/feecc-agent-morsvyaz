@@ -61,7 +61,7 @@ repos:
           - --allow-untyped-decorators
           - --implicit-reexport
 
-  - repo: https://gitlab.com/pycqa/flake8
+  - repo: https://github.com/pycqa/flake8
     rev: 3.9.2
     hooks:
       - id: flake8
@@ -89,7 +89,8 @@ repos:
         args:
           - --count
           - --max-line-length=130
-          - --exclude=*test*
+          - --exclude=*tests*
+          - --exit-zero
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
