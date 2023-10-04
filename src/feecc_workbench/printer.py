@@ -34,7 +34,7 @@ async def print_image(file_path: Path, annotation: str | None = None) -> None:
         logger.error(f"Error annotating image: {e}")
 
     task = _print_image_task(file_path)
-    logger.info(f"Printing...")
+    logger.info(f"Printing {annotation}")
     await task
 
 

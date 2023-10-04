@@ -95,6 +95,7 @@ class ProductionSchemaStage(BaseModel):
 class ProductionSchema(BaseModel):
     schema_id: str = Field(default_factory=lambda: uuid4().hex)
     unit_name: str
+    unit_short_name: str | None = None
     production_stages: list[ProductionSchemaStage] | None = None
     required_components_schema_ids: list[str] | None = None
     parent_schema_id: str | None = None
@@ -107,6 +108,12 @@ class ProductionSchema(BaseModel):
     @property
     def is_a_component(self) -> bool:
         return self.parent_schema_id is not None
+
+    @property
+    def print_name(self) -> str:
+        if self.unit_short_name is None:
+            return self.unit_name
+        return self.unit_short_name
 
 
 class ProductionSchemaResponse(GenericResponse):

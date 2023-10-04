@@ -47,10 +47,10 @@ class WorkBench(metaclass=SingletonMeta):
     async def _print_unit_barcode(self, unit: Unit) -> None:
         """Print unit barcode"""
         if (schema := unit.schema).parent_schema_id is None:
-            annotation = schema.unit_name
+            annotation = schema.print_name
         else:
             parent_schema = await self._database.get_schema_by_id(schema.parent_schema_id)
-            annotation = f"{parent_schema.unit_name}. {unit.model_name}."
+            annotation = f"{parent_schema.print_name}. {unit.schema.print_name}."
         assert self.employee is not None
         try:
             await print_image(Path(unit.barcode.filename), annotation=annotation)
