@@ -14,6 +14,7 @@ from .Messenger import messenger
 from .metrics import metrics
 from .models import ProductionSchema
 from .ProductionStage import ProductionStage
+from .translation import translation
 from .Types import AdditionalInfo
 from .unit_utils import UnitStatus, biography_factory
 from .utils import TIMESTAMP_FORMAT, timestamp
@@ -119,30 +120,32 @@ class Unit:
     def assign_component(self, component: Unit) -> None:
         """Assign one of the composite unit's components to the unit"""
         if self.components_filled:
-            messenger.warning("Изделию уже присвоены все необходимые компоненты")
+            messenger.warning(translation('NecessaryComponents'))
             raise ValueError(f"Unit {self.model_name} component requirements have already been satisfied")
 
         if component.schema.schema_id not in self._component_slots:
-            messenger.warning(f'Комопнент "{component.model_name}" не явлеяется частью изделия "{self.model_name}"')
+            messenger.warning(
+                translation('Component') +" "+ component.model_name +" "+ translation('NotPartOfProduct') +" "+ self.model_name
+            )
             raise ValueError(
                 f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
             )
 
         if self._component_slots.get(component.schema.schema_id, "") is not None:
-            messenger.warning(f'Компонент "{component.model_name}" уже был добавлен к этому изделию')
+            messenger.warning(translation('Component') +" "+ component.model_name +" "+ translation('AlreadyAdded'))
             raise ValueError(
                 f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
             )
 
         if component.status is not UnitStatus.built:
             messenger.warning(
-                f'Сборка компонента "{component.model_name}" не была завершена. Невозможно присвоить компонент'
+                translation('ComponentBuild') +" "+ component.model_name +" "+ translation('NotCompleted')
             )
             raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
 
         if component.featured_in_int_id is not None:
             messenger.warning(
-                f"Компонент №{component.internal_id} уже использован в изделии №{component.featured_in_int_id}"
+                translation('ComponentN') +" "+ component.internal_id +" "+ translation('AlreadyUsed') +" "+ component.featured_in_int_id
             )
             raise ValueError(
                 f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
@@ -152,7 +155,9 @@ class Unit:
         self.components_units.append(component)
         component.featured_in_int_id = self.internal_id
         logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
-        messenger.success(f'Компонент "{component.model_name}" присвоен изделию "{self.model_name}"')
+        messenger.success(
+            translation('Component') +" "+ component.model_name +" "+ translation('AssignedToProduct') +" "+ self.model_name
+        )
 
     def start_operation(
         self,
@@ -204,7 +209,7 @@ class Unit:
 
         if premature:
             self._duplicate_current_operation()
-            operation.name += " (неокончен.)"
+            operation.name += " "+translation('Unfinished')
             operation.ended_prematurely = True
 
         if video_hashes:

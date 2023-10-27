@@ -9,6 +9,7 @@ import socket
 from .config import CONFIG
 from .Messenger import messenger
 import re
+from .translation import translation
 
 MINIMAL_RECORD_DURATION_SEC: int = 3
 
@@ -121,7 +122,7 @@ class Camera:
             return True
         except Exception as e:
             logger.error(f"No response from camera. Is it up? Error: {e}")
-            messenger.error("Нет связи с камерой")
+            messenger.error(translation('NoConnection'))
             return False
 
     async def start_record(self) -> None:
@@ -135,7 +136,7 @@ class Camera:
             logger.info(f"Recording {self.record.record_id} has started.")
         except Exception as e:
             logger.error(f"Failed to start recording. Error: {e}")
-            messenger.error("Ошибка записи видео")
+            messenger.error(translation('ErrorRecording'))
             return
 
     async def end_record(self) -> None:

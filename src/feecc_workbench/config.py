@@ -16,6 +16,9 @@ if dotenv_file.exists():
 @environ.config(prefix="", frozen=True)
 class AppConfig:
     @environ.config(frozen=True)
+    class ChooseLang:
+        choose_lang: str = environ.var(name="LANGUAGE_MESSAGE", help='Message language')
+    @environ.config(frozen=True)
     class MongoDB:
         mongo_connection_uri: str = environ.var(name="MONGODB_URI", help="Your MongoDB connection URI")
         mongo_db_name: str = environ.var(name="MONGODB_DB_NAME", help="Your MongoDB DB name")
@@ -62,6 +65,7 @@ class AppConfig:
         rfid_reader: str = environ.var(default="rfid_reader", help="RFID reader device name")
         barcode_reader: str = environ.var(default="barcode_reader", help="Barcode reader device name")
 
+    lang = environ.group(ChooseLang)
     db = environ.group(MongoDB)
     robonomics = environ.group(RobonomicsNetwork)
     ipfs_gateway = environ.group(IPFSGateway)

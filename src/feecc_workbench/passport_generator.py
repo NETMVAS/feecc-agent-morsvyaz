@@ -7,23 +7,24 @@ from loguru import logger
 
 from .ProductionStage import ProductionStage
 from .Unit import Unit
+from .translation import translation
 
 
 def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
     stage: dict[str, Any] = {
-        "Наименование": prod_stage.name,
-        "Код сотрудника": prod_stage.employee_name,
-        "Время начала": prod_stage.session_start_time,
-        "Время окончания": prod_stage.session_end_time,
+        translation('Name'): prod_stage.name,
+        translation('Employee'): prod_stage.employee_name,
+        translation('StartTime'): prod_stage.session_start_time,
+        translation('EndTime'): prod_stage.session_end_time,
     }
 
     if prod_stage.video_hashes is not None:
-        stage["Видеозаписи процесса сборки в IPFS"] = [
+        stage[translation('VideoBuild')] = [
             f"https://gateway.ipfs.io/ipfs/{cid}" for cid in prod_stage.video_hashes
         ]
 
     if prod_stage.additional_info:
-        stage["Дополнительная информация"] = prod_stage.additional_info
+        stage[translation('Information')] = prod_stage.additional_info
 
     return stage
 
@@ -45,24 +46,24 @@ def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     data to dump it into a human friendly passport
     """
     passport_dict: dict[str, Any] = {
-        "Уникальный номер паспорта изделия": unit.uuid,
-        "Модель изделия": unit.model_name,
+        translation('ProductID'): unit.uuid,
+        translation('ProductModel'): unit.model_name,
     }
 
     try:
-        passport_dict["Общая продолжительность сборки"] = str(unit.total_assembly_time)
+        passport_dict[translation('BuildTime')] = str(unit.total_assembly_time)
     except Exception as e:
         logger.error(str(e))
 
     if unit.biography:
-        passport_dict["Этапы производства"] = [_construct_stage_dict(stage) for stage in unit.biography]
+        passport_dict[translation('ProdStage')] = [_construct_stage_dict(stage) for stage in unit.biography]
 
     if unit.components_units:
-        passport_dict["Компоненты в составе изделия"] = [_get_passport_dict(c) for c in unit.components_units]
-        passport_dict["Общая продолжительность сборки (включая компоненты)"] = str(_get_total_assembly_time(unit))
+        passport_dict[translation('Components')] = [_get_passport_dict(c) for c in unit.components_units]
+        passport_dict[translation('BuildTimeComponents')] = str(_get_total_assembly_time(unit))
 
     if unit.serial_number:
-        passport_dict["Серийный номер изделия"] = unit.serial_number
+        passport_dict[translation('SerialNumber')] = unit.serial_number
 
     return passport_dict
 

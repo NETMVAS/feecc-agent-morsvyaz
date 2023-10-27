@@ -8,6 +8,7 @@ from .database import MongoDbWrapper
 from .exceptions import RobonomicsError
 from .Messenger import messenger
 from .utils import async_time_execution
+from .translation import translation
 
 
 class AsyncDatalogClient(Datalog):  # type: ignore
@@ -53,11 +54,12 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
             logger.error(f"Failed to post to the Datalog (attempt {i}/{retry_cnt}): {e}")
             if i < retry_cnt:
                 continue
-            messenger.error("Не удалось записать данные паспорта в Даталог сети Robonomics")
+            messenger.error(translation('FailedToWrite'))
             raise e
 
     assert txn_hash
     await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
-    messenger.success("Данные паспорта опубликованы в Даталоге сети Robonomics")
+    messenger.success(translation('DataPublished'))
     logger.info(message)
+

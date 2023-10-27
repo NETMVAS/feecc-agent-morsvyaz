@@ -1,0 +1,54 @@
+key,ru,en
+Name,Наименование,Name
+Employee,Код сотрудника,Employee Name
+StartTime,Время начала,Session start time
+EndTime,Время окончания,Session end time
+VideoBuild, Видеозаписи процесса сборки в IPFS,Videos of the build process in IPFS
+Information,Дополнительная информация,Additional 
+ProductID,Уникальный номер паспорта изделия,Unique product passport number
+ProductModel,Модель изделия,Product model
+BuildTime,Общая продолжительность сборки,Total build time
+ProdStage,Этапы производства,Production stages
+Components,Компоненты в составе изделия,Components of the product
+BuildTimeComponents,Общая продолжительность сборки (включая компоненты),Total build time (including components)
+SerialNumber,Серийный номер изделия,Product serial number
+FailedToWrite,Не удалось записать данные паспорта в Даталог сети Robonomics,Failed to write passport data to Datalog of Robonomics network
+DataPublished,Данные паспорта опубликованы в Даталоге сети Robonomics,Passport data published in the Datalog of the Robonomics network
+ErrorPrintLabel,Ошибка при печати этикетки,Error printing label
+AuthorizedState,Для создания нового изделия рабочий стол должен иметь состояние AuthorizedIdling,To create a new item, the desktop must have the AuthorizedIdling state
+InvalidState,Недопустимая смена состояния,Invalid state change
+Authorized,Авторизован,Authorized
+loggedOut,вышел из системы,logged out
+CompletedBuild,Сборка изделия уже была завершена, паспорт выпущен. Отказано.,The build of the product has already been completed, the passport has been issued. Denied.
+ProductIntID,Изделие с внутренним номером ,Product with internal number
+OnTable,помещено на стол,placed on the table
+ImpossibleRemove,Невозможно убрать со стола изделие.,It is impossible to remove the product from the table. 
+NoProduct,На рабочем столе отсутсвует изделие,There is no product on the desktop
+ClearTable,убрано со стола,cleared from the table
+NecessaryAuth,Необходима авторизация,Authorization is necessary
+NotSaveVideo,Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.,The step is completed, but the video could not be saved. Contact your administrator.
+SaveLocalVideo,Этап завершен, однако опубликовать видеозапись в сети IPFS не удалось. Видеозапись сохранена локально. Обратитесь к администратору.,Phase completed, but the video could not be published on the IPFS network. Video saved locally. Contact your administrator.
+ErrorPrintSeal,Ошибка при печати пломбы,Error when printing seal
+ErrorPrintQR,Ошибка при печати QR-кода,Error when printing QR code
+CanceledPasport,Выпуск паспорта отменён поскольку печать экикетки невозможна,The passport issue has been canceled because printing the label is impossible
+ShutDownServer,Завершение работы сервера. Не выключайте машину!,Shutting down the server. Don't turn off the car!
+FinishServer,Работа сервера завершена,The server is finished
+ProductOnDesktop,Это изделие уже помещено на рабочий стол,This product is already placed on the desktop
+NoEmployee,Сотрудник не найден,Employee not found
+NoProduct,Изделие не найдено,Product not found
+NotBarcode,Не является штрих-кодом,Not a barcode
+IPFSunavailable,IPFS шлюз недоступен,IPFS gateway unavailable
+ErrorIPFS,Ошибка шлюза IPFS:,IPFS Gateway Error:
+NecessaryComponents,Изделию уже присвоены все необходимые компоненты,The product has already been assigned all the necessary components
+Component,Комопнент,Component 
+NotPartOfProduct,не явлеяется частью изделия,not part of the product
+AlreadyAdded,уже был добавлен к этому изделию,has already been added to this product
+ComponentBuild,Сборка компонента,Component BuildTime
+ComponentN,Компонент №,Component №
+AlreadyUsed,уже использован в изделии №,already used in product
+AssignedToProduct,присвоен изделию ,assigned to the product 
+Unfinished,(неокончен.),(unfinished)
+NoConnection,Нет связи с камерой,No connection to camera
+ErrorRecording,Ошибка записи видео,Video recording error
+PrintError,Ошибка печати,Print error
+SEALED,ОПЛОМБИРОВАНО,SEALED
