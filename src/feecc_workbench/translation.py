@@ -20,6 +20,6 @@ def translation(key: str):
         result={}
         red=csv.DictReader(f)
         for d in red:
-            result.setdefault(d['key'],[d[lang]])
+            result.setdefault(d['key'],[d['ru']['en']])
     return result[key][switch(lang)]
 
