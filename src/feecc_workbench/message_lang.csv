@@ -43,7 +43,7 @@ NecessaryComponents,Изделию уже присвоены все необхо
 Component,Комопнент,Component 
 NotPartOfProduct,не явлеяется частью изделия,not part of the product
 AlreadyAdded,уже был добавлен к этому изделию,has already been added to this product
-ComponentBuild,Сборка компонента,The component assembly
+ComponentAssembly,Сборка компонента,The component assembly
 NotCompleted,не была завершена. Невозможно присвоить компонент,was not completed. Cannot assign component
 ComponentN,Компонент №,Component №
 AlreadyUsed,уже использован в изделии №,already used in product

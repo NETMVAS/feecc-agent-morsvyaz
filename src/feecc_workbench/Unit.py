@@ -139,7 +139,7 @@ class Unit:
 
         if component.status is not UnitStatus.built:
             messenger.warning(
-                translation('ComponentBuild') +" "+ component.model_name +" "+ translation('NotCompleted')
+                translation('ComponentAssembly') +" "+ component.model_name +" "+ translation('NotCompleted')
             )
             raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
 
