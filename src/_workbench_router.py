@@ -187,7 +187,7 @@ async def handle_barcode_event(event_string: str) -> None:
             WORKBENCH.assign_unit(unit)
         case State.UNIT_ASSIGNED_IDLING_STATE:
             if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
-                messenger.info(translation('ProductOnDesktop'))
+                messenger.info(translation('UnitOnWorkbench'))
                 return
             WORKBENCH.remove_unit()
             WORKBENCH.assign_unit(unit)
