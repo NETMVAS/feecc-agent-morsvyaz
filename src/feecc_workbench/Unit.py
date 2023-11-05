@@ -125,7 +125,7 @@ class Unit:
 
         if component.schema.schema_id not in self._component_slots:
             messenger.warning(
-                translation('Component') +" "+ component.model_name +" "+ translation('NotPartOfProduct') +" "+ self.model_name
+                translation('Component') +" "+ component.model_name +" "+ translation('NotPartOfUnit') +" "+ self.model_name
             )
             raise ValueError(
                 f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
@@ -156,7 +156,7 @@ class Unit:
         component.featured_in_int_id = self.internal_id
         logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
         messenger.success(
-            translation('Component') +" "+ component.model_name +" "+ translation('AssignedToProduct') +" "+ self.model_name
+            translation('Component') +" "+ component.model_name +" "+ translation('AssignedToUnit') +" "+ self.model_name
         )
 
     def start_operation(

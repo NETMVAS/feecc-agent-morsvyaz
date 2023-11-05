@@ -47,7 +47,7 @@ def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     """
     passport_dict: dict[str, Any] = {
         translation('UnitID'): unit.uuid,
-        translation('UnitModelName'): unit.model_name,
+        translation('UnitName'): unit.model_name,
     }
 
     try:

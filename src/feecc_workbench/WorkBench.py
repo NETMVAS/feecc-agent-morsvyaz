@@ -134,14 +134,14 @@ class WorkBench(metaclass=SingletonMeta):
                 unit = get_first_unit_matching_status(unit, *allowed)
             except AssertionError as e:
                 message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-                messenger.warning(translation('CompletedBuild'))
+                messenger.warning(translation('CompletedAssembly'))
                 raise AssertionError(message) from e
 
         self.unit = unit
 
         message = f"Unit {unit.internal_id} has been assigned to the workbench"
         logger.info(message)
-        messenger.success(translation('UnitInternalID') +" "+ unit.internal_id +" "+ translation('WorkbenchOnTable'))
+        messenger.success(translation('UnitInternalID') +" "+ unit.internal_id +" "+ translation('OnWorkbench'))
 
         if not unit.components_filled:
             logger.info(
@@ -158,12 +158,12 @@ class WorkBench(metaclass=SingletonMeta):
 
         if self.unit is None:
             message = "Cannot remove unit. No unit is currently assigned to the workbench."
-            messenger.error(translation('ImpossibleRemove') +" "+ translation('WorkbenchNoProduct'))
+            messenger.error(translation('ImpossibleRemove') +" "+ translation('WorkbenchNoUnit'))
             raise AssertionError(message)
 
         message = f"Unit {self.unit.internal_id} has been removed from the workbench"
         logger.info(message)
-        messenger.success(translation('UnitInternalID') +" "+ self.unit.internal_id +" "+ translation('ClearTable'))
+        messenger.success(translation('UnitInternalID') +" "+ self.unit.internal_id +" "+ translation('ClearWorkbench'))
 
         self.unit = None
 
@@ -176,7 +176,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         if self.unit is None:
             message = "No unit is assigned to the workbench"
-            messenger.error(translation('WorkbenchNoProduct'))
+            messenger.error(translation('WorkbenchNoUnit'))
             raise AssertionError(message)
 
         if self.employee is None:
@@ -242,7 +242,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         if self.unit is None:
             message = "No unit is assigned to the workbench"
-            messenger.error(translation('WorkbenchNoProduct'))
+            messenger.error(translation('WorkbenchNoUnit'))
             raise AssertionError(message)
 
         logger.info("Trying to end operation")
@@ -307,7 +307,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         # Make sure nothing needed for this operation is missing
         if self.unit is None:
-            messenger.error(translation('WorkbenchNoProduct'))
+            messenger.error(translation('WorkbenchNoUnit'))
             raise AssertionError("No unit is assigned to the workbench")
 
         if self.employee is None:
