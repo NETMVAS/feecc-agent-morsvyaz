@@ -12,8 +12,7 @@ def translation(key: str):
     
     with open(f'{current_directory}', 'r') as f:
         result={}
-        red=csv.DictReader(f)
+        red=csv.DictReader(f,delimiter=';')
         for d in red:
             result.setdefault(d['key'],[d[lang]])
     return result[key][0]
-

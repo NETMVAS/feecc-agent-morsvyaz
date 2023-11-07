@@ -1,55 +1,55 @@
-key,ru,en
-BuildName,Наименование,Name
-BuildEmployee,Код сотрудника,Employee Name
-BuildStartTime,Время начала,Session start time
-BuildEndTime,Время окончания,Session end time
-BuildVideoHashes, Видеозаписи процесса сборки в IPFS,Videos of the assembly process in IPFS
-BuildAdditionalInfo,Дополнительная информация,Additional information
-UnitID,Уникальный номер паспорта изделия,Unit passport number
-UnitName,Модель изделия,Product model
-UnitTotalAssemblyTime,Общая продолжительность сборки,Total assembly time
-UnitBiography,Этапы производства,Stages of production 
-UnitComponents,Компоненты в составе изделия,Components of the unit
-UnitTotalAssemblyTimeComponents,Общая продолжительность сборки (включая компоненты),Total assembly time (including components)
-UnitSerialNumber,Серийный номер изделия,Unit serial number
-FailedToWrite,Не удалось записать данные паспорта в Даталог сети Robonomics,Failed to write passport data to Datalog of Robonomics network
-DataPublished,Данные паспорта опубликованы в Даталоге сети Robonomics,Passport data published in the Datalog of the Robonomics network
-ErrorPrintLabel,Ошибка при печати этикетки,Error printing label
-AuthorizedState,Для создания нового изделия рабочий стол должен иметь состояние AuthorizedIdling,To create a new item, the workbench must have the AuthorizedIdling state
-InvalidState,Недопустимая смена состояния,Invalid state change
-Authorized,Авторизован,Authorized
-loggedOut,вышел из системы,logged out
-CompletedAssembly,Сборка изделия уже была завершена, паспорт выпущен. Отказано.,The unit has already been completed, the passport has been issued. Denied.
-UnitInternalID,Изделие с внутренним номером ,Unit with internal number
-OnWorkbench,помещено на стол,has been assigned to the workbench
-ImpossibleRemove,Невозможно убрать со стола изделие.,Cannot remove unit. 
-WorkbenchNoUnit,На рабочем столе отсутсвует изделие,No unit is assigned to the workbench
-ClearWorkbench,убрано со стола,cleared from workbench
-NecessaryAuth,Необходима авторизация,No employee is logged in at the workbench
-NotSaveVideo,Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.,The step is completed, but the video could not be saved. Contact your administrator.
-SaveLocalVideo,Этап завершен, однако опубликовать видеозапись в сети IPFS не удалось. Видеозапись сохранена локально. Обратитесь к администратору.,The step is completed, but the video could not be published on the IPFS network. Video saved locally. Contact your administrator.
-ErrorPrintSeal,Ошибка при печати пломбы,Error printing seal
-ErrorPrintQR,Ошибка при печати QR-кода,Error printing QR code
-CanceledPasport,Выпуск паспорта отменён поскольку печать экикетки невозможна,The passport issue has been canceled because printing the label is impossible
-ShutDownServer,Завершение работы сервера. Не выключайте машину!,Shutting down the server. Don't turn off the PC!
-FinishServer,Работа сервера завершена,The server is finished
-UnitOnWorkbech,Это изделие уже помещено на рабочий стол,This unit is already placed on the workbench
-NoEmployee,Сотрудник не найден,Employee not found
-NoUnit,Изделие не найдено,Unit not found
-NotBarcode,Не является штрих-кодом,Not a barcode
-IPFSunavailable,IPFS шлюз недоступен,IPFS gateway unavailable
-ErrorIPFS,Ошибка шлюза IPFS:,IPFS Gateway Error:
-NecessaryComponents,Изделию уже присвоены все необходимые компоненты,The unit has already been assigned all the necessary components
-Component,Комопнент,Component 
-NotPartOfUnit,не явлеяется частью изделия,not part of the unit
-AlreadyAdded,уже был добавлен к этому изделию,has already been added to this unit
-ComponentAssembly,Сборка компонента,The component assembly
-NotCompleted,не была завершена. Невозможно присвоить компонент,was not completed. Cannot assign component
-ComponentN,Компонент №,Component №
-AlreadyUsed,уже использован в изделии №,already used in unit
-AssignedToUnit,присвоен изделию,assigned to the unit 
-Unfinished,(неокончен.),(unfinished)
-NoConnection,Нет связи с камерой,No connection to camera
-ErrorRecording,Ошибка записи видео,Video recording error
-PrintError,Ошибка печати,Print error
-SEALED,ОПЛОМБИРОВАНО,SEALED
+key;ru;en
+BuildName;Наименование;Name
+BuildEmployee;Код сотрудника;Employee Name
+BuildStartTime;Время начала;Session start time
+BuildEndTime;Время окончания;Session end time
+BuildVideoHashes; Видеозаписи процесса сборки в IPFS;Videos of the assembly process in IPFS
+BuildAdditionalInfo;Дополнительная информация;Additional information
+UnitID;Уникальный номер паспорта изделия;Unit passport number
+UnitName;Модель изделия;Product model
+UnitTotalAssemblyTime;Общая продолжительность сборки;Total assembly time
+UnitBiography;Этапы производства;Stages of production 
+UnitComponents;Компоненты в составе изделия;Components of the unit
+UnitTotalAssemblyTimeComponents;Общая продолжительность сборки (включая компоненты);Total assembly time (including components)
+UnitSerialNumber;Серийный номер изделия;Unit serial number
+FailedToWrite;Не удалось записать данные паспорта в Даталог сети Robonomics;Failed to write passport data to Datalog of Robonomics network
+DataPublished;Данные паспорта опубликованы в Даталоге сети Robonomics;Passport data published in the Datalog of the Robonomics network
+ErrorPrintLabel;Ошибка при печати этикетки;Error printing label
+AuthorizedState;Для создания нового изделия рабочий стол должен иметь состояние AuthorizedIdling;To create a new item, the workbench must have the AuthorizedIdling state
+InvalidState;Недопустимая смена состояния;Invalid state change
+Authorized;Авторизован;Authorized
+loggedOut;вышел из системы;logged out
+CompletedAssembly;Сборка изделия уже была завершена, паспорт выпущен. Отказано.;The unit has already been completed, the passport has been issued. Denied.
+UnitInternalID;Изделие с внутренним номером;Unit with internal number
+OnWorkbench;помещено на стол;has been assigned to the workbench
+ImpossibleRemove;Невозможно убрать со стола изделие.;Cannot remove unit. 
+WorkbenchNoUnit;На рабочем столе отсутсвует изделие;No unit is assigned to the workbench
+ClearWorkbench;убрано со стола;cleared from workbench
+NecessaryAuth;Необходима авторизация;No employee is logged in at the workbench
+NotSaveVideo;Этап завершен, однако сохранить видео не удалось. Обратитесь к администратору.;The step is completed, but the video could not be saved. Contact your administrator.
+SaveLocalVideo;Этап завершен, однако опубликовать видеозапись в сети IPFS не удалось. Видеозапись сохранена локально. Обратитесь к администратору.;The step is completed, but the video could not be published on the IPFS network. Video saved locally. Contact your administrator.
+ErrorPrintSeal;Ошибка при печати пломбы;Error printing seal
+ErrorPrintQR;Ошибка при печати QR-кода;Error printing QR code
+CanceledPasport;Выпуск паспорта отменён поскольку печать экикетки невозможна;The passport issue has been canceled because printing the label is impossible
+ShutDownServer;Завершение работы сервера. Не выключайте машину!;Shutting down the server. Don't turn off the PC!
+FinishServer;Работа сервера завершена;The server is finished
+UnitOnWorkbech;Это изделие уже помещено на рабочий стол;This unit is already placed on the workbench
+NoEmployee;Сотрудник не найден;Employee not found
+NoUnit;Изделие не найдено;Unit not found
+NotBarcode;Не является штрих-кодом;Not a barcode
+IPFSunavailable;IPFS шлюз недоступен;IPFS gateway unavailable
+ErrorIPFS;Ошибка шлюза IPFS:;IPFS Gateway Error:
+NecessaryComponents;Изделию уже присвоены все необходимые компоненты;The unit has already been assigned all the necessary components
+Component;Комопнент;Component 
+NotPartOfUnit;не явлеяется частью изделия;not part of the unit
+AlreadyAdded;уже был добавлен к этому изделию;has already been added to this unit
+ComponentAssembly;Сборка компонента;The component assembly
+NotCompleted;не была завершена. Невозможно присвоить компонент;was not completed. Cannot assign component
+ComponentN;Компонент №;Component №
+AlreadyUsed;уже использован в изделии №;already used in unit
+AssignedToUnit;присвоен изделию;assigned to the unit 
+Unfinished;(неокончен.);(unfinished)
+NoConnection;Нет связи с камерой;No connection to camera
+ErrorRecording;Ошибка записи видео;Video recording error
+PrintError;Ошибка печати;Print error
+SEALED;ОПЛОМБИРОВАНО;SEALED
