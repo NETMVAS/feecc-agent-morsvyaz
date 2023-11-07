@@ -11,6 +11,7 @@ from PIL.ImageFont import FreeTypeFont
 
 from .config import CONFIG
 from .Messenger import messenger
+from .translation import translation
 from .utils import async_time_execution
 from ._label_generation import _resize_to_paper_aspect_ratio
 
@@ -50,7 +51,7 @@ async def _print_image_task(file_path: Path) -> None:
         logger.info(f"Printed image '{file_path=}', {print_id=}")
     except Exception as e:
         logger.error(f"Print task failed: {e}")
-        messenger.error("Ошибка печати")
+        messenger.error(translation('PrintError'))
 
 
 def _annotate_image(image: Image, text: str) -> Image:

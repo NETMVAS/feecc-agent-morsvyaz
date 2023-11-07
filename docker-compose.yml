@@ -3,6 +3,7 @@ services:
   feecc_workbench_daemon:
     environment:
       # Use these environment variables to configure your deployment
+      LANGUAGE_MESSAGE: "ru"
       MONGODB_URI: ""  # Your MongoDB connection URI
       MONGODB_DB_NAME: ""  # Your MongoDB DB name
       ROBONOMICS_ENABLE_DATALOG: false  # Whether to enable datalog posting or not

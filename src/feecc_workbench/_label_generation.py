@@ -9,6 +9,7 @@ from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 
 from .config import CONFIG
+from .translation import translation
 from .utils import time_execution
 
 # color values
@@ -88,7 +89,7 @@ def create_seal_tag() -> pathlib.Path:
 
     # add text to the image
     upper_field: int = 30
-    text = "ОПЛОМБИРОВАНО"
+    text = translation('SEALED')
     main_txt_w, main_txt_h = seal_tag_draw.textsize(text, font)
     x: int = int((image_width - main_txt_w) / 2)
     seal_tag_draw.text(xy=(x, upper_field), text=text, fill=BLACK, font=font, align="center")
