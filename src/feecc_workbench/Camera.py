@@ -115,9 +115,9 @@ class Camera:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(0.25)
-            pattern: re.Pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d{1,5}')
+            pattern: re.Pattern = re.compile(r'@[\w._+-]+:\d{1,5}')
             addr, port = pattern.search(CONFIG.camera.ffmpeg_command)[0].split(":")
-            s.connect((addr, int(port)))
+            s.connect((addr[1:], int(port)))
             logger.debug("Camera is up")
             return True
         except Exception as e:
