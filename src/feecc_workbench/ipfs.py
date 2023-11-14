@@ -1,4 +1,5 @@
 import pathlib
+import os
 
 import httpx
 from loguru import logger
@@ -44,7 +45,8 @@ async def publish_file(rfid_card_id: str, file_path: pathlib.Path) -> tuple[str,
     cid: str = response.json().get("ipfs_cid")
     link: str = response.json().get("ipfs_link")
     assert cid and link, "IPFS gateway returned no CID"
-
+    if file_path.exists():
+        os.remove(file_path)
     logger.info(f"File '{file_path} published to IPFS under CID {cid}'")
 
     return cid, link
