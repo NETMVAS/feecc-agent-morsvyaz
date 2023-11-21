@@ -15,6 +15,7 @@ from feecc_workbench.states import State
 from feecc_workbench.translation import translation
 from feecc_workbench.Unit import Unit
 from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
+from feecc_workbench.config import CONFIG
 
 WORKBENCH = WorkBench()
 
@@ -54,7 +55,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().json()
+            yield get_workbench_status_data().model_dump_json()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -199,6 +200,9 @@ async def handle_barcode_event(event_string: str) -> None:
 
 async def handle_rfid_event(event_string: str) -> None:
     """Handle HID event produced by the RFID reader"""
+    if not CONFIG.workbench.login:
+        return
+    
     if WORKBENCH.employee is not None:
         WORKBENCH.log_out()
         return

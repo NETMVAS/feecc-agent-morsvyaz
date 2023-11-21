@@ -21,6 +21,7 @@ services:
       CAMERA_ENABLE: false  # Whether to enable Cameraman or not
       CAMERA_FFMPEG_COMMAND: "Sample"
       WORKBENCH_NUMBER: 1  # Workbench number
+      WORKBENCH_LOGIN: false
       HID_DEVICES_RFID_READER: "Sample"  # RFID reader device name
       HID_DEVICES_BARCODE_READER: "Sample"  # Barcode reader device name
     build:

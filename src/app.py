@@ -7,6 +7,7 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sse_starlette import EventSourceResponse
+from contextlib import asynccontextmanager
 
 import _employee_router
 import _unit_router
@@ -21,8 +22,21 @@ from feecc_workbench.WorkBench import WorkBench
 # apply logging configuration
 logger.configure(handlers=HANDLERS)
 
+# create lifespan function for startup and shutdown events
+@asynccontextmanager
+async def lifespan() -> None:
+    check_service_connectivity()
+    MongoDbWrapper()
+    app_version = os.getenv("VERSION", "Unknown")
+    logger.info(f"Runtime app version: {app_version}")
+
+    yield
+
+    await WorkBench().shutdown()
+    MongoDbWrapper().close_connection()
+
 # create app
-app = FastAPI(title="Feecc Workbench daemon")
+app = FastAPI(title="Feecc Workbench daemon", lifespan=lifespan)
 
 # include routers
 app.include_router(_employee_router.router)
@@ -41,20 +55,6 @@ app.add_middleware(
 # Enable Prometheus metrics
 app.add_middleware(MetricsMiddleware)
 app.add_route("/metrics", metrics)
-
-
-@app.on_event("startup")
-def startup_event() -> None:
-    check_service_connectivity()
-    MongoDbWrapper()
-    app_version = os.getenv("VERSION", "Unknown")
-    logger.info(f"Runtime app version: {app_version}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    await WorkBench().shutdown()
-    MongoDbWrapper().close_connection()
 
 
 @app.get("/notifications", tags=["notifications"])

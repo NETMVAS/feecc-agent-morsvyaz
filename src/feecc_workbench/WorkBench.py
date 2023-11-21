@@ -37,9 +37,8 @@ class WorkBench(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
         self.number: int = CONFIG.workbench.number
-        # self.camera: Camera | None = Camera() if CONFIG.camera.enable else None
         self.employee: Employee | None = None
-        # self.unit: Unit | None = None
+        self.unit: Unit | None = None
         self.state: State = State.AWAIT_LOGIN_STATE
 
         logger.info(f"Workbench {self.number} was initialized")
@@ -60,20 +59,20 @@ class WorkBench(metaclass=SingletonMeta):
     #     finally:
     #         pathlib.Path(unit.barcode.filename).unlink()
 
-    # @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    # async def create_new_unit(self, schema: ProductionSchema) -> Unit:
-    #     """initialize a new instance of the Unit class"""
-    #     if self.state != State.AUTHORIZED_IDLING_STATE:
-    #         message = "Cannot create a new unit unless workbench has state AuthorizedIdling"
-    #         messenger.error(translation('AuthorizedState'))
-    #         raise StateForbiddenError(message)
-    #     unit = Unit(schema)
-    #     if CONFIG.printer.print_barcode and CONFIG.printer.enable:
-    #         await self._print_unit_barcode(unit)
-    #     await self._database.push_unit(unit)
-    #     metrics.register_create_unit(self.employee, unit)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
+    async def create_new_unit(self, schema: ProductionSchema) -> Unit:
+        """initialize a new instance of the Unit class"""
+        if self.state != State.AUTHORIZED_IDLING_STATE:
+            message = "Cannot create a new unit unless workbench has state AuthorizedIdling"
+            messenger.error(translation('AuthorizedState'))
+            raise StateForbiddenError(message)
+        unit = Unit(schema)
+        if CONFIG.printer.print_barcode and CONFIG.printer.enable:
+            await self._print_unit_barcode(unit)
+        await self._database.push_unit(unit)
+        metrics.register_create_unit(self.employee, unit)
 
-    #     return unit
+        return unit
 
     def _validate_state_transition(self, new_state: State) -> None:
         """check if state transition can be performed using the map"""
@@ -191,35 +190,6 @@ class WorkBench(metaclass=SingletonMeta):
     #         await self._database.push_unit(self.unit)
     #         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    # async def _end_record(self) -> tuple[list[str], str]:  # noqa: CAC001
-    #     """End ongoing records and publish them to IPFS"""
-    #     assert self.camera is not None and self.employee is not None
-    #     override_timestamp = timestamp()
-    #     ipfs_hashes: list[str] = []
-
-    #     try:
-    #         await self.camera.end_record()
-    #         override_timestamp = timestamp()
-    #         assert self.camera.record is not None, "No record found"
-    #         file: str | None = self.camera.record.filename
-    #     except Exception as e:
-    #         logger.error(f"Failed to end record: {e}")
-    #         messenger.warning(translation('NotSaveVideo'))
-    #         file = None
-
-    #     if file is not None:
-    #         try:
-    #             data = await publish_file(file_path=Path(file), rfid_card_id=self.employee.rfid_card_id)
-
-    #             if data is not None:
-    #                 cid, link = data
-    #                 ipfs_hashes.append(cid)
-    #         except Exception as e:
-    #             logger.error(f"Failed to publish record: {e}")
-    #             messenger.warning(translation('SaveLocalVideo'))
-    #             ipfs_hashes = []
-
-    #     return ipfs_hashes, override_timestamp
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:

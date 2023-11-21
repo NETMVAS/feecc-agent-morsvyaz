@@ -51,14 +51,11 @@ class AppConfig:
             default=True, help="Whether to enable timestamps on security tags or not"
         )
 
-    @environ.config(frozen=True)
-    class Camera:
-        enable: bool = environ.bool_var(name="CAMERA_ENABLE", help="Whether to enable Camera or not")
-        ffmpeg_command: str = environ.var(name="CAMERA_FFMPEG_COMMAND", help="FFMPEG record command")
 
     @environ.config(frozen=True)
     class WorkBenchConfig:
         number: int = environ.var(converter=int, help="Workbench number")
+        login: bool = environ.bool_var(default=True, help="Decides whether the workbench needs login or not.")
 
     @environ.config(frozen=True)
     class HidDevicesNames:
@@ -70,7 +67,6 @@ class AppConfig:
     robonomics = environ.group(RobonomicsNetwork)
     ipfs_gateway = environ.group(IPFSGateway)
     printer = environ.group(Printer)
-    camera = environ.group(Camera)
     workbench = environ.group(WorkBenchConfig)
     hid_devices = environ.group(HidDevicesNames)
 
