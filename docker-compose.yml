@@ -4,13 +4,13 @@ services:
     environment:
       # Use these environment variables to configure your deployment
       LANGUAGE_MESSAGE: "ru"
-      MONGODB_URI: ""  # Your MongoDB connection URI
-      MONGODB_DB_NAME: ""  # Your MongoDB DB name
+      MONGODB_URI: "mongodb://localhost:27017"  # Your MongoDB connection URI
+      MONGODB_DB_NAME: "workbench"  # Your MongoDB DB name
       ROBONOMICS_ENABLE_DATALOG: false  # Whether to enable datalog posting or not
-      ROBONOMICS_ACCOUNT_SEED: ""  # Your Robonomics network account seed phrase
-      ROBONOMICS_SUBSTRATE_NODE_URI: ""  # Robonomics network node URI
+      ROBONOMICS_ACCOUNT_SEED: "Sample"  # Your Robonomics network account seed phrase
+      ROBONOMICS_SUBSTRATE_NODE_URI: "Sample"  # Robonomics network node URI
       IPFS_GATEWAY_ENABLE: false  # Whether to enable IPFS posting or not
-      IPFS_GATEWAY_IPFS_SERVER_URI: ""  # Your IPFS gateway deployment URI
+      IPFS_GATEWAY_IPFS_SERVER_URI: "Sample"  # Your IPFS gateway deployment URI
       PRINTER_ENABLE: false  # Whether to enable printing or not
       PRINTER_PAPER_ASPECT_RATIO: 40:25  # Printer labels aspect ratio (size in mm in form of width:height)
       PRINTER_PRINT_BARCODE: false  # Whether to print barcodes or not
@@ -19,10 +19,10 @@ services:
       PRINTER_PRINT_SECURITY_TAG: false  # Whether to enable printing security tags or not
       PRINTER_SECURITY_TAG_ADD_TIMESTAMP: false  # Whether to enable timestamps on security tags or not
       CAMERA_ENABLE: false  # Whether to enable Cameraman or not
-      CAMERA_FFMPEG_COMMAND: ""
+      CAMERA_FFMPEG_COMMAND: "Sample"
       WORKBENCH_NUMBER: 1  # Workbench number
-      HID_DEVICES_RFID_READER: ""  # RFID reader device name
-      HID_DEVICES_BARCODE_READER: ""  # Barcode reader device name
+      HID_DEVICES_RFID_READER: "Sample"  # RFID reader device name
+      HID_DEVICES_BARCODE_READER: "Sample"  # Barcode reader device name
     build:
       context: ./
       dockerfile: Dockerfile

@@ -35,3 +35,7 @@ class StateForbiddenError(TrackedException):
 
 class RobonomicsError(TrackedException):
     """Raised when Robonmics transactions fail"""
+
+
+class OperatorError(TrackedException):
+    """Raised when Operator request fails"""
