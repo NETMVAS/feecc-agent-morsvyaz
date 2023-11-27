@@ -185,8 +185,12 @@ class WorkBench(metaclass=SingletonMeta):
             messenger.error(translation('NecessaryAuth'))
             raise AssertionError(message)
         
-        self.unit.start_operation(self.employee, additional_info)
+        response = requests.get("business-logic/operator/start")
+        if response.status_code != 200:
+            raise OperatorError("Could not start the operator process.")
         
+        self.unit.start_operation(self.employee, additional_info)
+
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
 
@@ -219,6 +223,10 @@ class WorkBench(metaclass=SingletonMeta):
         override_timestamp = timestamp()
         ipfs_hashes: list[str] = []
 
+        response = requests.get("business-logic/operator/stop")
+        if response.status_code != 201:
+            raise OperatorError(response.content)
+        
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
             additional_info=additional_info,
@@ -229,7 +237,6 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
         metrics.register_complete_operation(self.employee, self.unit)
-        
 
     async def _print_security_tag(self) -> None:
         """Print security tag for the unit"""

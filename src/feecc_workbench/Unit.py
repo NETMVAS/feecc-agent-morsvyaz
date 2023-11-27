@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import requests
 from functools import reduce
 from operator import add
 from typing import no_type_check
@@ -19,7 +18,6 @@ from .translation import translation
 from .Types import AdditionalInfo
 from .unit_utils import UnitStatus, biography_factory
 from .utils import TIMESTAMP_FORMAT, timestamp
-from .exceptions import OperatorError
 
 
 class Unit:
@@ -167,9 +165,6 @@ class Unit:
         additional_info: AdditionalInfo | None = None,
     ) -> None:
         """begin the provided operation and save data about it"""
-        response = requests.get("business-logic/operator/start")
-        assert response.status_code == 200, "Error ttrying to start the operation"
-        
         operation = self.next_pending_operation
         assert operation is not None, f"Unit {self.uuid} has no pending operations ({self.status=})"
         operation.session_start_time = timestamp()
@@ -205,10 +200,6 @@ class Unit:
         as well as session end timestamp
         """
         operation = self.next_pending_operation
-
-        response = requests.get("business-logic/operator/stop")
-        if response.status_code != 201:
-            raise OperatorError(response.content)
 
         if operation is None:
             raise ValueError("No pending operations found")
