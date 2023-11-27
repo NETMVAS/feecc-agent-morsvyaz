@@ -3,8 +3,11 @@ import pathlib
 from pathlib import Path
 import requests
 
+
 from loguru import logger
 
+
+from .utils import timestamp
 from ._label_generation import create_qr, create_seal_tag
 from .config import CONFIG
 from .database import MongoDbWrapper
@@ -37,27 +40,27 @@ class WorkBench(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
         self.number: int = CONFIG.workbench.number
-        self.employee: Employee | None = None
+        self.employee: Employee | None = None if CONFIG.workbench.login else Employee("000", "000", "Dispatcher", "000")
         self.unit: Unit | None = None
         self.state: State = State.AWAIT_LOGIN_STATE
 
         logger.info(f"Workbench {self.number} was initialized")
 
-    # async def _print_unit_barcode(self, unit: Unit) -> None:
-    #     """Print unit barcode"""
-    #     if (schema := unit.schema).parent_schema_id is None:
-    #         annotation = schema.print_name
-    #     else:
-    #         parent_schema = await self._database.get_schema_by_id(schema.parent_schema_id)
-    #         annotation = f"{parent_schema.print_name}. {unit.schema.print_name}."
-    #     assert self.employee is not None
-    #     try:
-    #         await print_image(Path(unit.barcode.filename), annotation=annotation)
-    #     except Exception as e:
-    #         messenger.error(translation('ErrorPrintLabel'))
-    #         raise e
-    #     finally:
-    #         pathlib.Path(unit.barcode.filename).unlink()
+    async def _print_unit_barcode(self, unit: Unit) -> None:
+        """Print unit barcode"""
+        if (schema := unit.schema).parent_schema_id is None:
+            annotation = schema.print_name
+        else:
+            parent_schema = await self._database.get_schema_by_id(schema.parent_schema_id)
+            annotation = f"{parent_schema.print_name}. {unit.schema.print_name}."
+        assert self.employee is not None
+        try:
+            await print_image(Path(unit.barcode.filename), annotation=annotation)
+        except Exception as e:
+            messenger.error(translation('ErrorPrintLabel'))
+            raise e
+        finally:
+            pathlib.Path(unit.barcode.filename).unlink()
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def create_new_unit(self, schema: ProductionSchema) -> Unit:
@@ -119,84 +122,114 @@ class WorkBench(metaclass=SingletonMeta):
 
         self.switch_state(State.AWAIT_LOGIN_STATE)
 
-    # @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    # def assign_unit(self, unit: Unit) -> None:
-    #     """assign a unit to the workbench"""
-    #     self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
+    def assign_unit(self, unit: Unit) -> None:
+        """assign a unit to the workbench"""
+        self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    #     override = unit.status == UnitStatus.built and unit.passport_ipfs_cid is None
-    #     allowed = (UnitStatus.production, UnitStatus.revision)
+        override = unit.status == UnitStatus.built and unit.passport_ipfs_cid is None
+        allowed = (UnitStatus.production, UnitStatus.revision)
 
-    #     if not (override or unit.status in allowed):
-    #         try:
-    #             unit = get_first_unit_matching_status(unit, *allowed)
-    #         except AssertionError as e:
-    #             message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
-    #             messenger.warning(translation('CompletedAssembly'))
-    #             raise AssertionError(message) from e
+        if not (override or unit.status in allowed):
+            try:
+                unit = get_first_unit_matching_status(unit, *allowed)
+            except AssertionError as e:
+                message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
+                messenger.warning(translation('CompletedAssembly'))
+                raise AssertionError(message) from e
 
-    #     self.unit = unit
+        self.unit = unit
 
-    #     message = f"Unit {unit.internal_id} has been assigned to the workbench"
-    #     logger.info(message)
-    #     messenger.success(translation('UnitInternalID') +" "+ unit.internal_id +" "+ translation('OnWorkbench'))
+        message = f"Unit {unit.internal_id} has been assigned to the workbench"
+        logger.info(message)
+        messenger.success(translation('UnitInternalID') +" "+ unit.internal_id +" "+ translation('OnWorkbench'))
 
-    #     if not unit.components_filled:
-    #         logger.info(
-    #             f"Unit {unit.internal_id} is a composition with unsatisfied component requirements. Entering component gathering state."
-    #         )
-    #         self.switch_state(State.GATHER_COMPONENTS_STATE)
-    #     else:
-    #         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
+        if not unit.components_filled:
+            logger.info(
+                f"Unit {unit.internal_id} is a composition with unsatisfied component requirements. Entering component gathering state."
+            )
+            self.switch_state(State.GATHER_COMPONENTS_STATE)
+        else:
+            self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
-    # @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    # def remove_unit(self) -> None:
-    #     """remove a unit from the workbench"""
-    #     self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
+    def remove_unit(self) -> None:
+        """remove a unit from the workbench"""
+        self._validate_state_transition(State.AUTHORIZED_IDLING_STATE)
 
-    #     if self.unit is None:
-    #         message = "Cannot remove unit. No unit is currently assigned to the workbench."
-    #         messenger.error(translation('ImpossibleRemove') +" "+ translation('WorkbenchNoUnit'))
-    #         raise AssertionError(message)
+        if self.unit is None:
+            message = "Cannot remove unit. No unit is currently assigned to the workbench."
+            messenger.error(translation('ImpossibleRemove') +" "+ translation('WorkbenchNoUnit'))
+            raise AssertionError(message)
 
-    #     message = f"Unit {self.unit.internal_id} has been removed from the workbench"
-    #     logger.info(message)
-    #     messenger.success(translation('UnitInternalID') +" "+ self.unit.internal_id +" "+ translation('ClearWorkbench'))
+        message = f"Unit {self.unit.internal_id} has been removed from the workbench"
+        logger.info(message)
+        messenger.success(translation('UnitInternalID') +" "+ self.unit.internal_id +" "+ translation('ClearWorkbench'))
 
-    #     self.unit = None
+        self.unit = None
 
-    #     self.switch_state(State.AUTHORIZED_IDLING_STATE)
+        self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def start_operation(self, additional_info: AdditionalInfo) -> None:
         """begin work on the provided unit"""
+        self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
 
-        response = requests.get("business-logic/operator/start")
-        if response.status_code != 200:
-            raise OperatorError("Could not start the operator process.")
+        if self.unit is None:
+            message = "No unit is assigned to the workbench"
+            messenger.error(translation('WorkbenchNoUnit'))
+            raise AssertionError(message)
+
+        if self.employee is None:
+            message = "No employee is logged in at the workbench"
+            messenger.error(translation('NecessaryAuth'))
+            raise AssertionError(message)
+        
+        self.unit.start_operation(self.employee, additional_info)
+        
+        self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
 
-    # @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError, ValueError))
-    # async def assign_component_to_unit(self, component: Unit) -> None:
-    #     """assign provided component to a composite unit"""
-    #     assert (
-    #         self.state == State.GATHER_COMPONENTS_STATE and self.unit is not None
-    #     ), f"Cannot assign components unless WB is in state {State.GATHER_COMPONENTS_STATE}"
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError, ValueError))
+    async def assign_component_to_unit(self, component: Unit) -> None:
+        """assign provided component to a composite unit"""
+        assert (
+            self.state == State.GATHER_COMPONENTS_STATE and self.unit is not None
+        ), f"Cannot assign components unless WB is in state {State.GATHER_COMPONENTS_STATE}"
 
-    #     self.unit.assign_component(component)
-    #     STATE_SWITCH_EVENT.set()
+        self.unit.assign_component(component)
+        STATE_SWITCH_EVENT.set()
 
-    #     if self.unit.components_filled:
-    #         await self._database.push_unit(self.unit)
-    #         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
+        if self.unit.components_filled:
+            await self._database.push_unit(self.unit)
+            self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
         """Finishes operator process"""
-        response = requests.get("business-logic/operator/stop")
-        if response.status_code != 201:
-            raise OperatorError(response.content)
+        self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
+
+        if self.unit is None:
+            message = "No unit is assigned to the workbench"
+            messenger.error(translation('WorkbenchNoUnit'))
+            raise AssertionError(message)
+
+        logger.info("Trying to end operation")
+        override_timestamp = timestamp()
+        ipfs_hashes: list[str] = []
+
+        await self.unit.end_operation(
+            video_hashes=ipfs_hashes,
+            additional_info=additional_info,
+            premature=premature,
+            override_timestamp=override_timestamp,
+        )
+        await self._database.push_unit(self.unit, include_components=False)
+
+        self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
+        metrics.register_complete_operation(self.employee, self.unit)
+        
 
     async def _print_security_tag(self) -> None:
         """Print security tag for the unit"""
@@ -236,54 +269,54 @@ class WorkBench(metaclass=SingletonMeta):
         finally:
             pathlib.Path(qrcode_path).unlink()
 
-    # @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    # async def upload_unit_passport(self) -> None:  # noqa: CAC001,CCR001
-    #     """Finalize the Unit's assembly by producing and publishing its passport"""
+    @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
+    async def upload_unit_passport(self) -> None:  # noqa: CAC001,CCR001
+        """Finalize the Unit's assembly by producing and publishing its passport"""
 
-    #     # Make sure nothing needed for this operation is missing
-    #     if self.unit is None:
-    #         messenger.error(translation('WorkbenchNoUnit'))
-    #         raise AssertionError("No unit is assigned to the workbench")
+        # Make sure nothing needed for this operation is missing
+        if self.unit is None:
+            messenger.error(translation('WorkbenchNoUnit'))
+            raise AssertionError("No unit is assigned to the workbench")
 
-    #     if self.employee is None:
-    #         messenger.error(translation('NecessaryAuth'))
-    #         raise AssertionError("No employee is logged in at the workbench")
+        if self.employee is None:
+            messenger.error(translation('NecessaryAuth'))
+            raise AssertionError("No employee is logged in at the workbench")
 
-    #     # Generate and save passport YAML file
-    #     passport_file_path: Path = await construct_unit_passport(self.unit)
+        # Generate and save passport YAML file
+        passport_file_path: Path = await construct_unit_passport(self.unit)
 
-    #     # Determine if QR-code has to be printed -> short link is needed right now
-    #     print_qr = CONFIG.printer.print_qr and (
-    #         not CONFIG.printer.print_qr_only_for_composite
-    #         or self.unit.schema.is_composite
-    #         or not self.unit.schema.is_a_component
-    #     )
+        # Determine if QR-code has to be printed -> short link is needed right now
+        print_qr = CONFIG.printer.print_qr and (
+            not CONFIG.printer.print_qr_only_for_composite
+            or self.unit.schema.is_composite
+            or not self.unit.schema.is_a_component
+        )
 
-    #     # Publish passport YAML file into IPFS
-    #     if CONFIG.ipfs_gateway.enable:
-    #         cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
-    #         self.unit.passport_ipfs_cid = cid
+        # Publish passport YAML file into IPFS
+        if CONFIG.ipfs_gateway.enable:
+            cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
+            self.unit.passport_ipfs_cid = cid
 
-    #         # Generate a QR-code pointing to the unit's passport and print it
-    #         if print_qr:
-    #             try:
-    #                 await self._print_qr(link)
-    #             except Exception as e:
-    #                 messenger.error(translation('CanceledPasport'))
-    #                 logger.error(f"Failed to print QR code. Passport not saved. {e}")
-    #                 raise e
+            # Generate a QR-code pointing to the unit's passport and print it
+            if print_qr:
+                try:
+                    await self._print_qr(link)
+                except Exception as e:
+                    messenger.error(translation('CanceledPasport'))
+                    logger.error(f"Failed to print QR code. Passport not saved. {e}")
+                    raise e
 
-    #     # Print a security tag sticker if needed
-    #     if CONFIG.printer.print_security_tag:
-    #         await self._print_security_tag()
+        # Print a security tag sticker if needed
+        if CONFIG.printer.print_security_tag:
+            await self._print_security_tag()
 
-    #     # Publish passport file's IPFS CID to Robonomics Datalog
-    #     if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
-    #         asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
+        # Publish passport file's IPFS CID to Robonomics Datalog
+        if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
+            asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
-    #     # Update unit data saved in the DB
-    #     await self._database.push_unit(self.unit)
-    #     metrics.register_generate_passport(self.employee, self.unit)
+        # Update unit data saved in the DB
+        await self._database.push_unit(self.unit)
+        metrics.register_generate_passport(self.employee, self.unit)
 
     async def shutdown(self) -> None:
         logger.info("Workbench shutdown sequence initiated")
@@ -299,11 +332,11 @@ class WorkBench(metaclass=SingletonMeta):
             )
 
         if self.state in (State.UNIT_ASSIGNED_IDLING_STATE, State.GATHER_COMPONENTS_STATE):
-            # self.remove_unit()
+            self.remove_unit()
             ...
 
         if self.state == State.AUTHORIZED_IDLING_STATE:
-            # self.log_out()
+            self.log_out()
             ...
 
         message = "Workbench shutdown sequence complete"
