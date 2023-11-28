@@ -12,7 +12,7 @@ from ._label_generation import Barcode
 from .Employee import Employee
 from .Messenger import messenger
 from .metrics import metrics
-from .models import ProductionSchema
+from .models import ProductionSchema, FactoryCard
 from .ProductionStage import ProductionStage
 from .translation import translation
 from .Types import AdditionalInfo
@@ -33,6 +33,7 @@ class Unit:
         components_units: list[Unit] | None = None,
         featured_in_int_id: str | None = None,
         passport_ipfs_cid: str | None = None,
+        passport_ipfs_link: str | None = None,
         txn_hash: str | None = None,
         serial_number: str | None = None,
         creation_time: dt.datetime | None = None,
@@ -48,6 +49,7 @@ class Unit:
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
         self.passport_ipfs_cid: str | None = passport_ipfs_cid
+        self.passport_ipfs_link: str | None = passport_ipfs_link
         self.txn_hash: str | None = txn_hash
         self.serial_number: str | None = serial_number
         self.components_units: list[Unit] = components_units or []
@@ -56,6 +58,7 @@ class Unit:
         self.biography: list[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.now()
+        self.detail: FactoryCard | None = None
 
         if self.components_units:
             slots: dict[str, Unit | None] = {u.schema.schema_id: u for u in self.components_units}
@@ -216,7 +219,7 @@ class Unit:
             operation.video_hashes = video_hashes
 
         if operation.additional_info is not None:
-            operation.additional_info = {**operation.additional_info, **(additional_info or {})}
+            operation.additional_info = {**operation.additional_info, **(additional_info or {}), "detail": self.detail.model_dump_json}
 
         operation.completed = True
         self.biography[operation.number] = operation

@@ -226,6 +226,10 @@ class WorkBench(metaclass=SingletonMeta):
         response = requests.get("business-logic/operator/stop")
         if response.status_code != 201:
             raise OperatorError(response.content)
+        else:
+            self.unit.passport_ipfs_cid = response.ipfs_cid
+            self.unit.passport_ipfs_link = response.ipfs_link
+            self.unit.detail = response.factory_card
         
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
@@ -301,8 +305,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         # Publish passport YAML file into IPFS
         if CONFIG.ipfs_gateway.enable:
-            cid, link = await publish_file(file_path=passport_file_path, rfid_card_id=self.employee.rfid_card_id)
-            self.unit.passport_ipfs_cid = cid
+            cid, link = self.unit.passport_ipfs_cid, self.unit.passport_ipfs_link
 
             # Generate a QR-code pointing to the unit's passport and print it
             if print_qr:
