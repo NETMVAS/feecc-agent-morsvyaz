@@ -12,7 +12,7 @@ from ._label_generation import create_qr, create_seal_tag
 from .config import CONFIG
 from .database import MongoDbWrapper
 from .Employee import Employee
-from .exceptions import StateForbiddenError, OperatorError
+from .exceptions import StateForbiddenError
 from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
@@ -187,7 +187,7 @@ class WorkBench(metaclass=SingletonMeta):
         
         response = requests.get(CONFIG.operator.start_uri)
         if response.status_code != 200:
-            raise OperatorError("Could not start the operator process.")
+            raise Exception("Could not start the operator process.")
         
         self.unit.start_operation(self.employee, additional_info)
 
@@ -225,7 +225,7 @@ class WorkBench(metaclass=SingletonMeta):
 
         response = requests.get(CONFIG.operator.stop_uri)
         if response.status_code != 201:
-            raise OperatorError(response.content)
+            raise Exception(response.content)
         else:
             self.unit.passport_ipfs_cid = response.ipfs_cid
             self.unit.passport_ipfs_link = response.ipfs_link
