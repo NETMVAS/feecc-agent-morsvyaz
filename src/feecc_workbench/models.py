@@ -1,3 +1,5 @@
+import json
+
 from time import time
 from typing import Any
 from uuid import uuid4
@@ -30,10 +32,12 @@ class EmployeeWCardModel(EmployeeModel):
     rfid_card_id: str | None
 
 
-class FactoryCard(BaseModel):
-    schema_id: str = Field(default_factory=lambda: uuid4().hex)
-    sells_quantity: float
-    materials_needed: list[dict[str, float]] | None = None
+class AdditionalDetail():
+    def __init__(self, **kwargs) -> None:
+        self.__dict__.update(kwargs)
+
+    def toJSON(self):
+        return json.dumps(self.__dict__)
 
 
 class WorkbenchOut(BaseModel):

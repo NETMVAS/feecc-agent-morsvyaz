@@ -16,7 +16,7 @@ from .exceptions import StateForbiddenError, OperatorError
 from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
-from .models import ProductionSchema
+from .models import AdditionalDetail, ProductionSchema
 from .passport_generator import construct_unit_passport
 from .printer import print_image
 from .robonomics import post_to_datalog
@@ -40,7 +40,7 @@ class WorkBench(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
         self.number: int = CONFIG.workbench.number
-        self.employee: Employee | None = None if CONFIG.workbench.login else Employee("000", "000", "Dispatcher", "000")
+        self.employee: Employee | None = None if CONFIG.workbench.login else CONFIG.workbench.dummy_employee
         self.unit: Unit | None = None
         self.state: State = State.AWAIT_LOGIN_STATE
 
@@ -185,7 +185,7 @@ class WorkBench(metaclass=SingletonMeta):
             messenger.error(translation('NecessaryAuth'))
             raise AssertionError(message)
         
-        response = requests.get("business-logic/operator/start")
+        response = requests.get(CONFIG.operator.start_uri)
         if response.status_code != 200:
             raise OperatorError("Could not start the operator process.")
         
@@ -211,7 +211,7 @@ class WorkBench(metaclass=SingletonMeta):
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
     async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
-        """Finishes operator process"""
+        """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
         if self.unit is None:
@@ -223,13 +223,13 @@ class WorkBench(metaclass=SingletonMeta):
         override_timestamp = timestamp()
         ipfs_hashes: list[str] = []
 
-        response = requests.get("business-logic/operator/stop")
+        response = requests.get(CONFIG.operator.stop_uri)
         if response.status_code != 201:
             raise OperatorError(response.content)
         else:
             self.unit.passport_ipfs_cid = response.ipfs_cid
             self.unit.passport_ipfs_link = response.ipfs_link
-            self.unit.detail = response.factory_card
+            self.unit.detail = AdditionalDetail(**response.json())
         
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,

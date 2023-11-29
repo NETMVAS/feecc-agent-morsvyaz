@@ -12,7 +12,7 @@ from ._label_generation import Barcode
 from .Employee import Employee
 from .Messenger import messenger
 from .metrics import metrics
-from .models import ProductionSchema, FactoryCard
+from .models import ProductionSchema, AdditionalDetail
 from .ProductionStage import ProductionStage
 from .translation import translation
 from .Types import AdditionalInfo
@@ -58,7 +58,7 @@ class Unit:
         self.biography: list[ProductionStage] = biography or biography_factory(schema, self.uuid)
         self.is_in_db: bool = is_in_db or False
         self.creation_time: dt.datetime = creation_time or dt.datetime.now()
-        self.detail: FactoryCard | None = None
+        self.detail: AdditionalDetail | None = None
 
         if self.components_units:
             slots: dict[str, Unit | None] = {u.schema.schema_id: u for u in self.components_units}

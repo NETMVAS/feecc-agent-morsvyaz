@@ -7,6 +7,8 @@ import environ
 from dotenv import load_dotenv
 from loguru import logger
 
+from .Employee import Employee
+
 dotenv_file = pathlib.Path("../.env")
 if dotenv_file.exists():
     load_dotenv(dotenv_file)
@@ -56,6 +58,13 @@ class AppConfig:
     class WorkBenchConfig:
         number: int = environ.var(converter=int, help="Workbench number")
         login: bool = environ.bool_var(default=True, help="Decides whether the workbench needs login or not.")
+        dummy_employee: Employee = Employee("000", "000", "Dispatcher", "000")
+
+
+    @environ.config(frozen=True)
+    class Operator:
+        start_uri: str = environ.var(default="feecc-business-logic/operator/start", help="URI for starting operator process")
+        stop_uri: str = environ.var(default="feecc-business-logic/operator/stop", help="URI for stopping operator process")
 
     @environ.config(frozen=True)
     class HidDevicesNames:
@@ -68,6 +77,7 @@ class AppConfig:
     ipfs_gateway = environ.group(IPFSGateway)
     printer = environ.group(Printer)
     workbench = environ.group(WorkBenchConfig)
+    operator = environ.group(Operator)
     hid_devices = environ.group(HidDevicesNames)
 
 
