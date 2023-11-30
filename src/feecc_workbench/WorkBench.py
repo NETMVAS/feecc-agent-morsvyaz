@@ -185,7 +185,7 @@ class WorkBench(metaclass=SingletonMeta):
             messenger.error(translation('NecessaryAuth'))
             raise AssertionError(message)
         
-        response = requests.get(CONFIG.operator.start_uri)
+        response = requests.get(CONFIG.business_logic.start_uri)
         if response.status_code != 200:
             raise Exception("Could not start the operator process.")
         
@@ -223,7 +223,7 @@ class WorkBench(metaclass=SingletonMeta):
         override_timestamp = timestamp()
         ipfs_hashes: list[str] = []
 
-        response = requests.get(CONFIG.operator.stop_uri)
+        response = requests.get(CONFIG.business_logic.stop_uri)
         if response.status_code != 201:
             raise Exception(response.content)
         else:

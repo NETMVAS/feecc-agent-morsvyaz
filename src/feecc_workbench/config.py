@@ -58,13 +58,13 @@ class AppConfig:
     class WorkBenchConfig:
         number: int = environ.var(converter=int, help="Workbench number")
         login: bool = environ.bool_var(default=True, help="Decides whether the workbench needs login or not.")
-        dummy_employee: Employee = Employee("000", "000", "Dispatcher", "000")
+        dummy_employee: Employee = Employee(*environ.var(help="A dummy instance of employee if the login feature is not accessable").split())
 
 
     @environ.config(frozen=True)
-    class Operator:
-        start_uri: str = environ.var(default="feecc-business-logic/operator/start", help="URI for starting operator process")
-        stop_uri: str = environ.var(default="feecc-business-logic/operator/stop", help="URI for stopping operator process")
+    class BusinessLogic:
+        start_uri: str = environ.var(help="URI for starting operator or dispatcher process")
+        stop_uri: str = environ.var(help="URI for stopping operator or dispatcher process")
 
     @environ.config(frozen=True)
     class HidDevicesNames:
@@ -77,7 +77,7 @@ class AppConfig:
     ipfs_gateway = environ.group(IPFSGateway)
     printer = environ.group(Printer)
     workbench = environ.group(WorkBenchConfig)
-    operator = environ.group(Operator)
+    business_logic = environ.group(BusinessLogic)
     hid_devices = environ.group(HidDevicesNames)
 
 

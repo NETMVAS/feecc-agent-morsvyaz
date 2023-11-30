@@ -22,8 +22,9 @@ services:
       CAMERA_FFMPEG_COMMAND: "Sample"
       WORKBENCH_NUMBER: 1  # Workbench number
       WORKBENCH_LOGIN: false # True if the login function is needed
-      OPERATOR_START_URI: "Sample" # URI for starting the operator process
-      OPERATOR_STOP_URI: "Sample" # URI for stopping the operator process
+      WORKBENCH_DUMMY_EMPLOYEE: "000 000 Operator 000" # 
+      BUSINESS_LOGIC_START_URI: "Sample" # URI for starting the operator or dispattcher process
+      BUSINESS_LOGIC_STOP_URI: "Sample" # URI for stopping the operator or dispattcher process
       HID_DEVICES_RFID_READER: "Sample"  # RFID reader device name
       HID_DEVICES_BARCODE_READER: "Sample"  # Barcode reader device name
     build:
