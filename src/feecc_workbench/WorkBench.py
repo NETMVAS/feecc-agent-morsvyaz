@@ -12,7 +12,7 @@ from ._label_generation import create_qr, create_seal_tag
 from .config import CONFIG
 from .database import MongoDbWrapper
 from .Employee import Employee
-from .exceptions import StateForbiddenError
+from .exceptions import StateForbiddenError, ManualInputNeeded
 from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
@@ -186,8 +186,10 @@ class WorkBench(metaclass=SingletonMeta):
             raise AssertionError(message)
         
         response = requests.get(CONFIG.business_logic.start_uri)
+        if response.status_code == 504:
+            raise ManualInputNeeded("Business logic needs manual input from employee")
         if response.status_code != 200:
-            raise Exception("Could not start the operator process.")
+            raise Exception("Could not start business-logic process.")
         
         self.unit.start_operation(self.employee, additional_info)
 

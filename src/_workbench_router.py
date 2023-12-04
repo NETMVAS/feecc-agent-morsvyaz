@@ -9,7 +9,7 @@ from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sen
 from feecc_workbench import models as mdl
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.Employee import Employee
-from feecc_workbench.exceptions import EmployeeNotFoundError
+from feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
 from feecc_workbench.Messenger import messenger
 from feecc_workbench.states import State
 from feecc_workbench.translation import translation
@@ -106,6 +106,9 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
         message: str = f"Started operation '{unit.next_pending_operation.name}' on Unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
+
+    except ManualInputNeeded as e:
+        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=e)
 
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
