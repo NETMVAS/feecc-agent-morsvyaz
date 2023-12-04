@@ -187,6 +187,7 @@ class WorkBench(metaclass=SingletonMeta):
         
         response = requests.get(CONFIG.business_logic.start_uri)
         if response.status_code == 504:
+            self.unit.start_operation(self.employee, additional_info)
             raise ManualInputNeeded("Business logic needs manual input from employee")
         if response.status_code != 200:
             raise Exception("Could not start business-logic process.")
