@@ -58,7 +58,7 @@ class AppConfig:
     class WorkBenchConfig:
         number: int = environ.var(converter=int, help="Workbench number")
         login: bool = environ.bool_var(default=True, help="Decides whether the workbench needs login or not.")
-        dummy_employee: Employee = Employee(*environ.var(help="A dummy instance of employee if the login feature is not accessable").split())
+        dummy_employee: str = environ.var(help="A dummy instance of employee if the login feature is not accessable")
 
 
     @environ.config(frozen=True)

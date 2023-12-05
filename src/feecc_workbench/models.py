@@ -13,6 +13,9 @@ class GenericResponse(BaseModel):
     status_code: int
     detail: str | None
 
+class OperatorStartResponse(GenericResponse):
+    """Return 504 to front to ask for manual input"""
+
 
 class WorkbenchExtraDetails(BaseModel):
     additional_info: dict[str, str]

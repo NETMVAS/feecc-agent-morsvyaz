@@ -55,7 +55,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().model_dump_json()
+            yield get_workbench_status_data().json()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -97,7 +97,7 @@ def remove_unit() -> mdl.GenericResponse:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
-@router.post("/start-operation", response_model=mdl.GenericResponse)
+@router.post("/start-operation", responses = {200: {"model": mdl.GenericResponse}, 500: {"model": mdl.GenericResponse}, 504: {"model": mdl.OperatorStartResponse}})
 async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
@@ -106,10 +106,8 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
         message: str = f"Started operation '{unit.next_pending_operation.name}' on Unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
-
     except ManualInputNeeded as e:
-        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=e)
-
+        raise HTTPException(504, detail=str(e))
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
@@ -205,7 +203,7 @@ async def handle_rfid_event(event_string: str) -> None:
     """Handle HID event produced by the RFID reader"""
     if not CONFIG.workbench.login:
         return
-    
+
     if WORKBENCH.employee is not None:
         WORKBENCH.log_out()
         return

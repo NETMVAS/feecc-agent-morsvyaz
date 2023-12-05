@@ -40,9 +40,9 @@ class WorkBench(metaclass=SingletonMeta):
     def __init__(self) -> None:
         self._database: MongoDbWrapper = MongoDbWrapper()
         self.number: int = CONFIG.workbench.number
-        self.employee: Employee | None = None if CONFIG.workbench.login else CONFIG.workbench.dummy_employee
+        self.employee: Employee | None = None if CONFIG.workbench.login else Employee(*(CONFIG.workbench.dummy_employee.split(" ")))
         self.unit: Unit | None = None
-        self.state: State = State.AWAIT_LOGIN_STATE
+        self.state: State = State.AWAIT_LOGIN_STATE if CONFIG.workbench.login else State.AUTHORIZED_IDLING_STATE
 
         logger.info(f"Workbench {self.number} was initialized")
 
@@ -184,14 +184,14 @@ class WorkBench(metaclass=SingletonMeta):
             message = "No employee is logged in at the workbench"
             messenger.error(translation('NecessaryAuth'))
             raise AssertionError(message)
-        
+
         response = requests.get(CONFIG.business_logic.start_uri)
         if response.status_code == 504:
             self.unit.start_operation(self.employee, additional_info)
-            raise ManualInputNeeded("Business logic needs manual input from employee")
+            raise ManualInputNeeded(response.json()["detail"])  # pass business-logic detail to frontend
         if response.status_code != 200:
             raise Exception("Could not start business-logic process.")
-        
+
         self.unit.start_operation(self.employee, additional_info)
 
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
@@ -233,7 +233,7 @@ class WorkBench(metaclass=SingletonMeta):
             self.unit.passport_ipfs_cid = response.ipfs_cid
             self.unit.passport_ipfs_link = response.ipfs_link
             self.unit.detail = AdditionalDetail(**response.json())
-        
+
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
             additional_info=additional_info,
