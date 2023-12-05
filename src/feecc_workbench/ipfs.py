@@ -1,11 +1,12 @@
 import pathlib
-
+import asyncio
 import httpx
 from loguru import logger
 
 from .config import CONFIG
 from .Messenger import messenger
 from .translation import translation
+from .rabbit_queue import rabbit_queue
 from .utils import async_time_execution, get_headers, service_is_up
 
 IPFS_GATEWAY_ADDRESS: str = CONFIG.ipfs_gateway.ipfs_server_uri
@@ -36,6 +37,8 @@ async def publish_file(rfid_card_id: str, file_path: pathlib.Path) -> tuple[str,
             response = await client.post(url="/by-path", headers=headers, json=json)
 
     if response.is_error:
+        message=[file_path,headers,base_url,files]
+        asyncio.run(rabbit_queue(message))
         messenger.error(translation('ErrorIPFS') +" "+ response.json().get('detail', ''))
         raise httpx.RequestError(response.json().get("detail", ""))
 
