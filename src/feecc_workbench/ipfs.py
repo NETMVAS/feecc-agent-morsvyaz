@@ -38,7 +38,7 @@ async def publish_file(rfid_card_id: str, file_path: pathlib.Path) -> tuple[str,
 
     if response.is_error:
         message=[file_path,headers,base_url,files]
-        asyncio.run(rabbit_queue(message))
+        await rabbit_queue(message)
         messenger.error(translation('ErrorIPFS') +" "+ response.json().get('detail', ''))
         raise httpx.RequestError(response.json().get("detail", ""))
 

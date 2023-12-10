@@ -65,10 +65,12 @@ async def message_receiv_from_queue() -> None:
         await queue.consume(callback, no_ack=True)
 
         #print(" [*] Waiting for messages. To exit press CTRL+C")
-        await asyncio.Future()
+        asyncio.Future()
+
+        await channel.close()
 
 async def rabbit_queue(message):
     #message = [_file_path,_headers,_base_url,_files]
     for mess in message:
         await asyncio.create_task(send_message_to_queue(mess))
-    asyncio.create_task(message_receiv_from_queue())
+    await asyncio.create_task(message_receiv_from_queue())
