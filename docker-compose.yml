@@ -1,11 +1,11 @@
-version: "3"
+version: "3.9"
 services:
   feecc_workbench_daemon:
     environment:
       # Use these environment variables to configure your deployment
-      LANGUAGE_MESSAGE: "ru"
-      MONGODB_URI: ""  # Your MongoDB connection URI
-      MONGODB_DB_NAME: ""  # Your MongoDB DB name
+      LANGUAGE_MESSAGE: "ru" # Choose message language
+      MONGODB_URI: "mongodb://root:pass@localhost:27017/?authMechanism=DEFAULT"  # Your MongoDB connection URI
+      MONGODB_DB_NAME: "FEECC-Academy"  # Your MongoDB DB name
       ROBONOMICS_ENABLE_DATALOG: false  # Whether to enable datalog posting or not
       ROBONOMICS_ACCOUNT_SEED: ""  # Your Robonomics network account seed phrase
       ROBONOMICS_SUBSTRATE_NODE_URI: ""  # Robonomics network node URI
@@ -21,7 +21,7 @@ services:
       CAMERA_ENABLE: false  # Whether to enable Cameraman or not
       CAMERA_FFMPEG_COMMAND: ""
       WORKBENCH_NUMBER: 1  # Workbench number
-      HID_DEVICES_RFID_READER: ""  # RFID reader device name
+      HID_DEVICES_RFID_READER: "Sample RFID Scanner"  # RFID reader device name
       HID_DEVICES_BARCODE_READER: ""  # Barcode reader device name
     build:
       context: ./
@@ -35,3 +35,32 @@ services:
       - "./workbench.pem:/src/workbench.pem:ro"
     network_mode: host
     restart: always
+
+  hid-emulator:
+    image: nyurik/alpine-python3-requests
+    container_name: feecc_academy_hid_emulator
+    network_mode: host
+    build:
+      context: hid-emulator
+      dockerfile: Dockerfile
+
+  mongodb:
+    image: mongo:jammy
+    container_name: feecc_academy_mongoDB
+    network_mode: host
+    environment:
+      MONGO_INITDB_DATABASE: FEECC-Academy
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: pass
+    volumes:
+      - ./mongodb-local:/docker-entrypoint-initdb.d:ro
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    netwok_mode: host
+    ports:
+      - 5672:5672
+      - 15672:15672
+    restart: always
+
+  
