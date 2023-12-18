@@ -15,6 +15,7 @@ class GenericResponse(BaseModel):
 
 class OperatorStartResponse(GenericResponse):
     """Return 504 to front to ask for manual input"""
+    license_plate: bool = False
 
 
 class WorkbenchExtraDetails(BaseModel):

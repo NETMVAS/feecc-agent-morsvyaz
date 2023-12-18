@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from loguru import logger
 from sse_starlette.sse import EventSourceResponse
 
@@ -107,7 +108,7 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
     except ManualInputNeeded as e:
-        raise HTTPException(504, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=e.args)
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
