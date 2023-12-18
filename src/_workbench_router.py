@@ -108,7 +108,7 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
     except ManualInputNeeded as e:
-        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=e.args)
+        return JSONResponse(status_code=status.HTTP_504_GATEWAY_TIMEOUT, content=e.args)
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
