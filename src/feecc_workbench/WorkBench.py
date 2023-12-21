@@ -185,7 +185,7 @@ class WorkBench(metaclass=SingletonMeta):
             messenger.error(translation('NecessaryAuth'))
             raise AssertionError(message)
 
-        response = requests.get(CONFIG.business_logic.start_uri)
+        response = requests.get(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump_json())
         if response.status_code == 504:
             self.unit.start_operation(self.employee, additional_info)
             raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
