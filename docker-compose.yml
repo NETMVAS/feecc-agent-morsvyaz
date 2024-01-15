@@ -24,6 +24,7 @@ services:
       WORKBENCH_LOGIN: false # True if the login function is needed
       WORKBENCH_DUMMY_EMPLOYEE: "000 000 Operator 000" # 
       BUSINESS_LOGIC_START_URI: "Sample" # URI for starting the operator or dispattcher process
+      BUSINESS_LOGIC_MANUAL_INPUT_URI: "Sample" # URI for starting the operator or dispattcher process
       BUSINESS_LOGIC_STOP_URI: "Sample" # URI for stopping the operator or dispattcher process
       HID_DEVICES_RFID_READER: "Sample"  # RFID reader device name
       HID_DEVICES_BARCODE_READER: "Sample"  # Barcode reader device name

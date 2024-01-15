@@ -171,7 +171,7 @@ class WorkBench(metaclass=SingletonMeta):
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    async def start_operation(self, additional_info: AdditionalInfo) -> None:
+    async def start_operation(self, additional_info: AdditionalInfo, manual_input: dict[str, bool] | None = None) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
 
@@ -185,15 +185,18 @@ class WorkBench(metaclass=SingletonMeta):
             messenger.error(translation('NecessaryAuth'))
             raise AssertionError(message)
 
-        response = requests.get(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump_json())
-        if response.status_code == 504:
-            self.unit.start_operation(self.employee, additional_info)
-            raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
+        if manual_input is not None:
+            response = requests.post(CONFIG.business_logic.manual_input_uri, json=manual_input)
+        
+        else:
+            response = requests.post(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump_json())
+            if response.status_code == 504:
+                raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
+
         if response.status_code != 200:
             raise Exception("Could not start business-logic process.")
 
         self.unit.start_operation(self.employee, additional_info)
-
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
 
 

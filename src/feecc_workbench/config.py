@@ -64,6 +64,7 @@ class AppConfig:
     @environ.config(frozen=True)
     class BusinessLogic:
         start_uri: str = environ.var(help="URI for starting operator or dispatcher process")
+        manual_input_uri: str = environ.var(help="URI for manual input endpoint.")
         stop_uri: str = environ.var(help="URI for stopping operator or dispatcher process")
 
     @environ.config(frozen=True)
