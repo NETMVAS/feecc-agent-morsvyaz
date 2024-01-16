@@ -12,10 +12,16 @@ from .states import State
 class GenericResponse(BaseModel):
     status_code: int
     detail: str | None
+    
 
 class OperatorStartResponse(GenericResponse):
     """Return 504 to front to ask for manual input"""
     license_plate: bool = False
+
+
+class ManualInput(BaseModel):
+    license_plate: str | None = None
+    weight: str | None = None
 
 
 class WorkbenchExtraDetails(BaseModel):

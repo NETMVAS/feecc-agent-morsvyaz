@@ -16,7 +16,7 @@ from .exceptions import StateForbiddenError, ManualInputNeeded
 from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
-from .models import AdditionalDetail, ProductionSchema
+from .models import AdditionalDetail, ProductionSchema, ManualInput
 from .passport_generator import construct_unit_passport
 from .printer import print_image
 from .robonomics import post_to_datalog
@@ -171,10 +171,9 @@ class WorkBench(metaclass=SingletonMeta):
         self.switch_state(State.AUTHORIZED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    async def start_operation(self, additional_info: AdditionalInfo, manual_input: dict[str, bool] | None = None) -> None:
+    async def start_operation(self, additional_info: AdditionalInfo, manual_input: ManualInput | None = None) -> None:
         """begin work on the provided unit"""
         self._validate_state_transition(State.PRODUCTION_STAGE_ONGOING_STATE)
-
         if self.unit is None:
             message = "No unit is assigned to the workbench"
             messenger.error(translation('WorkbenchNoUnit'))
@@ -186,10 +185,10 @@ class WorkBench(metaclass=SingletonMeta):
             raise AssertionError(message)
 
         if manual_input is not None:
-            response = requests.post(CONFIG.business_logic.manual_input_uri, json=manual_input)
+            response = requests.post(CONFIG.business_logic.manual_input_uri, json=manual_input.model_dump())
         
         else:
-            response = requests.post(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump_json())
+            response = requests.post(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
             if response.status_code == 504:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
 

@@ -98,11 +98,11 @@ def remove_unit() -> mdl.GenericResponse:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
-@router.post("/start-operation", responses = {200: {"model": mdl.GenericResponse}, 500: {"model": mdl.GenericResponse}, 504: {"model": mdl.OperatorStartResponse}})
-async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.GenericResponse:
+@router.post("/start-operation")
+async def start_operation(workbench_details: mdl.WorkbenchExtraDetails, manual_input: mdl.ManualInput | None = None) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
-        await WORKBENCH.start_operation(workbench_details.additional_info)
+        await WORKBENCH.start_operation(workbench_details.additional_info, manual_input)
         unit = WORKBENCH.unit
         message: str = f"Started operation '{unit.next_pending_operation.name}' on Unit {unit.internal_id}"
         logger.info(message)
