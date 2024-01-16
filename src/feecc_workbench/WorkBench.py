@@ -185,10 +185,10 @@ class WorkBench(metaclass=SingletonMeta):
             raise AssertionError(message)
 
         if manual_input is not None:
-            response = requests.post(CONFIG.business_logic.manual_input_uri, json=manual_input.model_dump())
+            response = requests.post(CONFIG.business_logic.manual_input_uri, json=manual_input.model_dump_json())
         
         else:
-            response = requests.post(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
+            response = requests.post(CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump_json())
             if response.status_code == 504:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
 

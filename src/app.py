@@ -24,7 +24,7 @@ logger.configure(handlers=HANDLERS)
 
 # create lifespan function for startup and shutdown events
 @asynccontextmanager
-async def lifespan() -> None:
+async def lifespan(app: FastAPI) -> None:
     check_service_connectivity()
     MongoDbWrapper()
     app_version = os.getenv("VERSION", "Unknown")
