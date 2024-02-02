@@ -229,12 +229,13 @@ class WorkBench(metaclass=SingletonMeta):
         ipfs_hashes: list[str] = []
 
         response = requests.get(CONFIG.business_logic.stop_uri)
-        if response.status_code != 201:
+        if response.status_code != 200:
             raise Exception(response.content)
         else:
-            self.unit.passport_ipfs_cid = response.ipfs_cid
-            self.unit.passport_ipfs_link = response.ipfs_link
-            self.unit.detail = AdditionalDetail(**response.json())
+            response_json = response.json()
+            self.unit.passport_ipfs_cid = response_json["ipfs_cid"]
+            self.unit.passport_ipfs_link = response_json["ipfs_link"]
+            self.unit.detail = AdditionalDetail(factory_card_id=response_json["factory_card_id"])
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
