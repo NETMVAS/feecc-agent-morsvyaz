@@ -46,7 +46,7 @@ class AdditionalDetail():
     def __init__(self, **kwargs) -> None:
         self.__dict__.update(kwargs)
 
-    def toJSON(self):
+    def to_json(self):
         return json.dumps(self.__dict__)
 
 

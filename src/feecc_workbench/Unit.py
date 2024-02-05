@@ -219,7 +219,7 @@ class Unit:
             operation.video_hashes = video_hashes
 
         if operation.additional_info is not None:
-            operation.additional_info = {**operation.additional_info, **(additional_info or {}), "detail": self.detail.model_dump_json}
+            operation.additional_info = {**operation.additional_info, **(additional_info or {}), "detail": self.detail.to_json()}
 
         operation.completed = True
         self.biography[operation.number] = operation
