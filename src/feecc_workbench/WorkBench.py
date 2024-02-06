@@ -235,7 +235,7 @@ class WorkBench(metaclass=SingletonMeta):
             response_json = response.json()
             self.unit.passport_ipfs_cid = response_json["ipfs_cid"]
             self.unit.passport_ipfs_link = response_json["ipfs_link"]
-            self.unit.detail = AdditionalDetail(factory_card_id=response_json["factory_card_id"])
+            self.unit.detail = AdditionalDetail(**response_json)
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
