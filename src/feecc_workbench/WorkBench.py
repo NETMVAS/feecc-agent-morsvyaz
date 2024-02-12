@@ -193,6 +193,11 @@ class WorkBench(metaclass=SingletonMeta):
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
 
         if response.status_code != 200:
+            try: 
+                detail = response.json()["detail"]
+            except:
+                detail = ""
+            messenger.error(f"Something went wrong starting the process: {detail}")
             raise Exception("Could not start business-logic process.")
 
         self.unit.start_operation(self.employee, additional_info)
@@ -229,13 +234,18 @@ class WorkBench(metaclass=SingletonMeta):
         ipfs_hashes: list[str] = []
 
         response = requests.get(CONFIG.business_logic.stop_uri)
+        try:
+            data = response.json()
+        except:
+            data = response.status_code
+
         if response.status_code != 200:
-            raise Exception(response.content)
+            messenger(f"Could not end the operation: {data}")
+            raise Exception(data)
         else:
-            response_json = response.json()
-            self.unit.passport_ipfs_cid = response_json["ipfs_cid"]
-            self.unit.passport_ipfs_link = response_json["ipfs_link"]
-            self.unit.detail = AdditionalDetail(**response_json)
+            self.unit.passport_ipfs_cid = data["ipfs_cid"]
+            self.unit.passport_ipfs_link = data["ipfs_link"]
+            self.unit.detail = AdditionalDetail(**data)
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
