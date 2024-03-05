@@ -9,9 +9,9 @@ from loguru import logger
 from sse_starlette import EventSourceResponse
 from contextlib import asynccontextmanager
 
-import _employee_router
-import _unit_router
-import _workbench_router
+import src.routers._employee_router as _employee_router
+import src.routers._unit_router as _unit_router
+import src.routers._workbench_router as _workbench_router
 from _logging import HANDLERS
 from src.database.database import base_mongodb_wrapper
 from feecc_workbench.Messenger import MessageLevels, message_generator, messenger
