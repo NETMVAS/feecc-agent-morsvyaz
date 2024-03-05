@@ -12,7 +12,7 @@ from ._label_generation import Barcode
 from .Employee import Employee
 from .Messenger import messenger
 from .metrics import metrics
-from .models import ProductionSchema, AdditionalDetail
+from ..database.models import ProductionSchema, AdditionalDetail
 from .ProductionStage import ProductionStage
 from .translation import translation
 from .Types import AdditionalInfo

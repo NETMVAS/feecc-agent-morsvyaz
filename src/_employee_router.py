@@ -3,7 +3,7 @@ from loguru import logger
 from starlette import status
 
 from dependencies import get_employee_by_card_id
-from feecc_workbench import models as mdl
+from src.database import models as mdl
 from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import StateForbiddenError
 from feecc_workbench.WorkBench import WorkBench

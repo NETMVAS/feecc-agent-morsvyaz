@@ -4,7 +4,7 @@ from loguru import logger
 from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
-from .database import MongoDbWrapper
+from ..database.database import MongoDbWrapper
 from .exceptions import RobonomicsError
 from .Messenger import messenger
 from .utils import async_time_execution

@@ -7,8 +7,8 @@ from loguru import logger
 from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
-from feecc_workbench import models as mdl
-from feecc_workbench.database import MongoDbWrapper
+from src.database import models as mdl
+from src.database.database import base_mongodb_wrapper
 from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
 from feecc_workbench.Messenger import messenger
@@ -56,7 +56,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().json()
+            yield get_workbench_status_data().model_dump()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -132,9 +132,9 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 
 
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
-async def get_schemas() -> mdl.SchemasList:
+def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in await MongoDbWrapper().get_all_schemas()}
+    all_schemas = {schema.schema_id: schema for schema in base_mongodb_wrapper.get_all_schemas()}
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
@@ -200,7 +200,7 @@ async def handle_barcode_event(event_string: str) -> None:
             logger.error(f"Received input {event_string}. Ignoring event since no one is authorized.")
 
 
-async def handle_rfid_event(event_string: str) -> None:
+def handle_rfid_event(event_string: str) -> None:
     """Handle HID event produced by the RFID reader"""
     if not CONFIG.workbench.login:
         return
@@ -210,7 +210,7 @@ async def handle_rfid_event(event_string: str) -> None:
         return
 
     try:
-        employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event_string)
+        employee: Employee = base_mongodb_wrapper.get_employee_by_card_id(event_string)
     except EmployeeNotFoundError as e:
         messenger.warning(translation('NoEmployee'))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

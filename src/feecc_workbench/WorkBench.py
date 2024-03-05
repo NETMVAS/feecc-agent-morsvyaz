@@ -10,17 +10,16 @@ from loguru import logger
 from .utils import timestamp
 from ._label_generation import create_qr, create_seal_tag
 from .config import CONFIG
-from .database import MongoDbWrapper
+from ..database.database import base_mongodb_wrapper, _BaseMongoDbWrapper
 from .Employee import Employee
 from .exceptions import StateForbiddenError, ManualInputNeeded
 from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
-from .models import AdditionalDetail, ProductionSchema, ManualInput
+from ..database.models import AdditionalDetail, ProductionSchema, ManualInput
 from .passport_generator import construct_unit_passport
 from .printer import print_image
 from .robonomics import post_to_datalog
-from .Singleton import SingletonMeta
 from .states import STATE_TRANSITION_MAP, State
 from .translation import translation
 from .Types import AdditionalInfo
@@ -30,7 +29,7 @@ from .unit_utils import UnitStatus, get_first_unit_matching_status
 STATE_SWITCH_EVENT = asyncio.Event()
 
 
-class WorkBench(metaclass=SingletonMeta):
+class WorkBench:
     """
     Work bench is a union of an Employee, working at it and Camera attached.
     It provides highly abstract interface for interaction with them
@@ -38,7 +37,7 @@ class WorkBench(metaclass=SingletonMeta):
 
     @logger.catch
     def __init__(self) -> None:
-        self._database: MongoDbWrapper = MongoDbWrapper()
+        self._database: _BaseMongoDbWrapper = base_mongodb_wrapper
         self.number: int = CONFIG.workbench.number
         self.employee: Employee | None = None if CONFIG.workbench.login else Employee(*(CONFIG.workbench.dummy_employee.split(" ")))
         self.unit: Unit | None = None

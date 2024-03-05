@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING
 
-from .models import ProductionSchema
+from ..database.models import ProductionSchema
 from .ProductionStage import ProductionStage
 
 if TYPE_CHECKING:

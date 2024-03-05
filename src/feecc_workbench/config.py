@@ -7,8 +7,6 @@ import environ
 from dotenv import load_dotenv
 from loguru import logger
 
-from .Employee import Employee
-
 dotenv_file = pathlib.Path("../.env")
 if dotenv_file.exists():
     load_dotenv(dotenv_file)

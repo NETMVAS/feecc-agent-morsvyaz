@@ -3,38 +3,35 @@ from typing import Any
 
 import pydantic
 from loguru import logger
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 from pymongo import InsertOne, UpdateOne
 
 from ._db_utils import _get_database_client, _get_unit_dict_data
-from .config import CONFIG
-from .Employee import Employee
-from .exceptions import EmployeeNotFoundError, UnitNotFoundError
+from ..feecc_workbench.config import CONFIG
+from ..feecc_workbench.Employee import Employee
+from ..feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
-from .ProductionStage import ProductionStage
-from .Singleton import SingletonMeta
-from .Types import BulkWriteTask, Document
-from .Unit import Unit
-from .unit_utils import UnitStatus
-from .utils import async_time_execution
+from ..feecc_workbench.ProductionStage import ProductionStage
+from ..feecc_workbench.Types import BulkWriteTask, Document
+from ..feecc_workbench.Unit import Unit
+from ..feecc_workbench.unit_utils import UnitStatus
+from ..feecc_workbench.utils import time_execution
 
 
-class MongoDbWrapper(metaclass=SingletonMeta):
+class _BaseMongoDbWrapper:
     """handles interactions with MongoDB database"""
 
     @logger.catch
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        self._client: AsyncIOMotorClient = _get_database_client(CONFIG.db.mongo_connection_uri)
-        db_name: str = CONFIG.db.mongo_db_name
-        self._database: AsyncIOMotorDatabase = self._client[db_name]
+        self._client = _get_database_client(CONFIG.db.mongo_connection_uri)
+        self._database = self._client[CONFIG.db.mongo_db_name]
 
         # collections
-        self._employee_collection: AsyncIOMotorCollection = self._database.employeeData
-        self._unit_collection: AsyncIOMotorCollection = self._database.unitData
-        self._prod_stage_collection: AsyncIOMotorCollection = self._database.productionStagesData
-        self._schemas_collection: AsyncIOMotorCollection = self._database.productionSchemas
+        self._employee_collection = self._database.employeeData
+        self._unit_collection = self._database.unitData
+        self._prod_stage_collection = self._database.productionStagesData
+        self._schemas_collection = self._database.productionSchemas
 
         logger.info("Successfully connected to MongoDB")
 
@@ -42,7 +39,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         self._client.close()
         logger.info("MongoDB connection closed")
 
-    async def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
+    def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
         tasks: list[BulkWriteTask] = []
 
         for stage in production_stages:
@@ -57,38 +54,38 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
             tasks.append(task)
 
-        result = await self._prod_stage_collection.bulk_write(tasks)
+        result = self._prod_stage_collection.bulk_write(tasks)
         logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
-    @async_time_execution
-    async def push_unit(self, unit: Unit, include_components: bool = True) -> None:
+    @time_execution
+    def push_unit(self, unit: Unit, include_components: bool = True) -> None:
         """Upload or update data about the unit into the DB"""
         if unit.components_units and include_components:
             for component in unit.components_units:
-                await self.push_unit(component)
+                self.push_unit(component)
 
-        await self._bulk_push_production_stages(unit.biography)
+        self._bulk_push_production_stages(unit.biography)
         unit_dict = _get_unit_dict_data(unit)
 
         if unit.is_in_db:
-            await self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
+            self._unit_collection.find_one_and_update({"uuid": unit.uuid}, {"$set": unit_dict})
         else:
-            await self._unit_collection.insert_one(unit_dict)
+            self._unit_collection.insert_one(unit_dict)
 
-    @async_time_execution
-    async def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
-        await self._unit_collection.find_one_and_update(
+    @time_execution
+    def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
+        self._unit_collection.find_one_and_update(
             {"internal_id": unit_internal_id}, {"$set": {field_name: field_val}}
         )
         logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
 
-    async def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
+    def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         # get nested component units
         components_internal_ids = unit_dict.get("components_internal_ids", [])
         components_units = []
 
         for component_internal_id in components_internal_ids:
-            component_unit = await self.get_unit_by_internal_id(component_internal_id)
+            component_unit = self.get_unit_by_internal_id(component_internal_id)
             components_units.append(component_unit)
 
         # get biography objects instead of dicts
@@ -102,7 +99,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         # construct a Unit object from the document data
         return Unit(
-            schema=await self.get_schema_by_id(unit_dict["schema_id"]),
+            schema=self.get_schema_by_id(unit_dict["schema_id"]),
             uuid=unit_dict.get("uuid"),
             internal_id=unit_dict.get("internal_id"),
             is_in_db=True,
@@ -116,8 +113,8 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             status=unit_dict.get("status", None),
         )
 
-    @async_time_execution
-    async def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
+    @time_execution
+    def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
         pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"status": status.value}},
             {
@@ -134,7 +131,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             {"$unwind": {"path": "$unit_name"}},
             {"$project": {"_id": 0, "unit_name": 1, "internal_id": 1}},
         ]
-        result: list[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=None)
+        result: list[Document] = self._unit_collection.aggregate(pipeline).to_list(length=None)
 
         return [
             {
@@ -144,10 +141,10 @@ class MongoDbWrapper(metaclass=SingletonMeta):
             for entry in result
         ]
 
-    @async_time_execution
-    async def get_employee_by_card_id(self, card_id: str) -> Employee:
+    @time_execution
+    def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
-        employee_data: Document | None = await self._employee_collection.find_one({"rfid_card_id": card_id}, {"_id": 0})
+        employee_data: Document | None = self._employee_collection.find_one({"rfid_card_id": card_id}, {"_id": 0})
 
         if employee_data is None:
             message = f"No employee with card ID {card_id}"
@@ -156,8 +153,8 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         return Employee(**employee_data)
 
-    @async_time_execution
-    async def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
+    @time_execution
+    def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"internal_id": unit_internal_id}},
             {
@@ -176,7 +173,7 @@ class MongoDbWrapper(metaclass=SingletonMeta):
         ]
 
         try:
-            result: list[Document] = await self._unit_collection.aggregate(pipeline).to_list(length=1)
+            result: list[Document] = self._unit_collection.aggregate(pipeline).to_list(length=1)
         except Exception as e:
             logger.error(e)
             raise e
@@ -188,20 +185,24 @@ class MongoDbWrapper(metaclass=SingletonMeta):
 
         unit_dict: Document = result[0]
 
-        return await self._get_unit_from_raw_db_data(unit_dict)
+        return self._get_unit_from_raw_db_data(unit_dict)
 
-    @async_time_execution
-    async def get_all_schemas(self) -> list[ProductionSchema]:
+
+    def get_all_schemas(self) -> list[ProductionSchema]:
         """get all production schemas"""
-        schema_data = await self._schemas_collection.find({}, {"_id": 0}).to_list(length=None)
+        schema_data = self._schemas_collection.find({}, {"_id": 0}).to_list(length=None)
         return [pydantic.parse_obj_as(ProductionSchema, schema) for schema in schema_data]
 
-    @async_time_execution
-    async def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
+    
+    @time_execution
+    def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
         """get the specified production schema"""
-        target_schema = await self._schemas_collection.find_one({"schema_id": schema_id}, {"_id": 0})
+        target_schema = self._schemas_collection.find_one({"schema_id": schema_id}, {"_id": 0})
 
         if target_schema is None:
             raise ValueError(f"Schema {schema_id} not found")
 
         return pydantic.parse_obj_as(ProductionSchema, target_schema)
+
+
+base_mongodb_wrapper = _BaseMongoDbWrapper()

@@ -3,9 +3,9 @@ from dataclasses import asdict
 from fastapi import HTTPException, status
 from loguru import logger
 
-from feecc_workbench import models
+from src.database import models
 from feecc_workbench.config import CONFIG
-from feecc_workbench.database import MongoDbWrapper
+from src.database.database import base_mongodb_wrapper
 from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.Messenger import messenger
@@ -15,18 +15,18 @@ from feecc_workbench.unit_utils import UnitStatus
 from feecc_workbench.utils import is_a_ean13_barcode
 
 
-async def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
+def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
     try:
-        return await MongoDbWrapper().get_unit_by_internal_id(unit_internal_id)
+        return base_mongodb_wrapper.get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
         messenger.warning(translation('NoUnit'))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
-async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.EmployeeWCardModel:
+def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.EmployeeWCardModel:
     try:
-        employee: Employee = await MongoDbWrapper().get_employee_by_card_id(employee_data.employee_rfid_card_no)
+        employee: Employee = base_mongodb_wrapper.get_employee_by_card_id(employee_data.employee_rfid_card_no)
         return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
@@ -34,17 +34,17 @@ async def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Em
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
-async def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
+def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
     """get the specified production schema"""
     try:
-        return await MongoDbWrapper().get_schema_by_id(schema_id)
+        return base_mongodb_wrapper.get_schema_by_id(schema_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
-async def get_revision_pending_units() -> list[dict[str, str]]:
+def get_revision_pending_units() -> list[dict[str, str]]:
     """get all the units headed for revision"""
-    return await MongoDbWrapper().get_unit_ids_and_names_by_status(UnitStatus.revision)  # type: ignore
+    return base_mongodb_wrapper.get_unit_ids_and_names_by_status(UnitStatus.revision)  # type: ignore
 
 
 def identify_sender(event: models.HidEvent) -> models.HidEvent:
