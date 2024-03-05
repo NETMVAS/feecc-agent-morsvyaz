@@ -20,7 +20,7 @@ def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
         return base_mongodb_wrapper.get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
-        messenger.warning(translation('NoUnit'))
+        messenger.warning(translation("NoUnit"))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
@@ -30,7 +30,7 @@ def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Employee
         return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
-        messenger.warning(translation('NoEmployee'))
+        messenger.warning(translation("NoEmployee"))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
@@ -60,7 +60,7 @@ def identify_sender(event: models.HidEvent) -> models.HidEvent:
         if device_name == event.name:
             if sender_name == "barcode_reader" and not is_a_ean13_barcode(event.string):
                 message = f"'{event.string}' is not a EAN13 barcode and cannot be an internal unit ID."
-                messenger.default(translation('NotBarcode'))
+                messenger.default(translation("NotBarcode"))
                 logger.warning(message)
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 

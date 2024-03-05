@@ -54,12 +54,11 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
             logger.error(f"Failed to post to the Datalog (attempt {i}/{retry_cnt}): {e}")
             if i < retry_cnt:
                 continue
-            messenger.error(translation('FailedToWrite'))
+            messenger.error(translation("FailedToWrite"))
             raise e
 
     assert txn_hash
     await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
-    messenger.success(translation('DataPublished'))
+    messenger.success(translation("DataPublished"))
     logger.info(message)
-

@@ -22,6 +22,7 @@ from feecc_workbench.WorkBench import WorkBench
 # apply logging configuration
 logger.configure(handlers=HANDLERS)
 
+
 # create lifespan function for startup and shutdown events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
 
     await WorkBench().shutdown()
     base_mongodb_wrapper.close_connection()
+
 
 # create app
 app = FastAPI(title="Feecc Workbench daemon", lifespan=lifespan)

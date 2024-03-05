@@ -89,7 +89,7 @@ def create_seal_tag() -> pathlib.Path:
 
     # add text to the image
     upper_field: int = 30
-    text = translation('SEALED')
+    text = translation("SEALED")
     main_txt_w, main_txt_h = seal_tag_draw.textsize(text, font)
     x: int = int((image_width - main_txt_w) / 2)
     seal_tag_draw.text(xy=(x, upper_field), text=text, fill=BLACK, font=font, align="center")
@@ -123,7 +123,9 @@ class Barcode:
         dir_ = pathlib.Path(self.filename).parent
         if not dir_.is_dir():
             dir_.mkdir(parents=True)
-        barcode_path = str(ean_code.save(self.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1}))
+        barcode_path = str(
+            ean_code.save(self.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
+        )
         with Image.open(barcode_path) as img:
             img = _resize_to_paper_aspect_ratio(img)
             img.save(barcode_path)

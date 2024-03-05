@@ -12,19 +12,19 @@ from .translation import translation
 
 def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
     stage: dict[str, Any] = {
-        translation('BuildName'): prod_stage.name,
-        translation('BuildEmployee'): prod_stage.employee_name,
-        translation('BuildStartTime'): prod_stage.session_start_time,
-        translation('BuildEndTime'): prod_stage.session_end_time,
+        translation("BuildName"): prod_stage.name,
+        translation("BuildEmployee"): prod_stage.employee_name,
+        translation("BuildStartTime"): prod_stage.session_start_time,
+        translation("BuildEndTime"): prod_stage.session_end_time,
     }
 
     if prod_stage.video_hashes is not None:
-        stage[translation('BuildVideoHashes')] = [
+        stage[translation("BuildVideoHashes")] = [
             f"https://gateway.ipfs.io/ipfs/{cid}" for cid in prod_stage.video_hashes
         ]
 
     if prod_stage.additional_info:
-        stage[translation('BuildAdditionalInfo')] = prod_stage.additional_info
+        stage[translation("BuildAdditionalInfo")] = prod_stage.additional_info
 
     return stage
 
@@ -46,24 +46,24 @@ def _get_passport_dict(unit: Unit) -> dict[str, Any]:
     data to dump it into a human friendly passport
     """
     passport_dict: dict[str, Any] = {
-        translation('UnitID'): unit.uuid,
-        translation('UnitName'): unit.model_name,
+        translation("UnitID"): unit.uuid,
+        translation("UnitName"): unit.model_name,
     }
 
     try:
-        passport_dict[translation('UnitTotalAssemblyTime')] = str(unit.total_assembly_time)
+        passport_dict[translation("UnitTotalAssemblyTime")] = str(unit.total_assembly_time)
     except Exception as e:
         logger.error(str(e))
 
     if unit.biography:
-        passport_dict[translation('UnitBiography')] = [_construct_stage_dict(stage) for stage in unit.biography]
+        passport_dict[translation("UnitBiography")] = [_construct_stage_dict(stage) for stage in unit.biography]
 
     if unit.components_units:
-        passport_dict[translation('UnitComponents')] = [_get_passport_dict(c) for c in unit.components_units]
-        passport_dict[translation('UnitTotalAssemblyTimeComponents')] = str(_get_total_assembly_time(unit))
+        passport_dict[translation("UnitComponents")] = [_get_passport_dict(c) for c in unit.components_units]
+        passport_dict[translation("UnitTotalAssemblyTimeComponents")] = str(_get_total_assembly_time(unit))
 
     if unit.serial_number:
-        passport_dict[translation('UnitSerialNumber')] = unit.serial_number
+        passport_dict[translation("UnitSerialNumber")] = unit.serial_number
 
     return passport_dict
 

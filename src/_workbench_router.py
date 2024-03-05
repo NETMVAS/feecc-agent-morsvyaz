@@ -99,7 +99,9 @@ def remove_unit() -> mdl.GenericResponse:
 
 
 @router.post("/start-operation")
-async def start_operation(workbench_details: mdl.WorkbenchExtraDetails, manual_input: mdl.ManualInput | None = None) -> mdl.GenericResponse:
+async def start_operation(
+    workbench_details: mdl.WorkbenchExtraDetails, manual_input: mdl.ManualInput | None = None
+) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
         await WORKBENCH.start_operation(workbench_details.additional_info, manual_input)
@@ -190,7 +192,7 @@ async def handle_barcode_event(event_string: str) -> None:
             WORKBENCH.assign_unit(unit)
         case State.UNIT_ASSIGNED_IDLING_STATE:
             if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
-                messenger.info(translation('UnitOnWorkbench'))
+                messenger.info(translation("UnitOnWorkbench"))
                 return
             WORKBENCH.remove_unit()
             WORKBENCH.assign_unit(unit)
@@ -212,7 +214,7 @@ def handle_rfid_event(event_string: str) -> None:
     try:
         employee: Employee = base_mongodb_wrapper.get_employee_by_card_id(event_string)
     except EmployeeNotFoundError as e:
-        messenger.warning(translation('NoEmployee'))
+        messenger.warning(translation("NoEmployee"))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
     WORKBENCH.log_in(employee)

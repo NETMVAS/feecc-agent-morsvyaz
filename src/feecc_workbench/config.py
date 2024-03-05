@@ -17,7 +17,8 @@ if dotenv_file.exists():
 class AppConfig:
     @environ.config(frozen=True)
     class ChooseLang:
-        choose_lang: str = environ.var(name="LANGUAGE_MESSAGE", help='Message language')
+        choose_lang: str = environ.var(name="LANGUAGE_MESSAGE", help="Message language")
+
     @environ.config(frozen=True)
     class MongoDB:
         mongo_connection_uri: str = environ.var(name="MONGODB_URI", help="Your MongoDB connection URI")
@@ -37,8 +38,9 @@ class AppConfig:
     @environ.config(frozen=True)
     class Printer:
         enable: bool = environ.bool_var(default=False, help="Whether to enable printing or not")
-        paper_aspect_ratio: str = environ.var(default=False, help="Printer labels aspect ratio (size in mm in "
-                                                                       "form of width:height)")
+        paper_aspect_ratio: str = environ.var(
+            default=False, help="Printer labels aspect ratio (size in mm in " "form of width:height)"
+        )
         print_barcode: bool = environ.bool_var(default=True, help="Whether to print barcodes or not")
         print_qr: bool = environ.bool_var(default=True, help="Whether to print QR codes or not")
         print_qr_only_for_composite: bool = environ.bool_var(
@@ -51,13 +53,11 @@ class AppConfig:
             default=True, help="Whether to enable timestamps on security tags or not"
         )
 
-
     @environ.config(frozen=True)
     class WorkBenchConfig:
         number: int = environ.var(converter=int, help="Workbench number")
         login: bool = environ.bool_var(default=True, help="Decides whether the workbench needs login or not.")
         dummy_employee: str = environ.var(help="A dummy instance of employee if the login feature is not accessable")
-
 
     @environ.config(frozen=True)
     class BusinessLogic:
