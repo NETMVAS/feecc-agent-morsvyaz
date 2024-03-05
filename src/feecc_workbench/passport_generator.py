@@ -5,8 +5,8 @@ from typing import Any
 import yaml
 from loguru import logger
 
-from .ProductionStage import ProductionStage
-from .Unit import Unit
+from ..prod_stage.ProductionStage import ProductionStage
+from ..unit.Unit import Unit
 from .translation import translation
 
 

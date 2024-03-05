@@ -14,7 +14,7 @@ from feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
 from feecc_workbench.Messenger import messenger
 from feecc_workbench.states import State
 from feecc_workbench.translation import translation
-from feecc_workbench.Unit import Unit
+from src.unit.Unit import Unit
 from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from feecc_workbench.config import CONFIG
 

@@ -11,16 +11,15 @@ from ..feecc_workbench.config import CONFIG
 from ..feecc_workbench.Employee import Employee
 from ..feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
-from ..feecc_workbench.ProductionStage import ProductionStage
+from ..prod_stage.ProductionStage import ProductionStage
 from ..feecc_workbench.Types import BulkWriteTask, Document
-from ..feecc_workbench.Unit import Unit
-from ..feecc_workbench.unit_utils import UnitStatus
+from ..unit.Unit import Unit
+from ..unit.unit_utils import UnitStatus
 from ..feecc_workbench.utils import time_execution
 
 
 class _BaseMongoDbWrapper:
     """handles interactions with MongoDB database"""
-
     @logger.catch
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
@@ -34,21 +33,25 @@ class _BaseMongoDbWrapper:
         self._client.close()
         logger.info("MongoDB connection closed")
 
-    def insert(self, collection: str, entity: dict[str, Any]) -> str:
+    def insert(self, collection: str, entity: dict[str, Any]) -> None:
         """Inserts the entity in the specified collection."""
-        return self._database[collection].insert_one(entity).inserted_id
+        self._database[collection].insert_one(entity)
 
-    def read(self, collection: str, filters: dict[str, Any] = {}) -> list[dict[str, Any]]:
+    def read(self, collection: str, filters: dict[str, Any] = {}) -> None:
         """Returns the list of all items if filter is not specified. Otherwise returns the whole collection."""
-        return list(self._database[collection].find(filters))
+        self._database[collection].find(filters)
 
-    def update(self, collection: str, update: dict[str, Any], filters: dict[str, Any]) -> dict[str, Any]:
+    def update(self, collection: str, update: dict[str, Any], filters: dict[str, Any]) -> None:
         """Updates the specified document's fields."""
-        return self._database[collection].find_one_and_update(filter=filters, update=update)
+        self._database[collection].find_one_and_update(filter=filters, update=update)
     
-    def delete(self, collection: str, filters: dict[str, Any]) -> int:
+    def delete(self, collection: str, filters: dict[str, Any]) -> None:
         """Deletes filtered results and returns it's number."""
-        return self._database[collection].delete_one(filter=filters).deleted_count
+        self._database[collection].delete_one(filter=filters)
+
+    def bulk_write(self, collection: str, items: list[Any]) -> None:
+        """Inserts or updates multiple documents at once."""
+        return self._database[collection].bulk_write(items)
 
     # def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
     #     tasks: list[BulkWriteTask] = []

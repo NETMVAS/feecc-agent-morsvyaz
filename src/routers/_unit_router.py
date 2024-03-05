@@ -6,7 +6,7 @@ from dependencies import get_revision_pending_units, get_schema_by_id, get_unit_
 from src.database import models as mdl
 from feecc_workbench.exceptions import StateForbiddenError
 from feecc_workbench.states import State
-from feecc_workbench.Unit import Unit
+from src.unit.Unit import Unit
 from feecc_workbench.WorkBench import WorkBench
 
 WORKBENCH = WorkBench()

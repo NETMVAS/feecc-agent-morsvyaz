@@ -4,7 +4,7 @@ import sys
 from loguru import logger
 from pymongo import MongoClient
 
-from ..feecc_workbench.Unit import Unit
+from ..unit.Unit import Unit
 
 
 def _get_database_client(mongo_connection_uri: str) -> MongoClient:

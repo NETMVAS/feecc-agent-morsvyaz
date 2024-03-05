@@ -11,7 +11,7 @@ from .Singleton import SingletonMeta
 from .utils import export_version
 
 if TYPE_CHECKING:
-    from .Unit import Unit
+    from ..unit.Unit import Unit
 
 
 class Metrics(metaclass=SingletonMeta):

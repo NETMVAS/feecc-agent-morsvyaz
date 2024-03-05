@@ -23,8 +23,8 @@ from .robonomics import post_to_datalog
 from .states import STATE_TRANSITION_MAP, State
 from .translation import translation
 from .Types import AdditionalInfo
-from .Unit import Unit
-from .unit_utils import UnitStatus, get_first_unit_matching_status
+from ..unit.Unit import Unit
+from ..unit.unit_utils import UnitStatus, get_first_unit_matching_status
 
 STATE_SWITCH_EVENT = asyncio.Event()
 
