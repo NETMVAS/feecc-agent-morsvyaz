@@ -4,7 +4,7 @@ import enum
 from typing import TYPE_CHECKING
 
 from ..database.models import ProductionSchema
-from .ProductionStage import ProductionStage
+from ..prod_stage.ProductionStage import ProductionStage
 
 if TYPE_CHECKING:
     from .Unit import Unit
