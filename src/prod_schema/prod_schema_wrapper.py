@@ -1,8 +1,8 @@
 import pydantic
 
-from ..feecc_workbench.utils import time_execution
-from ..database.database import base_mongodb_wrapper
-from ..database.models import ProductionSchema
+from src.feecc_workbench.utils import time_execution
+from src.database.database import base_mongodb_wrapper
+from src.database.models import ProductionSchema
 
 
 class ProdSchemaWrapper:

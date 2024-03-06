@@ -3,8 +3,8 @@ from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING
 
-from ..database.models import ProductionSchema
-from ..prod_stage.ProductionStage import ProductionStage
+from src.database.models import ProductionSchema
+from src.prod_stage.ProductionStage import ProductionStage
 
 if TYPE_CHECKING:
     from .Unit import Unit

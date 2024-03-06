@@ -5,8 +5,8 @@ from pymongo import MongoClient
 from pymongo.database import Database
 
 from ._db_utils import _get_database_client
-from ..feecc_workbench.config import CONFIG
-from ..feecc_workbench.Types import Document
+from src.feecc_workbench.config import CONFIG
+from src.feecc_workbench.Types import Document
 
 
 class _BaseMongoDbWrapper:

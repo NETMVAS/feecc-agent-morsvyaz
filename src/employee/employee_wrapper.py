@@ -1,9 +1,9 @@
 from loguru import logger
 
-from ..database.database import base_mongodb_wrapper
-from ..feecc_workbench.utils import time_execution
-from ..feecc_workbench.exceptions import EmployeeNotFoundError
-from ..feecc_workbench.Types import Document
+from src.database.database import base_mongodb_wrapper
+from src.feecc_workbench.utils import time_execution
+from src.feecc_workbench.exceptions import EmployeeNotFoundError
+from src.feecc_workbench.Types import Document
 from .Employee import Employee
 
 

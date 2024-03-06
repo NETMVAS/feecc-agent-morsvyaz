@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from ..feecc_workbench.states import State
+from src.feecc_workbench.states import State
 
 
 class GenericResponse(BaseModel):

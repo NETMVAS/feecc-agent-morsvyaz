@@ -2,9 +2,9 @@ from pymongo import InsertOne, UpdateOne
 from dataclasses import asdict
 from loguru import logger
 
-from ..database.database import base_mongodb_wrapper
-from ..feecc_workbench.Types import BulkWriteTask
-from ..prod_stage.ProductionStage import ProductionStage
+from src.database.database import base_mongodb_wrapper
+from src.feecc_workbench.Types import BulkWriteTask
+from src.prod_stage.ProductionStage import ProductionStage
 
 
 class ProdStageWrapper:
