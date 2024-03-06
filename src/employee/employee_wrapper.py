@@ -10,7 +10,6 @@ from .Employee import Employee
 class EmployeeWrapper:
     collection = "employeeData"
 
-
     @time_execution
     def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
@@ -24,6 +23,6 @@ class EmployeeWrapper:
             raise EmployeeNotFoundError(message)
 
         return Employee(**employee_data)
-    
+
 
 employee_wrapper = EmployeeWrapper()

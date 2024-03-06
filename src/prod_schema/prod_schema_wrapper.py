@@ -8,13 +8,11 @@ from ..database.models import ProductionSchema
 class ProdSchemaWrapper:
     collection = "productionSchemas"
 
-
     @time_execution
     def get_all_schemas(self) -> list[ProductionSchema]:
         """get all production schemas"""
         schema_data = base_mongodb_wrapper.read(projection={"_id": 0})
         return [pydantic.TypeAdapter.validate_python(ProductionSchema, schema) for schema in schema_data]
-    
 
     @time_execution
     def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
@@ -27,6 +25,6 @@ class ProdSchemaWrapper:
             raise ValueError(f"Schema {schema_id} not found")
 
         return pydantic.TypeAdapter.validate_python(ProductionSchema, target_schema)
-    
+
 
 prod_schema_wrapper = ProdSchemaWrapper()

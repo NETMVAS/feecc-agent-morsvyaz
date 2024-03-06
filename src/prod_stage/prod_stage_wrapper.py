@@ -6,6 +6,7 @@ from ..database.database import base_mongodb_wrapper
 from ..feecc_workbench.Types import BulkWriteTask
 from ..prod_stage.ProductionStage import ProductionStage
 
+
 class ProdStageWrapper:
     collection = "productionStagesData"
 

@@ -11,6 +11,7 @@ from ..feecc_workbench.Types import Document
 
 class _BaseMongoDbWrapper:
     """handles interactions with MongoDB database"""
+
     @logger.catch
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
@@ -35,7 +36,7 @@ class _BaseMongoDbWrapper:
     def update(self, collection: str, update: dict[str, Any], filters: dict[str, Any]) -> None:
         """Updates the specified document's fields."""
         self._database[collection].find_one_and_update(filter=filters, update=update)
-    
+
     def delete(self, collection: str, filters: dict[str, Any]) -> None:
         """Deletes filtered results and returns it's number."""
         self._database[collection].delete_one(filter=filters)
@@ -43,11 +44,10 @@ class _BaseMongoDbWrapper:
     def bulk_write(self, collection: str, items: list[Any]) -> None:
         """Inserts or updates multiple documents at once."""
         return self._database[collection].bulk_write(items)
-    
+
     def aggregate(self, collection: str, pipeline: list[dict[str, Any]]) -> list[Document]:
         """Perform the aggregation and return matched Documents."""
         return list(self._database[collection].aggregate(pipeline))
-
 
 
 base_mongodb_wrapper = _BaseMongoDbWrapper()
