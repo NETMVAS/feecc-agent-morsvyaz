@@ -15,14 +15,14 @@ class EmployeeWrapper:
         """find the employee with the provided RFID card id"""
         filters = {"rfid_card_id": card_id}
         projection = {"_id": 0}
-        employee_data: Document | None = base_mongodb_wrapper.read(filters=filters, projection=projection)
+        employee_data: list[Document] | None = base_mongodb_wrapper.read(collection=self.collection, filters=filters, projection=projection)
 
         if employee_data is None:
             message = f"No employee with card ID {card_id}"
             logger.error(message)
             raise EmployeeNotFoundError(message)
 
-        return Employee(**employee_data)
+        return Employee(**employee_data[0])
 
 
 employee_wrapper = EmployeeWrapper()

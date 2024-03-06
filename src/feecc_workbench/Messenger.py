@@ -8,8 +8,6 @@ from uuid import uuid4
 
 from loguru import logger
 
-from .Singleton import SingletonMeta
-
 MessageApiDict: TypeAlias = dict[str, bool | str | int | dict[str, str]]
 
 
@@ -75,7 +73,7 @@ class MessageBrocker:
         logger.debug(f"Brocker {self.brocker_id} killed.")
 
 
-class Messenger(metaclass=SingletonMeta):
+class Messenger:
     """
     Messenger is a single entrypoint to get brockers and
     emit messages across all brockers at once.

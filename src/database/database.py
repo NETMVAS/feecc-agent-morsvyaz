@@ -3,6 +3,7 @@ from typing import Any
 from loguru import logger
 from pymongo import MongoClient
 from pymongo.database import Database
+from pymongo.results import BulkWriteResult
 
 from ._db_utils import _get_database_client
 from src.feecc_workbench.config import CONFIG
@@ -41,7 +42,7 @@ class _BaseMongoDbWrapper:
         """Deletes filtered results and returns it's number."""
         self._database[collection].delete_one(filter=filters)
 
-    def bulk_write(self, collection: str, items: list[Any]) -> None:
+    def bulk_write(self, collection: str, items: list[Any]) -> BulkWriteResult:
         """Inserts or updates multiple documents at once."""
         return self._database[collection].bulk_write(items)
 
