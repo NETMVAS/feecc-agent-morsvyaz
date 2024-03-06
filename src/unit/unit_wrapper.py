@@ -2,19 +2,20 @@ from loguru import logger
 from typing import Any
 
 from ..database.database import base_mongodb_wrapper
-from ..database._db_utils import _get_database_client, _get_unit_dict_data
+from ..database._db_utils import _get_unit_dict_data
+from ..prod_stage.ProductionStage import ProductionStage
 from ..prod_stage.prod_stage_wrapper import prod_stage_wrapper
 from ..feecc_workbench.Types import Document
 from ..feecc_workbench.utils import time_execution
-from ..feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
-from ..prod_stage.ProductionStage import ProductionStage
+from ..feecc_workbench.exceptions import UnitNotFoundError
+from src.prod_schema.prod_schema_wrapper import prod_schema_wrapper
 from .Unit import Unit
 from .unit_utils import UnitStatus
 
 
+
 class UnitWrapper:
     collection = "unitData"
-    
 
     @time_execution
     def push_unit(self, unit: Unit, include_components: bool = True) -> None:
@@ -33,14 +34,12 @@ class UnitWrapper:
         else:
             base_mongodb_wrapper.insert(self.collection, unit_dict)
 
-
     @time_execution
     def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
         filters = {"internal_id": unit_internal_id}
         update = {"$set": {field_name: field_val}}
         base_mongodb_wrapper.update(self.collection, update, filters)
         logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
-
 
     @time_execution
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
@@ -76,7 +75,6 @@ class UnitWrapper:
 
         return self._get_unit_from_raw_db_data(unit_dict)
 
-
     def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         # get nested component units
         components_internal_ids = unit_dict.get("components_internal_ids", [])
@@ -97,7 +95,7 @@ class UnitWrapper:
 
         # construct a Unit object from the document data
         return Unit(
-            schema=self.get_schema_by_id(unit_dict["schema_id"]),
+            schema=prod_schema_wrapper.get_schema_by_id(unit_dict["schema_id"]),
             uuid=unit_dict.get("uuid"),
             internal_id=unit_dict.get("internal_id"),
             is_in_db=True,
@@ -110,7 +108,6 @@ class UnitWrapper:
             creation_time=unit_dict.get("creation_time"),
             status=unit_dict.get("status", None),
         )
-
 
     @time_execution
     def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
@@ -139,6 +136,6 @@ class UnitWrapper:
             }
             for entry in result
         ]
-    
+
 
 unit_wrapper = UnitWrapper()
