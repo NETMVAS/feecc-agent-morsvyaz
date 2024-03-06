@@ -9,7 +9,7 @@ from uuid import uuid4
 from loguru import logger
 
 from ..feecc_workbench._label_generation import Barcode
-from ..feecc_workbench.Employee import Employee
+from ..employee.Employee import Employee
 from ..feecc_workbench.Messenger import messenger
 from ..feecc_workbench.metrics import metrics
 from ..database.models import ProductionSchema, AdditionalDetail

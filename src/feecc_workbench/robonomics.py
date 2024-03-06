@@ -4,7 +4,7 @@ from loguru import logger
 from robonomicsinterface import Account, Datalog
 
 from .config import CONFIG
-from ..database.database import MongoDbWrapper
+from ..unit.unit_wrapper import unit_wrapper
 from .exceptions import RobonomicsError
 from .Messenger import messenger
 from .utils import async_time_execution
@@ -58,7 +58,7 @@ async def post_to_datalog(content: str, unit_internal_id: str) -> None:
             raise e
 
     assert txn_hash
-    await MongoDbWrapper().unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
+    unit_wrapper.unit_update_single_field(unit_internal_id, "txn_hash", txn_hash)
     message = f"Data '{content}' has been posted to the Robonomics datalog. {txn_hash=}"
     messenger.success(translation("DataPublished"))
     logger.info(message)

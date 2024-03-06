@@ -5,8 +5,10 @@ from loguru import logger
 
 from src.database import models
 from feecc_workbench.config import CONFIG
-from src.database.database import base_mongodb_wrapper
-from feecc_workbench.Employee import Employee
+from .unit.unit_wrapper import unit_wrapper
+from .employee.employee_wrapper import employee_wrapper
+from .prod_schema.prod_schema_wrapper import prod_schema_wrapper
+from src.employee.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from feecc_workbench.Messenger import messenger
 from feecc_workbench.translation import translation
@@ -17,7 +19,7 @@ from feecc_workbench.utils import is_a_ean13_barcode
 
 def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
     try:
-        return base_mongodb_wrapper.get_unit_by_internal_id(unit_internal_id)
+        return unit_wrapper.get_unit_by_internal_id(unit_internal_id)
 
     except UnitNotFoundError as e:
         messenger.warning(translation("NoUnit"))
@@ -26,7 +28,7 @@ def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
 
 def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.EmployeeWCardModel:
     try:
-        employee: Employee = base_mongodb_wrapper.get_employee_by_card_id(employee_data.employee_rfid_card_no)
+        employee: Employee = employee_wrapper.get_employee_by_card_id(employee_data.employee_rfid_card_no)
         return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
@@ -37,14 +39,14 @@ def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Employee
 def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
     """get the specified production schema"""
     try:
-        return base_mongodb_wrapper.get_schema_by_id(schema_id)
+        return prod_schema_wrapper.get_schema_by_id(schema_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 def get_revision_pending_units() -> list[dict[str, str]]:
     """get all the units headed for revision"""
-    return base_mongodb_wrapper.get_unit_ids_and_names_by_status(UnitStatus.revision)  # type: ignore
+    return unit_wrapper.get_unit_ids_and_names_by_status(UnitStatus.revision)  # type: ignore
 
 
 def identify_sender(event: models.HidEvent) -> models.HidEvent:
