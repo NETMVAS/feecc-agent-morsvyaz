@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from loguru import logger
 
 from feecc_workbench import models
-from feecc_workbench.config import CONFIG
+from src.config import CONFIG
 from feecc_workbench.database import MongoDbWrapper
 from feecc_workbench.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError

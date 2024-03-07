@@ -9,7 +9,7 @@ from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageFont import FreeTypeFont
 
-from .config import CONFIG
+from ..config import CONFIG
 from .Messenger import messenger
 from .translation import translation
 from .utils import async_time_execution

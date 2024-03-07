@@ -1,5 +1,5 @@
 
-from .config import CONFIG
+from ..config import CONFIG
 import csv
 import os
 

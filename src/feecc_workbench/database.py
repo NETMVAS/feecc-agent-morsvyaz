@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, Asyn
 from pymongo import InsertOne, UpdateOne
 
 from ._db_utils import _get_database_client, _get_unit_dict_data
-from .config import CONFIG
+from ..config import CONFIG
 from .Employee import Employee
 from .exceptions import EmployeeNotFoundError, UnitNotFoundError
 from .models import ProductionSchema
