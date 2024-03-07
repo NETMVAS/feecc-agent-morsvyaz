@@ -26,8 +26,8 @@ class MongoDbWrapper(metaclass=SingletonMeta):
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        self._client: AsyncIOMotorClient = _get_database_client(CONFIG.db.mongo_connection_uri)
-        db_name: str = CONFIG.db.mongo_db_name
+        self._client: AsyncIOMotorClient = _get_database_client(CONFIG.mongodb.uri)
+        db_name: str = CONFIG.mongodb.db_name
         self._database: AsyncIOMotorDatabase = self._client[db_name]
 
         # collections

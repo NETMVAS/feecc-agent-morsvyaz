@@ -8,7 +8,7 @@ current_directory = os.path.dirname(current_file)+"/message_lang.csv"
         
 def translation(key: str):
 
-    lang = CONFIG.lang.choose_lang
+    lang = CONFIG.language_message
     
     with open(f'{current_directory}', 'r') as f:
         result={}
