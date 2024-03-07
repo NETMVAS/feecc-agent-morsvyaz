@@ -36,6 +36,7 @@ class UnitWrapper:
 
     @time_execution
     def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
+        """Updates single field in unit collection's document."""
         filters = {"internal_id": unit_internal_id}
         update = {"$set": {field_name: field_val}}
         base_mongodb_wrapper.update(self.collection, update, filters)
@@ -43,6 +44,7 @@ class UnitWrapper:
 
     @time_execution
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
+        """Returns """
         pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"internal_id": unit_internal_id}},
             {
@@ -76,6 +78,7 @@ class UnitWrapper:
         return self._get_unit_from_raw_db_data(unit_dict)
 
     def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
+        """Creates and returns Unit class instance from raw data."""
         # get nested component units
         components_internal_ids = unit_dict.get("components_internal_ids", [])
         components_units = []
@@ -111,6 +114,7 @@ class UnitWrapper:
 
     @time_execution
     def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
+        """Return's units' ids and names filtered by status."""
         pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"status": status.value}},
             {

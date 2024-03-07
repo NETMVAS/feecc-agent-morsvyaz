@@ -11,6 +11,7 @@ class ProdStageWrapper:
     collection = "productionStagesData"
 
     def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
+        """Gives command to MongoDB to bulk write tasks."""
         tasks: list[BulkWriteTask] = []
 
         for stage in production_stages:
