@@ -30,9 +30,12 @@ class _BaseMongoDbWrapper:
         """Inserts the entity in the specified collection."""
         self._database[collection].insert_one(entity)
 
-    def read(self, collection: str, filters: dict[str, Any] = {}, **kwargs) -> list[Document]:
+    def find(self, collection: str, filters: dict[str, Any] = {}, **kwargs) -> list[Document]:
         """Returns the list of all items if filter is not specified. Otherwise returns the whole collection."""
         return list(self._database[collection].find(filter=filters, **kwargs))
+    
+    def find_one(self, collection: str, filters: dict[str, Any]) -> Document | None:
+        return self._database[collection].find_one(filter=filters)
 
     def update(self, collection: str, update: dict[str, Any], filters: dict[str, Any]) -> None:
         """Updates the specified document's fields."""

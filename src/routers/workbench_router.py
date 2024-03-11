@@ -8,7 +8,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from src.database import models as mdl
-from ..prod_schema.prod_schema_wrapper import prod_schema_wrapper
+from ..prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from ..employee.employee_wrapper import employee_wrapper
 from src.employee.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
@@ -137,7 +137,7 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
 def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in prod_schema_wrapper.get_all_schemas()}
+    all_schemas = {schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas()}
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:

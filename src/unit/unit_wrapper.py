@@ -4,11 +4,11 @@ from typing import Any
 from src.database.database import BaseMongoDbWrapper
 from src.database._db_utils import _get_unit_dict_data
 from src.prod_stage.ProductionStage import ProductionStage
-from src.prod_stage.prod_stage_wrapper import prod_stage_wrapper
+from src.prod_stage.prod_stage_wrapper import ProdStageWrapper
 from src.feecc_workbench.Types import Document
 from src.feecc_workbench.utils import time_execution
 from src.feecc_workbench.exceptions import UnitNotFoundError
-from src.prod_schema.prod_schema_wrapper import prod_schema_wrapper
+from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from .Unit import Unit
 from .unit_utils import UnitStatus
 
@@ -24,7 +24,7 @@ class UnitWrapper:
             for component in unit.components_units:
                 self.push_unit(component)
 
-        prod_stage_wrapper._bulk_push_production_stages(unit.biography)
+        ProdStageWrapper.bulk_push_production_stages(unit.biography)
         unit_dict = _get_unit_dict_data(unit)
 
         if unit.is_in_db:
@@ -98,7 +98,7 @@ class UnitWrapper:
 
         # construct a Unit object from the document data
         return Unit(
-            schema=prod_schema_wrapper.get_schema_by_id(unit_dict["schema_id"]),
+            schema=ProdSchemaWrapper.get_schema_by_id(unit_dict["schema_id"]),
             uuid=unit_dict.get("uuid"),
             internal_id=unit_dict.get("internal_id"),
             is_in_db=True,
@@ -142,4 +142,4 @@ class UnitWrapper:
         ]
 
 
-unit_wrapper = UnitWrapper()
+UnitWrapper = UnitWrapper()

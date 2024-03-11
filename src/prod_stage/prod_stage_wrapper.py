@@ -10,7 +10,7 @@ from src.prod_stage.ProductionStage import ProductionStage
 class ProdStageWrapper:
     collection = "productionStagesData"
 
-    def _bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
+    def bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
         """Gives command to MongoDB to bulk write tasks."""
         tasks: list[BulkWriteTask] = []
 
@@ -30,4 +30,4 @@ class ProdStageWrapper:
         logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
 
-prod_stage_wrapper = ProdStageWrapper()
+ProdStageWrapper = ProdStageWrapper()

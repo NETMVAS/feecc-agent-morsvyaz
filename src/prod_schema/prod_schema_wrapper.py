@@ -11,7 +11,7 @@ class ProdSchemaWrapper:
     @time_execution
     def get_all_schemas(self) -> list[ProductionSchema]:
         """get all production schemas"""
-        schema_data = BaseMongoDbWrapper.read(collection=self.collection, projection={"_id": 0})
+        schema_data = BaseMongoDbWrapper.find(collection=self.collection, projection={"_id": 0})
         return [pydantic.TypeAdapter.validate_python(ProductionSchema, schema) for schema in schema_data]
 
     @time_execution
@@ -19,7 +19,7 @@ class ProdSchemaWrapper:
         """get the specified production schema"""
         filters = {"schema_id": schema_id}
         projection = {"_id": 0}
-        target_schema = BaseMongoDbWrapper.read(collection=self.collection, filters=filters, projection=projection)
+        target_schema = BaseMongoDbWrapper.find(collection=self.collection, filters=filters, projection=projection)
 
         if target_schema is None:
             raise ValueError(f"Schema {schema_id} not found")
@@ -27,4 +27,4 @@ class ProdSchemaWrapper:
         return pydantic.TypeAdapter.validate_python(ProductionSchema, target_schema)
 
 
-prod_schema_wrapper = ProdSchemaWrapper()
+ProdSchemaWrapper = ProdSchemaWrapper()

@@ -10,7 +10,7 @@ from loguru import logger
 from .utils import timestamp
 from ._label_generation import create_qr, create_seal_tag
 from .config import CONFIG
-from ..prod_schema.prod_schema_wrapper import prod_schema_wrapper
+from ..prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from ..employee.Employee import Employee
 from .exceptions import StateForbiddenError, ManualInputNeeded
 from .ipfs import publish_file
@@ -25,7 +25,7 @@ from .translation import translation
 from .Types import AdditionalInfo
 from ..unit.Unit import Unit
 from ..unit.unit_utils import UnitStatus, get_first_unit_matching_status
-from ..unit.unit_wrapper import unit_wrapper
+from ..unit.unit_wrapper import UnitWrapper
 
 STATE_SWITCH_EVENT = asyncio.Event()
 
@@ -52,7 +52,7 @@ class WorkBench:
         if (schema := unit.schema).parent_schema_id is None:
             annotation = schema.print_name
         else:
-            parent_schema = await prod_schema_wrapper.get_schema_by_id(schema.parent_schema_id)
+            parent_schema = ProdSchemaWrapper.get_schema_by_id(schema.parent_schema_id)
             annotation = f"{parent_schema.print_name}. {unit.schema.print_name}."
         assert self.employee is not None
         try:
@@ -73,7 +73,7 @@ class WorkBench:
         unit = Unit(schema)
         if CONFIG.printer.print_barcode and CONFIG.printer.enable:
             await self._print_unit_barcode(unit)
-        unit_wrapper.push_unit(unit)
+        UnitWrapper.push_unit(unit)
         metrics.register_create_unit(self.employee, unit)
 
         return unit
@@ -217,7 +217,7 @@ class WorkBench:
         STATE_SWITCH_EVENT.set()
 
         if self.unit.components_filled:
-            unit_wrapper.push_unit(self.unit)
+            UnitWrapper.push_unit(self.unit)
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
@@ -254,7 +254,7 @@ class WorkBench:
             premature=premature,
             override_timestamp=override_timestamp,
         )
-        unit_wrapper.push_unit(self.unit, include_components=False)
+        UnitWrapper.push_unit(self.unit, include_components=False)
 
         self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
         metrics.register_complete_operation(self.employee, self.unit)
@@ -281,7 +281,7 @@ class WorkBench:
             if self.unit.schema.parent_schema_id is None:
                 annotation = f"{self.unit.model_name} (ID: {self.unit.internal_id})."
             else:
-                parent_schema = prod_schema_wrapper.get_schema_by_id(self.unit.schema.parent_schema_id)
+                parent_schema = ProdSchemaWrapper.get_schema_by_id(self.unit.schema.parent_schema_id)
                 annotation = f"{parent_schema.unit_name}. {self.unit.model_name} (ID: {self.unit.internal_id})."
 
             await print_image(
@@ -340,7 +340,7 @@ class WorkBench:
             asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         # Update unit data saved in the DB
-        unit_wrapper.push_unit(self.unit)
+        UnitWrapper.push_unit(self.unit)
         metrics.register_generate_passport(self.employee, self.unit)
 
     async def shutdown(self) -> None:

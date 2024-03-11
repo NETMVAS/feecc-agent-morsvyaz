@@ -15,7 +15,7 @@ class EmployeeWrapper:
         """find the employee with the provided RFID card id"""
         filters = {"rfid_card_id": card_id}
         projection = {"_id": 0}
-        employee_data: list[Document] | None = BaseMongoDbWrapper.read(collection=self.collection, filters=filters, projection=projection)
+        employee_data: list[Document] | None = BaseMongoDbWrapper.find(collection=self.collection, filters=filters, projection=projection)
 
         if employee_data is None:
             message = f"No employee with card ID {card_id}"
