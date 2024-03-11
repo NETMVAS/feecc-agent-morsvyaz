@@ -9,11 +9,11 @@ from loguru import logger
 from sse_starlette import EventSourceResponse
 from contextlib import asynccontextmanager
 
-import src.routers._employee_router as _employee_router
-import src.routers._unit_router as _unit_router
-import src.routers._workbench_router as _workbench_router
+import src.routers.employee_router as employee_router
+import src.routers.unit_router as unit_router
+import src.routers.workbench_router as workbench_router
 from _logging import HANDLERS
-from src.database.database import base_mongodb_wrapper
+from src.database.database import BaseMongoDbWrapper
 from feecc_workbench.Messenger import MessageLevels, message_generator, messenger
 from src.database.models import GenericResponse
 from feecc_workbench.utils import check_service_connectivity
@@ -33,16 +33,16 @@ async def lifespan(app: FastAPI):
     yield
 
     await WorkBench().shutdown()
-    base_mongodb_wrapper.close_connection()
+    BaseMongoDbWrapper.close_connection()
 
 
 # create app
 app = FastAPI(title="Feecc Workbench daemon", lifespan=lifespan)
 
 # include routers
-app.include_router(_employee_router.router)
-app.include_router(_unit_router.router)
-app.include_router(_workbench_router.router)
+app.include_router(employee_router.router)
+app.include_router(unit_router.router)
+app.include_router(workbench_router.router)
 
 # set up CORS
 app.add_middleware(

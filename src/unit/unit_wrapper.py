@@ -1,7 +1,7 @@
 from loguru import logger
 from typing import Any
 
-from src.database.database import base_mongodb_wrapper
+from src.database.database import BaseMongoDbWrapper
 from src.database._db_utils import _get_unit_dict_data
 from src.prod_stage.ProductionStage import ProductionStage
 from src.prod_stage.prod_stage_wrapper import prod_stage_wrapper
@@ -30,16 +30,16 @@ class UnitWrapper:
         if unit.is_in_db:
             filters = {"uuid": unit.uuid}
             update = {"$set": unit_dict}
-            base_mongodb_wrapper.update(self.collection, update, filters)
+            BaseMongoDbWrapper.update(self.collection, update, filters)
         else:
-            base_mongodb_wrapper.insert(self.collection, unit_dict)
+            BaseMongoDbWrapper.insert(self.collection, unit_dict)
 
     @time_execution
     def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
         """Updates single field in unit collection's document."""
         filters = {"internal_id": unit_internal_id}
         update = {"$set": {field_name: field_val}}
-        base_mongodb_wrapper.update(self.collection, update, filters)
+        BaseMongoDbWrapper.update(self.collection, update, filters)
         logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
 
     @time_execution
@@ -63,7 +63,7 @@ class UnitWrapper:
         ]
 
         try:
-            result: list[Document] = base_mongodb_wrapper.aggregate(self.collection, pipeline)
+            result: list[Document] = BaseMongoDbWrapper.aggregate(self.collection, pipeline)
         except Exception as e:
             logger.error(e)
             raise e
@@ -131,7 +131,7 @@ class UnitWrapper:
             {"$unwind": {"path": "$unit_name"}},
             {"$project": {"_id": 0, "unit_name": 1, "internal_id": 1}},
         ]
-        result: list[Document] = base_mongodb_wrapper.aggregate(self.collection, pipeline)
+        result: list[Document] = BaseMongoDbWrapper.aggregate(self.collection, pipeline)
 
         return [
             {

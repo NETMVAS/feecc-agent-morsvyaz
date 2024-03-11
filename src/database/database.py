@@ -51,4 +51,4 @@ class _BaseMongoDbWrapper:
         return list(self._database[collection].aggregate(pipeline))
 
 
-base_mongodb_wrapper = _BaseMongoDbWrapper()
+BaseMongoDbWrapper = _BaseMongoDbWrapper()

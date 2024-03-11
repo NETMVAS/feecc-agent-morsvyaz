@@ -2,7 +2,7 @@ from pymongo import InsertOne, UpdateOne
 from dataclasses import asdict
 from loguru import logger
 
-from src.database.database import base_mongodb_wrapper
+from src.database.database import BaseMongoDbWrapper
 from src.feecc_workbench.Types import BulkWriteTask
 from src.prod_stage.ProductionStage import ProductionStage
 
@@ -26,7 +26,7 @@ class ProdStageWrapper:
 
             tasks.append(task)
 
-        result = base_mongodb_wrapper.bulk_write(self.collection, tasks)
+        result = BaseMongoDbWrapper.bulk_write(self.collection, tasks)
         logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
 
