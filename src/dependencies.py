@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from loguru import logger
 
 from src.database import models
-from feecc_workbench.config import CONFIG
+from src.config import CONFIG
 from src.unit.unit_wrapper import UnitWrapper
 from src.employee.employee_wrapper import employee_wrapper
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
