@@ -7,14 +7,13 @@ from typing import TYPE_CHECKING
 from aioprometheus.collectors import Summary
 
 from ..employee.Employee import Employee
-from .Singleton import SingletonMeta
 from .utils import export_version
 
 if TYPE_CHECKING:
     from ..unit.Unit import Unit
 
 
-class Metrics(metaclass=SingletonMeta):
+class Metrics():
     def __init__(self) -> None:
         self._metrics: dict[str, Summary] = {}
         export_version()

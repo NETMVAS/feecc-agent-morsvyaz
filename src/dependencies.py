@@ -9,12 +9,12 @@ from src.unit.unit_wrapper import UnitWrapper
 from src.employee.employee_wrapper import employee_wrapper
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from src.employee.Employee import Employee
-from feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
-from feecc_workbench.Messenger import messenger
-from feecc_workbench.translation import translation
+from src.feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
+from src.feecc_workbench.Messenger import messenger
+from src.feecc_workbench.translation import translation
 from src.unit.Unit import Unit
 from src.unit.unit_utils import UnitStatus
-from feecc_workbench.utils import is_a_ean13_barcode
+from src.feecc_workbench.utils import is_a_ean13_barcode
 
 
 def get_unit_by_internal_id(unit_internal_id: str) -> Unit:

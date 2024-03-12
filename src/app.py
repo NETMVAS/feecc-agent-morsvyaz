@@ -12,12 +12,12 @@ from contextlib import asynccontextmanager
 import src.routers.employee_router as employee_router
 import src.routers.unit_router as unit_router
 import src.routers.workbench_router as workbench_router
-from _logging import HANDLERS
+from src._logging import HANDLERS
 from src.database.database import BaseMongoDbWrapper
-from feecc_workbench.Messenger import MessageLevels, message_generator, messenger
+from src.feecc_workbench.Messenger import MessageLevels, message_generator, messenger
 from src.database.models import GenericResponse
-from feecc_workbench.utils import check_service_connectivity
-from feecc_workbench.WorkBench import WorkBench
+from src.feecc_workbench.utils import check_service_connectivity
+from src.feecc_workbench.WorkBench import WorkBench
 
 # apply logging configuration
 logger.configure(handlers=HANDLERS)

@@ -6,17 +6,17 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 from sse_starlette.sse import EventSourceResponse
 
-from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
+from src.dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from src.database import models as mdl
-from ..prod_schema.prod_schema_wrapper import ProdSchemaWrapper
-from ..employee.employee_wrapper import employee_wrapper
+from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
+from src.employee.employee_wrapper import employee_wrapper
 from src.employee.Employee import Employee
-from feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
-from feecc_workbench.Messenger import messenger
-from feecc_workbench.states import State
-from feecc_workbench.translation import translation
+from src.feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
+from src.feecc_workbench.Messenger import messenger
+from src.feecc_workbench.states import State
+from src.feecc_workbench.translation import translation
 from src.unit.Unit import Unit
-from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
+from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from src.config import CONFIG
 
 WORKBENCH = WorkBench()

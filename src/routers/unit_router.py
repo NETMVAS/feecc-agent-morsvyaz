@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from starlette import status
 
-from dependencies import get_revision_pending_units, get_schema_by_id, get_unit_by_internal_id
+from src.dependencies import get_revision_pending_units, get_schema_by_id, get_unit_by_internal_id
 from src.database import models as mdl
-from feecc_workbench.exceptions import StateForbiddenError
-from feecc_workbench.states import State
+from src.feecc_workbench.exceptions import StateForbiddenError
+from src.feecc_workbench.states import State
 from src.unit.Unit import Unit
-from feecc_workbench.WorkBench import WorkBench
+from src.feecc_workbench.WorkBench import WorkBench
 
 WORKBENCH = WorkBench()
 

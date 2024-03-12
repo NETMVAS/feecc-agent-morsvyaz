@@ -17,8 +17,8 @@ class _BaseMongoDbWrapper:
     def __init__(self) -> None:
         logger.info("Trying to connect to MongoDB")
 
-        self._client: MongoClient = _get_database_client(CONFIG.db.mongo_connection_uri)
-        self._database: Database = self._client[CONFIG.db.mongo_db_name]
+        self._client: MongoClient = _get_database_client(CONFIG.mongodb.uri)
+        self._database: Database = self._client[CONFIG.mongodb.db_name]
 
         logger.info("Successfully connected to MongoDB")
 
