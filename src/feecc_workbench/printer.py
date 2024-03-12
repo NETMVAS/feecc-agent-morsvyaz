@@ -51,7 +51,7 @@ async def _print_image_task(file_path: Path) -> None:
         logger.info(f"Printed image '{file_path=}', {print_id=}")
     except Exception as e:
         logger.error(f"Print task failed: {e}")
-        messenger.error(translation('PrintError'))
+        messenger.error(translation("PrintError"))
 
 
 def _annotate_image(image: Image, text: str) -> Image:

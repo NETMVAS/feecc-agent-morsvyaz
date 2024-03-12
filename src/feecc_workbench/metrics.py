@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING
 
 from aioprometheus.collectors import Summary
 
-from .Employee import Employee
+from ..employee.Employee import Employee
 from .Singleton import SingletonMeta
 from .utils import export_version
 
 if TYPE_CHECKING:
-    from .Unit import Unit
+    from ..unit.Unit import Unit
 
 
 class Metrics(metaclass=SingletonMeta):

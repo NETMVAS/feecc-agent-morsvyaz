@@ -6,16 +6,17 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from .states import State
+from src.feecc_workbench.states import State
 
 
 class GenericResponse(BaseModel):
     status_code: int
     detail: str | None
-    
+
 
 class OperatorStartResponse(GenericResponse):
     """Return 504 to front to ask for manual input"""
+
     license_plate: bool = False
 
 
@@ -42,7 +43,7 @@ class EmployeeWCardModel(EmployeeModel):
     rfid_card_id: str | None
 
 
-class AdditionalDetail():
+class AdditionalDetail:
     def __init__(self, **kwargs) -> None:
         self.__dict__.update(kwargs)
 

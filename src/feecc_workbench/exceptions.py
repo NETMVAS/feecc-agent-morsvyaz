@@ -36,5 +36,6 @@ class StateForbiddenError(TrackedException):
 class RobonomicsError(TrackedException):
     """Raised when Robonmics transactions fail"""
 
+
 class ManualInputNeeded(Exception):
     """Raised when manual input from employee is needed"""
