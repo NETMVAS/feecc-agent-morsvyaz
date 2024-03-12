@@ -10,7 +10,7 @@ from typing import Any
 from loguru import logger
 from yarl import URL
 
-from .config import CONFIG
+from ..config import CONFIG
 
 TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M:%S"
 

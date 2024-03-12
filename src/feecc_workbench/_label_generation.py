@@ -8,7 +8,7 @@ import qrcode
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 
-from .config import CONFIG
+from ..config import CONFIG
 from .translation import translation
 from .utils import time_execution
 

@@ -9,7 +9,7 @@ from loguru import logger
 
 from .utils import timestamp
 from ._label_generation import create_qr, create_seal_tag
-from .config import CONFIG
+from ..config import CONFIG
 from ..prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from ..employee.Employee import Employee
 from .exceptions import StateForbiddenError, ManualInputNeeded

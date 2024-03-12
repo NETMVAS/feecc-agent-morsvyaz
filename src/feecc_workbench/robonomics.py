@@ -3,7 +3,7 @@ import asyncio
 from loguru import logger
 from robonomicsinterface import Account, Datalog
 
-from .config import CONFIG
+from ..config import CONFIG
 from ..unit.unit_wrapper import UnitWrapper
 from .exceptions import RobonomicsError
 from .Messenger import messenger
