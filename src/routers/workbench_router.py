@@ -7,14 +7,15 @@ from loguru import logger
 from sse_starlette.sse import EventSourceResponse
 
 from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
-from feecc_workbench import models as mdl
-from feecc_workbench.database import MongoDbWrapper
-from feecc_workbench.Employee import Employee
+from src.database import models as mdl
+from ..prod_schema.prod_schema_wrapper import ProdSchemaWrapper
+from ..employee.employee_wrapper import employee_wrapper
+from src.employee.Employee import Employee
 from feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
 from feecc_workbench.Messenger import messenger
 from feecc_workbench.states import State
 from feecc_workbench.translation import translation
-from feecc_workbench.Unit import Unit
+from src.unit.Unit import Unit
 from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from src.config import CONFIG
 
@@ -56,7 +57,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().json()
+            yield get_workbench_status_data().model_dump()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -99,7 +100,9 @@ def remove_unit() -> mdl.GenericResponse:
 
 
 @router.post("/start-operation")
-async def start_operation(workbench_details: mdl.WorkbenchExtraDetails, manual_input: mdl.ManualInput | None = None) -> mdl.GenericResponse:
+async def start_operation(
+    workbench_details: mdl.WorkbenchExtraDetails, manual_input: mdl.ManualInput | None = None
+) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
         await WORKBENCH.start_operation(workbench_details.additional_info, manual_input)
@@ -132,9 +135,9 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 
 
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
-async def get_schemas() -> mdl.SchemasList:
+def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in await MongoDbWrapper().get_all_schemas()}
+    all_schemas = {schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas()}
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
@@ -190,7 +193,7 @@ async def handle_barcode_event(event_string: str) -> None:
             WORKBENCH.assign_unit(unit)
         case State.UNIT_ASSIGNED_IDLING_STATE:
             if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
-                messenger.info(translation('UnitOnWorkbench'))
+                messenger.info(translation("UnitOnWorkbench"))
                 return
             WORKBENCH.remove_unit()
             WORKBENCH.assign_unit(unit)
@@ -200,7 +203,7 @@ async def handle_barcode_event(event_string: str) -> None:
             logger.error(f"Received input {event_string}. Ignoring event since no one is authorized.")
 
 
-async def handle_rfid_event(event_string: str) -> None:
+def handle_rfid_event(event_string: str) -> None:
     """Handle HID event produced by the RFID reader"""
     if not CONFIG.workbench.login:
         return
@@ -210,9 +213,9 @@ async def handle_rfid_event(event_string: str) -> None:
         return
 
     try:
-        employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event_string)
+        employee: Employee = employee_wrapper.get_employee_by_card_id(event_string)
     except EmployeeNotFoundError as e:
-        messenger.warning(translation('NoEmployee'))
+        messenger.warning(translation("NoEmployee"))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
     WORKBENCH.log_in(employee)

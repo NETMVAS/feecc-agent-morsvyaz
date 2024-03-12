@@ -2,7 +2,7 @@ import datetime as dt
 from dataclasses import dataclass, field
 from uuid import uuid4
 
-from .Types import AdditionalInfo
+from src.feecc_workbench.Types import AdditionalInfo
 
 
 @dataclass

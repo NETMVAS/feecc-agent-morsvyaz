@@ -9,39 +9,40 @@ from loguru import logger
 from sse_starlette import EventSourceResponse
 from contextlib import asynccontextmanager
 
-import _employee_router
-import _unit_router
-import _workbench_router
+import src.routers.employee_router as employee_router
+import src.routers.unit_router as unit_router
+import src.routers.workbench_router as workbench_router
 from _logging import HANDLERS
-from feecc_workbench.database import MongoDbWrapper
+from src.database.database import BaseMongoDbWrapper
 from feecc_workbench.Messenger import MessageLevels, message_generator, messenger
-from feecc_workbench.models import GenericResponse
+from src.database.models import GenericResponse
 from feecc_workbench.utils import check_service_connectivity
 from feecc_workbench.WorkBench import WorkBench
 
 # apply logging configuration
 logger.configure(handlers=HANDLERS)
 
+
 # create lifespan function for startup and shutdown events
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> None:
+async def lifespan(app: FastAPI):
     check_service_connectivity()
-    MongoDbWrapper()
     app_version = os.getenv("VERSION", "Unknown")
     logger.info(f"Runtime app version: {app_version}")
 
     yield
 
     await WorkBench().shutdown()
-    MongoDbWrapper().close_connection()
+    BaseMongoDbWrapper.close_connection()
+
 
 # create app
 app = FastAPI(title="Feecc Workbench daemon", lifespan=lifespan)
 
 # include routers
-app.include_router(_employee_router.router)
-app.include_router(_unit_router.router)
-app.include_router(_workbench_router.router)
+app.include_router(employee_router.router)
+app.include_router(unit_router.router)
+app.include_router(workbench_router.router)
 
 # set up CORS
 app.add_middleware(

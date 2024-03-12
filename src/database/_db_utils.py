@@ -2,16 +2,15 @@ import datetime as dt
 import sys
 
 from loguru import logger
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 
-from .Unit import Unit
+from ..unit.Unit import Unit
 
 
-def _get_database_client(mongo_connection_uri: str) -> AsyncIOMotorClient:
+def _get_database_client(mongo_connection_uri: str) -> MongoClient:
     """Get MongoDB connection url"""
     try:
-        db_client = AsyncIOMotorClient(mongo_connection_uri, serverSelectionTimeoutMS=10000)
-        db_client.server_info()
+        db_client: MongoClient = MongoClient(mongo_connection_uri)
         return db_client
 
     except Exception as e:

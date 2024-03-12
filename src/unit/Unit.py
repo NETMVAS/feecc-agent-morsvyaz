@@ -8,16 +8,16 @@ from uuid import uuid4
 
 from loguru import logger
 
-from ._label_generation import Barcode
-from .Employee import Employee
-from .Messenger import messenger
-from .metrics import metrics
-from .models import ProductionSchema, AdditionalDetail
-from .ProductionStage import ProductionStage
-from .translation import translation
-from .Types import AdditionalInfo
+from src.feecc_workbench._label_generation import Barcode
+from src.employee.Employee import Employee
+from src.feecc_workbench.Messenger import messenger
+from src.feecc_workbench.metrics import metrics
+from src.database.models import ProductionSchema, AdditionalDetail
+from src.prod_stage.ProductionStage import ProductionStage
+from src.feecc_workbench.translation import translation
+from src.feecc_workbench.Types import AdditionalInfo
 from .unit_utils import UnitStatus, biography_factory
-from .utils import TIMESTAMP_FORMAT, timestamp
+from src.feecc_workbench.utils import TIMESTAMP_FORMAT, timestamp
 
 
 class Unit:
@@ -123,32 +123,44 @@ class Unit:
     def assign_component(self, component: Unit) -> None:
         """Assign one of the composite unit's components to the unit"""
         if self.components_filled:
-            messenger.warning(translation('NecessaryComponents'))
+            messenger.warning(translation("NecessaryComponents"))
             raise ValueError(f"Unit {self.model_name} component requirements have already been satisfied")
 
         if component.schema.schema_id not in self._component_slots:
             messenger.warning(
-                translation('Component') +" "+ component.model_name +" "+ translation('NotPartOfUnit') +" "+ self.model_name
+                translation("Component")
+                + " "
+                + component.model_name
+                + " "
+                + translation("NotPartOfUnit")
+                + " "
+                + self.model_name
             )
             raise ValueError(
                 f"Cannot assign component {component.model_name} to {self.model_name} as it's not a component of it"
             )
 
         if self._component_slots.get(component.schema.schema_id, "") is not None:
-            messenger.warning(translation('Component') +" "+ component.model_name +" "+ translation('AlreadyAdded'))
+            messenger.warning(translation("Component") + " " + component.model_name + " " + translation("AlreadyAdded"))
             raise ValueError(
                 f"Component {component.model_name} is already assigned to a composite Unit {self.model_name}"
             )
 
         if component.status is not UnitStatus.built:
             messenger.warning(
-                translation('ComponentAssembly') +" "+ component.model_name +" "+ translation('NotCompleted')
+                translation("ComponentAssembly") + " " + component.model_name + " " + translation("NotCompleted")
             )
             raise ValueError(f"Component {component.model_name} assembly is not completed. {component.status=}")
 
         if component.featured_in_int_id is not None:
             messenger.warning(
-                translation('ComponentN') +" "+ component.internal_id +" "+ translation('AlreadyUsed') +" "+ component.featured_in_int_id
+                translation("ComponentN")
+                + " "
+                + component.internal_id
+                + " "
+                + translation("AlreadyUsed")
+                + " "
+                + component.featured_in_int_id
             )
             raise ValueError(
                 f"Component {component.model_name} has already been used in unit {component.featured_in_int_id}"
@@ -159,7 +171,13 @@ class Unit:
         component.featured_in_int_id = self.internal_id
         logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
         messenger.success(
-            translation('Component') +" "+ component.model_name +" "+ translation('AssignedToUnit') +" "+ self.model_name
+            translation("Component")
+            + " "
+            + component.model_name
+            + " "
+            + translation("AssignedToUnit")
+            + " "
+            + self.model_name
         )
 
     def start_operation(
@@ -212,14 +230,18 @@ class Unit:
 
         if premature:
             self._duplicate_current_operation()
-            operation.name += " "+translation('Unfinished')
+            operation.name += " " + translation("Unfinished")
             operation.ended_prematurely = True
 
         if video_hashes:
             operation.video_hashes = video_hashes
 
         if operation.additional_info is not None:
-            operation.additional_info = {**operation.additional_info, **(additional_info or {}), "detail": self.detail.to_json()}
+            operation.additional_info = {
+                **operation.additional_info,
+                **(additional_info or {}),
+                "detail": self.detail.to_json(),
+            }
 
         operation.completed = True
         self.biography[operation.number] = operation
