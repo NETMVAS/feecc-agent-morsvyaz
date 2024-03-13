@@ -137,7 +137,7 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
 def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas()}
+    all_schemas = {schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas(WORKBENCH.employee.position)}
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:

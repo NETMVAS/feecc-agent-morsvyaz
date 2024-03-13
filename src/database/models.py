@@ -122,6 +122,7 @@ class ProductionSchema(BaseModel):
     parent_schema_id: str | None = None
     schema_type: str | None = None
     erp_metadata: dict[str, str] | None = None
+    allowed_positions: list[str] | None = None
 
     @property
     def is_composite(self) -> bool:

@@ -9,10 +9,11 @@ class ProdSchemaWrapper:
     collection = "productionSchemas"
 
     @time_execution
-    def get_all_schemas(self) -> list[ProductionSchema]:
+    def get_all_schemas(self, position: str) -> list[ProductionSchema]:
         """get all production schemas"""
-        schema_data = BaseMongoDbWrapper.find(collection=self.collection, projection={"_id": 0})
-        return [pydantic.TypeAdapter.validate_python(ProductionSchema, schema) for schema in schema_data]
+        query = {"allowed_positions": {"$in": [None, [], position]}}
+        schema_data = BaseMongoDbWrapper.find(collection=self.collection, filters=query, projection={"_id": 0})
+        return [ProductionSchema(**schema) for schema in schema_data]
 
     @time_execution
     def get_schema_by_id(self, schema_id: str) -> ProductionSchema:
