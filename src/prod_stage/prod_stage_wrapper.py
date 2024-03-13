@@ -7,7 +7,7 @@ from src.feecc_workbench.Types import BulkWriteTask
 from src.prod_stage.ProductionStage import ProductionStage
 
 
-class ProdStageWrapper:
+class _ProdStageWrapper:
     collection = "productionStagesData"
 
     def bulk_push_production_stages(self, production_stages: list[ProductionStage]) -> None:
@@ -30,4 +30,4 @@ class ProdStageWrapper:
         logger.debug(f"Bulk write operation result: {result.bulk_api_result}")
 
 
-ProdStageWrapper = ProdStageWrapper()
+ProdStageWrapper = _ProdStageWrapper()

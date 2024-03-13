@@ -21,6 +21,8 @@ router = APIRouter(
 async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.UnitOut:  # noqa: B008
     """handle new Unit creation"""
     try:
+        if not schema.is_allowed(WORKBENCH.employee.position):
+            raise ValueError("schema is not allowed")
         unit: Unit = await WORKBENCH.create_new_unit(schema)
         logger.info(f"Initialized new unit with internal ID {unit.internal_id}")
         return mdl.UnitOut(

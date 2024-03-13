@@ -23,8 +23,8 @@ class UnitWrapper:
         if unit.components_units and include_components:
             for component in unit.components_units:
                 self.push_unit(component)
-
-        ProdStageWrapper.bulk_push_production_stages(unit.biography)
+        if unit.biography:
+            ProdStageWrapper.bulk_push_production_stages(unit.biography)
         unit_dict = _get_unit_dict_data(unit)
 
         if unit.is_in_db:
