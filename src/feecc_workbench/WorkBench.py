@@ -5,6 +5,7 @@ import requests
 
 
 from loguru import logger
+from typing import Any
 
 
 from .utils import timestamp
@@ -192,7 +193,7 @@ class WorkBench:
 
         else:
             response = requests.post(url=CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
-            if response.status_code == 504:
+            if response.status_code == 304:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
 
         if response.status_code != 200:
@@ -221,7 +222,7 @@ class WorkBench:
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
+    async def end_operation(self, stage_data: AdditionalInfo | None = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
@@ -234,23 +235,24 @@ class WorkBench:
         override_timestamp = timestamp()
         ipfs_hashes: list[str] = []
 
-        response = requests.get(CONFIG.business_logic.stop_uri)
+        # Send the command to business logic to stop ongoing operation.
         try:
+            response = requests.get(CONFIG.business_logic.stop_uri)
             data = response.json()
-        except:
-            data = response.status_code
+        except Exception as e:
+            messenger(f"Could not stop the operation via business logic: {str(e)}")
 
         if response.status_code != 200:
             messenger(f"Could not end the operation: {data}")
             raise Exception(data)
         else:
-            self.unit.passport_ipfs_cid = data["ipfs_cid"]
-            self.unit.passport_ipfs_link = data["ipfs_link"]
-            self.unit.detail = AdditionalDetail(**data)
+            self.unit.passport_ipfs_cid = data.pop("ipfs_cid")
+            self.unit.passport_ipfs_link = data.pop("ipfs_link")
+            self.unit.detail = AdditionalDetail(**data, stage_data=stage_data)
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
-            additional_info=additional_info,
+            additional_info=stage_data,
             premature=premature,
             override_timestamp=override_timestamp,
         )

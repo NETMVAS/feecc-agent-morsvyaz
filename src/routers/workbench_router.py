@@ -111,7 +111,7 @@ async def start_operation(
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
     except ManualInputNeeded as e:
-        return JSONResponse(status_code=status.HTTP_504_GATEWAY_TIMEOUT, content=e.args)
+        return JSONResponse(status_code=status.HTTP_304_NOT_MODIFIED, content=e.args)
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
@@ -119,10 +119,10 @@ async def start_operation(
 
 
 @router.post("/end-operation", response_model=mdl.GenericResponse)
-async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -> mdl.GenericResponse:
+async def end_operation(workbench_data: mdl.OperationStageData) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        await WORKBENCH.end_operation(workbench_data.additional_info, workbench_data.premature_ending)
+        await WORKBENCH.end_operation(workbench_data.stage_data, workbench_data.premature_ending)
         unit = WORKBENCH.unit
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
