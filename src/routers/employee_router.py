@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from starlette import status
 
-from src.dependencies import get_employee_by_card_id
+from src.dependencies import get_employee_by_card_id, get_employee_by_username
 from src.database import models as mdl
 from src.employee.Employee import Employee
 from src.feecc_workbench.exceptions import StateForbiddenError
@@ -26,13 +26,41 @@ def get_employee_data(
     )
 
 
+@router.post("/login-creds", response_model=mdl.EmployeeOut)
+def log_in_creds(employee: mdl.EmployeeWCardModel = Depends(get_employee_by_username)) -> mdl.EmployeeOut:
+    try:
+        WORKBENCH.log_in(
+            Employee(
+                rfid_card_id=employee.rfid_card_id,
+                name=employee.name,
+                position=employee.position,
+                username=employee.username,
+                hashed_password=employee.hashed_password,
+            )
+        )
+        return mdl.EmployeeOut(
+            status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
+        )
+
+    except StateForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+
+
 @router.post("/log-in", response_model=mdl.EmployeeOut)
 def log_in_employee(
     employee: mdl.EmployeeWCardModel = Depends(get_employee_by_card_id),  # noqa: B008
 ) -> mdl.EmployeeOut:
     """handle logging in the Employee at a given Workbench"""
     try:
-        WORKBENCH.log_in(Employee(rfid_card_id=employee.rfid_card_id, name=employee.name, position=employee.position))
+        WORKBENCH.log_in(
+            Employee(
+                rfid_card_id=employee.rfid_card_id,
+                name=employee.name,
+                position=employee.position,
+                username=employee.username,
+                hashed_password=employee.hashed_password,
+            )
+        )
         return mdl.EmployeeOut(
             status_code=status.HTTP_200_OK, detail="Employee logged in successfully", employee_data=employee
         )

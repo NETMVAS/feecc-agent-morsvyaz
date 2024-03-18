@@ -7,6 +7,8 @@ class Employee:
     rfid_card_id: str
     name: str
     position: str
+    username: str
+    hashed_password: str
     passport_code: str = ""
 
     def __post_init__(self) -> None:

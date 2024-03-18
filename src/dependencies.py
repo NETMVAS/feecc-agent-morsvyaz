@@ -36,6 +36,18 @@ def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Employee
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
+def get_employee_by_username(employee_data: models.EmployeeCreds) -> models.EmployeeWCardModel:
+    try:
+        employee: Employee = employee_wrapper.get_employee_by_username(
+            username=employee_data.employee_username, password=employee_data.employee_password
+        )
+        return models.EmployeeWCardModel(**asdict(employee))
+
+    except EmployeeNotFoundError as e:
+        messenger.warning(translation("NoEmployee"))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+
 def get_schema_by_id(schema_id: str) -> models.ProductionSchema:
     """get the specified production schema"""
     try:
