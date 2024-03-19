@@ -18,7 +18,7 @@ from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
 from ..database.models import AdditionalDetail, ProductionSchema, ManualInput
-from .passport_generator import construct_unit_passport
+from .passport_generator import construct_unit_certificate
 from .printer import print_image
 from .robonomics import post_to_datalog
 from .states import STATE_TRANSITION_MAP, State
@@ -240,15 +240,21 @@ class WorkBench:
             response = requests.get(CONFIG.business_logic.stop_uri)
             data = response.json()
         except Exception as e:
-            messenger(f"Could not stop the operation via business logic: {str(e)}")
+            message = f"Could not stop the operation via business logic: {str(e)}"
+            messenger(message)
+            logger.error(message)
 
         if response.status_code != 200:
-            messenger(f"Could not end the operation: {data}")
-            raise Exception(data)
+            messenger(f"Could not end the operation: {response}")
+            raise Exception(response)
         else:
-            self.unit.passport_ipfs_cid = data.pop("ipfs_cid")
-            self.unit.passport_ipfs_link = data.pop("ipfs_link")
-            self.unit.detail = AdditionalDetail(**data, stage_data=stage_data)
+            cid = data.pop("ipfs_cid")
+            link = data.pop("ipfs_link")
+            self.unit.passport_ipfs_cid = cid
+            self.unit.passport_ipfs_link = link
+            ipfs_hashes.append(cid)
+            if data:
+                self.unit.detail = AdditionalDetail(**data)
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
@@ -311,7 +317,7 @@ class WorkBench:
             raise AssertionError("No employee is logged in at the workbench")
 
         # Generate and save passport YAML file
-        passport_file_path: Path = await construct_unit_passport(self.unit)
+        passport_file_path: Path = await construct_unit_certificate(self.unit)
 
         # Determine if QR-code has to be printed -> short link is needed right now
         print_qr = CONFIG.printer.print_qr and (

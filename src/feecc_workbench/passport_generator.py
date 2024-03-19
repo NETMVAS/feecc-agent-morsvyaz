@@ -40,49 +40,49 @@ def _get_total_assembly_time(unit: Unit) -> dt.timedelta:
     return own_time
 
 
-def _get_passport_dict(unit: Unit) -> dict[str, Any]:
+def _get_certificate_dict(unit: Unit) -> dict[str, Any]:
     """
     form a nested dictionary containing all the unit
-    data to dump it into a human friendly passport
+    data to dump it into a human friendly certificate
     """
-    passport_dict: dict[str, Any] = {
+    certificate_dict: dict[str, Any] = {
         translation("UnitID"): unit.uuid,
         translation("UnitName"): unit.model_name,
     }
 
     try:
-        passport_dict[translation("UnitTotalAssemblyTime")] = str(unit.total_assembly_time)
+        certificate_dict[translation("UnitTotalAssemblyTime")] = str(unit.total_assembly_time)
     except Exception as e:
         logger.error(str(e))
 
     if unit.biography:
-        passport_dict[translation("UnitBiography")] = [_construct_stage_dict(stage) for stage in unit.biography]
+        certificate_dict[translation("UnitBiography")] = [_construct_stage_dict(stage) for stage in unit.biography]
 
     if unit.components_units:
-        passport_dict[translation("UnitComponents")] = [_get_passport_dict(c) for c in unit.components_units]
-        passport_dict[translation("UnitTotalAssemblyTimeComponents")] = str(_get_total_assembly_time(unit))
+        certificate_dict[translation("UnitComponents")] = [_get_certificate_dict(c) for c in unit.components_units]
+        certificate_dict[translation("UnitTotalAssemblyTimeComponents")] = str(_get_total_assembly_time(unit))
 
     if unit.serial_number:
-        passport_dict[translation("UnitSerialNumber")] = unit.serial_number
+        certificate_dict[translation("UnitSerialNumber")] = unit.serial_number
 
-    return passport_dict
+    return certificate_dict
 
 
-def _save_passport(unit: Unit, passport_dict: dict[str, Any], path: str) -> None:
-    """makes a unit passport and dumps it in a form of a YAML file"""
-    dir_ = pathlib.Path("unit-passports")
+def _save_certificate(unit: Unit, certificate_dict: dict[str, Any], path: str) -> None:
+    """makes a unit certificate and dumps it in a form of a YAML file"""
+    dir_ = pathlib.Path("unit-certificates")
     if not dir_.is_dir():
         dir_.mkdir()
-    passport_file = pathlib.Path(path)
-    with passport_file.open("w") as f:
-        yaml.dump(passport_dict, f, allow_unicode=True, sort_keys=False)
-    logger.info(f"Unit passport with UUID {unit.uuid} has been dumped successfully")
+    certificate_file = pathlib.Path(path)
+    with certificate_file.open("w") as f:
+        yaml.dump(certificate_dict, f, allow_unicode=True, sort_keys=False)
+    logger.info(f"Unit certificate with UUID {unit.uuid} has been dumped successfully")
 
 
 @logger.catch(reraise=True)
-async def construct_unit_passport(unit: Unit) -> pathlib.Path:
-    """construct own passport, dump it as .yaml file and return a path to it"""
-    passport = _get_passport_dict(unit)
-    path = f"unit-passports/unit-passport-{unit.uuid}.yaml"
-    _save_passport(unit, passport, path)
+async def construct_unit_certificate(unit: Unit) -> pathlib.Path:
+    """construct own certificate, dump it as .yaml file and return a path to it"""
+    certificate = _get_certificate_dict(unit)
+    path = f"unit-certificates/unit-certificate-{unit.uuid}.yaml"
+    _save_certificate(unit, certificate, path)
     return pathlib.Path(path)

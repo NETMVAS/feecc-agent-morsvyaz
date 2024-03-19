@@ -3,7 +3,7 @@ BuildName;Наименование;Name
 BuildEmployee;Код сотрудника;Employee Name
 BuildStartTime;Время начала;Session start time
 BuildEndTime;Время окончания;Session end time
-BuildVideoHashes; Видеозаписи процесса сборки в IPFS;Videos of the assembly process in IPFS
+BuildVideoHashes; Информация об этапе операции;Operation stage data
 BuildAdditionalInfo;Дополнительная информация;Additional information
 UnitID;Уникальный номер паспорта изделия;Unit passport number
 UnitName;Модель изделия;Product model
