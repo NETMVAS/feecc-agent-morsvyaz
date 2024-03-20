@@ -3,8 +3,9 @@ BuildName;Наименование;Name
 BuildEmployee;Код сотрудника;Employee Name
 BuildStartTime;Время начала;Session start time
 BuildEndTime;Время окончания;Session end time
-BuildVideoHashes; Информация об этапе операции;Operation stage data
+BuildVideoHashes;Информация об этапе операции;Operation stage data
 BuildAdditionalInfo;Дополнительная информация;Additional information
+BuildDetails;Информация о производстве;Production information
 UnitID;Уникальный номер паспорта изделия;Unit passport number
 UnitName;Модель изделия;Product model
 UnitTotalAssemblyTime;Общая продолжительность сборки;Total assembly time

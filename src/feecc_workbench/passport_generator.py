@@ -65,6 +65,9 @@ def _get_certificate_dict(unit: Unit) -> dict[str, Any]:
     if unit.serial_number:
         certificate_dict[translation("UnitSerialNumber")] = unit.serial_number
 
+    if unit.detail:
+        certificate_dict[translation("BuildDetails")] = unit.detail
+
     return certificate_dict
 
 
