@@ -129,7 +129,7 @@ class WorkBench:
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
-        override = unit.status == UnitStatus.built and unit.passport_ipfs_cid is None
+        override = unit.status == UnitStatus.built and unit.certificate_ipfs_cid is None
         allowed = (UnitStatus.production, UnitStatus.revision)
 
         if not (override or unit.status in allowed):
@@ -250,8 +250,8 @@ class WorkBench:
         else:
             cid = data.pop("ipfs_cid")
             link = data.pop("ipfs_link")
-            self.unit.passport_ipfs_cid = cid
-            self.unit.passport_ipfs_link = link
+            self.unit.certificate_ipfs_cid = cid
+            self.unit.certificate_ipfs_link = link
             ipfs_hashes.append(cid)
             if data:
                 self.unit.detail = AdditionalDetail(**data)
@@ -328,7 +328,7 @@ class WorkBench:
 
         # Publish passport YAML file into IPFS
         if CONFIG.ipfs_gateway.enable:
-            cid, link = self.unit.passport_ipfs_cid, self.unit.passport_ipfs_link
+            cid, link = self.unit.certificate_ipfs_cid, self.unit.certificate_ipfs_link
 
             # Generate a QR-code pointing to the unit's passport and print it
             if print_qr:
@@ -344,7 +344,7 @@ class WorkBench:
             await self._print_security_tag()
 
         # Publish passport file's IPFS CID to Robonomics Datalog
-        if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
+        if CONFIG.robonomics.enable_datalog and (cid := self.unit.certificate_ipfs_cid) is not None:
             asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         # Update unit data saved in the DB
