@@ -27,7 +27,7 @@ def _get_unit_dict_data(unit: Unit) -> dict[str, str | bool | None | list[str] |
         "schema_id": unit.schema.schema_id,
         "uuid": unit.uuid,
         "internal_id": unit.internal_id,
-        "passport_ipfs_cid": unit.certificate_ipfs_cid,
+        "certificate_ipfs_cid": unit.certificate_ipfs_cid,
         "txn_hash": unit.txn_hash,
         "serial_number": unit.serial_number,
         "components_internal_ids": unit.components_internal_ids,

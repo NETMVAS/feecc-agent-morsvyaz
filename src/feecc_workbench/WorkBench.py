@@ -18,7 +18,7 @@ from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
 from ..database.models import AdditionalDetail, ProductionSchema, ManualInput
-from .passport_generator import construct_unit_certificate
+from .certificate_generator import construct_unit_certificate
 from .printer import print_image
 from .robonomics import post_to_datalog
 from .states import STATE_TRANSITION_MAP, State
