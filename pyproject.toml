@@ -26,6 +26,7 @@ robonomics-interface = "^1.2.2"
 ecs-logging = "^2.0.0"
 aioprometheus = "^22.5.0"
 pycups = "^2.0.1"
+pydantic-settings = "^2.2.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.971"

@@ -5,6 +5,7 @@ import requests
 
 
 from loguru import logger
+from typing import Any
 
 
 from .utils import timestamp
@@ -17,7 +18,7 @@ from .ipfs import publish_file
 from .Messenger import messenger
 from .metrics import metrics
 from ..database.models import AdditionalDetail, ProductionSchema, ManualInput
-from .passport_generator import construct_unit_passport
+from .certificate_generator import construct_unit_certificate
 from .printer import print_image
 from .robonomics import post_to_datalog
 from .states import STATE_TRANSITION_MAP, State
@@ -128,7 +129,7 @@ class WorkBench:
         """assign a unit to the workbench"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
-        override = unit.status == UnitStatus.built and unit.passport_ipfs_cid is None
+        override = unit.status == UnitStatus.built and unit.certificate_ipfs_cid is None
         allowed = (UnitStatus.production, UnitStatus.revision)
 
         if not (override or unit.status in allowed):
@@ -192,7 +193,7 @@ class WorkBench:
 
         else:
             response = requests.post(url=CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
-            if response.status_code == 504:
+            if response.status_code == 304:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
 
         if response.status_code != 200:
@@ -221,7 +222,7 @@ class WorkBench:
             self.switch_state(State.UNIT_ASSIGNED_IDLING_STATE)
 
     @logger.catch(reraise=True, exclude=(StateForbiddenError, AssertionError))
-    async def end_operation(self, additional_info: AdditionalInfo | None = None, premature: bool = False) -> None:
+    async def end_operation(self, stage_data: AdditionalInfo | None = None, premature: bool = False) -> None:
         """end work on the provided unit"""
         self._validate_state_transition(State.UNIT_ASSIGNED_IDLING_STATE)
 
@@ -234,23 +235,30 @@ class WorkBench:
         override_timestamp = timestamp()
         ipfs_hashes: list[str] = []
 
-        response = requests.get(CONFIG.business_logic.stop_uri)
+        # Send the command to business logic to stop ongoing operation.
         try:
+            response = requests.get(CONFIG.business_logic.stop_uri)
             data = response.json()
-        except:
-            data = response.status_code
+        except Exception as e:
+            message = f"Could not stop the operation via business logic: {str(e)}"
+            messenger(message)
+            logger.error(message)
 
         if response.status_code != 200:
-            messenger(f"Could not end the operation: {data}")
-            raise Exception(data)
+            messenger(f"Could not end the operation: {response}")
+            raise Exception(response)
         else:
-            self.unit.passport_ipfs_cid = data["ipfs_cid"]
-            self.unit.passport_ipfs_link = data["ipfs_link"]
-            self.unit.detail = AdditionalDetail(**data)
+            cid = data.pop("ipfs_cid")
+            link = data.pop("ipfs_link")
+            self.unit.certificate_ipfs_cid = cid
+            self.unit.certificate_ipfs_link = link
+            ipfs_hashes.append(cid)
+            if data:
+                self.unit.detail = AdditionalDetail(**data)
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
-            additional_info=additional_info,
+            additional_info=stage_data,
             premature=premature,
             override_timestamp=override_timestamp,
         )
@@ -309,7 +317,7 @@ class WorkBench:
             raise AssertionError("No employee is logged in at the workbench")
 
         # Generate and save passport YAML file
-        passport_file_path: Path = await construct_unit_passport(self.unit)
+        passport_file_path: Path = await construct_unit_certificate(self.unit)
 
         # Determine if QR-code has to be printed -> short link is needed right now
         print_qr = CONFIG.printer.print_qr and (
@@ -320,7 +328,7 @@ class WorkBench:
 
         # Publish passport YAML file into IPFS
         if CONFIG.ipfs_gateway.enable:
-            cid, link = self.unit.passport_ipfs_cid, self.unit.passport_ipfs_link
+            cid, link = self.unit.certificate_ipfs_cid, self.unit.certificate_ipfs_link
 
             # Generate a QR-code pointing to the unit's passport and print it
             if print_qr:
@@ -336,7 +344,7 @@ class WorkBench:
             await self._print_security_tag()
 
         # Publish passport file's IPFS CID to Robonomics Datalog
-        if CONFIG.robonomics.enable_datalog and (cid := self.unit.passport_ipfs_cid) is not None:
+        if CONFIG.robonomics.enable_datalog and (cid := self.unit.certificate_ipfs_cid) is not None:
             asyncio.create_task(post_to_datalog(cid, self.unit.internal_id))
 
         # Update unit data saved in the DB
