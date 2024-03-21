@@ -34,7 +34,7 @@ services:
     volumes:
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
-      - "./unit-passports/:/src/unit-passports/"
+      - "./unit-certificates/:/src/unit-certificates/"
       - "./workbench.log:/src/workbench.log"
       - "./rootCA.pem:/src/rootCA.pem:ro"
       - "./workbench.pem:/src/workbench.pem:ro"
