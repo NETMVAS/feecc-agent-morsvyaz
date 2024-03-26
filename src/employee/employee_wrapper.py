@@ -17,7 +17,7 @@ class EmployeeWrapper:
     def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
         filters = {"rfid_card_id": card_id}
-        projection = {"_id": 0}
+        projection = {"_id": 0, "hashed_password": 0}
         employee_data = BaseMongoDbWrapper.find_one(collection=self.collection, filters=filters, projection=projection)
 
         if employee_data is None:
@@ -44,7 +44,12 @@ class EmployeeWrapper:
             logger.error(message)
             raise EmployeeNotFoundError(message)
 
-        return Employee(**employee_data)
+        return Employee(
+            rfid_card_id=employee_data["rfid_card_id"],
+            name=employee_data["name"],
+            position=employee_data["position"],
+            username=employee_data["username"],
+        )
 
 
 employee_wrapper = EmployeeWrapper()

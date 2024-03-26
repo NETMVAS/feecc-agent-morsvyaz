@@ -35,7 +35,6 @@ def log_in_creds(employee: mdl.EmployeeWCardModel = Depends(get_employee_by_user
                 name=employee.name,
                 position=employee.position,
                 username=employee.username,
-                hashed_password=employee.hashed_password,
             )
         )
         return mdl.EmployeeOut(
@@ -58,7 +57,6 @@ def log_in_employee(
                 name=employee.name,
                 position=employee.position,
                 username=employee.username,
-                hashed_password=employee.hashed_password,
             )
         )
         return mdl.EmployeeOut(

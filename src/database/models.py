@@ -42,7 +42,6 @@ class EmployeeModel(BaseModel):
 class EmployeeWCardModel(EmployeeModel):
     rfid_card_id: str | None
     username: str | None
-    hashed_password: str | None
 
 
 class AdditionalDetail:
