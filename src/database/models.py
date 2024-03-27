@@ -41,6 +41,7 @@ class EmployeeModel(BaseModel):
 
 class EmployeeWCardModel(EmployeeModel):
     rfid_card_id: str | None
+    username: str | None
 
 
 class AdditionalDetail:
@@ -68,6 +69,11 @@ class EmployeeOut(GenericResponse):
 
 class EmployeeID(BaseModel):
     employee_rfid_card_no: str
+
+
+class EmployeeCreds(BaseModel):
+    employee_username: str
+    employee_password: str
 
 
 class UnitOut(GenericResponse):

@@ -2,14 +2,18 @@ import hashlib
 from dataclasses import dataclass
 
 
+
 @dataclass
 class Employee:
-    rfid_card_id: str
     name: str
     position: str
+    rfid_card_id: str | None = None
+    username: str | None = None
     passport_code: str = ""
 
     def __post_init__(self) -> None:
+        if not self.username and not self.rfid_card_id:
+            raise ValueError("needs username or card id")
         if not self.passport_code:
             self.passport_code = self.get_passport_code()
 
