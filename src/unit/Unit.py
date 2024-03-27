@@ -48,8 +48,8 @@ class Unit:
         self.uuid: str = uuid or uuid4().hex
         self.barcode: Barcode = Barcode(str(int(self.uuid, 16))[:12])
         self.internal_id: str = internal_id or str(self.barcode.barcode.get_fullcode())
-        self.passport_ipfs_cid: str | None = passport_ipfs_cid
-        self.passport_ipfs_link: str | None = passport_ipfs_link
+        self.certificate_ipfs_cid: str | None = passport_ipfs_cid
+        self.certificate_ipfs_link: str | None = passport_ipfs_link
         self.txn_hash: str | None = txn_hash
         self.serial_number: str | None = serial_number
         self.components_units: list[Unit] = components_units or []

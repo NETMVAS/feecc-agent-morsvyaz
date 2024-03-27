@@ -15,7 +15,7 @@ class GenericResponse(BaseModel):
 
 
 class OperatorStartResponse(GenericResponse):
-    """Return 504 to front to ask for manual input"""
+    """Return 304 to front to ask for manual input"""
 
     license_plate: bool = False
 
@@ -29,8 +29,8 @@ class WorkbenchExtraDetails(BaseModel):
     additional_info: dict[str, str]
 
 
-class WorkbenchExtraDetailsWithoutStage(BaseModel):
-    additional_info: dict[str, str] | None = None
+class OperationStageData(BaseModel):
+    stage_data: dict[str, Any] | None = None
     premature_ending: bool = False
 
 

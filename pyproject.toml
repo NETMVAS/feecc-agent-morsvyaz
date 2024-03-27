@@ -29,6 +29,7 @@ pycups = "^2.0.1"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 pydantic_settings = "^2.2.1"
 
+
 [tool.poetry.dev-dependencies]
 mypy = "^0.971"
 flake8 = "^5.0.4"
