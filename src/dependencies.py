@@ -6,7 +6,7 @@ from loguru import logger
 from src.database import models
 from src.config import CONFIG
 from src.unit.unit_wrapper import UnitWrapper
-from src.employee.employee_wrapper import employee_wrapper
+from src.employee.employee_wrapper import EmployeeWrapper
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from src.employee.Employee import Employee
 from src.feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
@@ -28,7 +28,7 @@ def get_unit_by_internal_id(unit_internal_id: str) -> Unit:
 
 def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.EmployeeWCardModel:
     try:
-        employee: Employee = employee_wrapper.get_employee_by_card_id(employee_data.employee_rfid_card_no)
+        employee: Employee = EmployeeWrapper.get_employee_by_card_id(employee_data.employee_rfid_card_no)
         return models.EmployeeWCardModel(**asdict(employee))
 
     except EmployeeNotFoundError as e:
@@ -38,7 +38,7 @@ def get_employee_by_card_id(employee_data: models.EmployeeID) -> models.Employee
 
 def get_employee_by_username(employee_data: models.EmployeeCreds) -> models.EmployeeWCardModel:
     try:
-        employee: Employee = employee_wrapper.get_employee_by_username(
+        employee: Employee = EmployeeWrapper.get_employee_by_username(
             username=employee_data.employee_username, password=employee_data.employee_password
         )
         return models.EmployeeWCardModel(**asdict(employee))
