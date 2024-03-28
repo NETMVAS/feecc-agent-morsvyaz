@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"])
 
 
-class EmployeeWrapper:
+class _EmployeeWrapper:
     collection = "employeeData"
 
     @time_execution
@@ -52,4 +52,4 @@ class EmployeeWrapper:
         )
 
 
-employee_wrapper = EmployeeWrapper()
+EmployeeWrapper = _EmployeeWrapper()

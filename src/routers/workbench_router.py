@@ -9,7 +9,7 @@ from sse_starlette.sse import EventSourceResponse
 from src.dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
 from src.database import models as mdl
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
-from src.employee.employee_wrapper import employee_wrapper
+from src.employee.employee_wrapper import EmployeeWrapper
 from src.employee.Employee import Employee
 from src.feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
 from src.feecc_workbench.Messenger import messenger
@@ -137,7 +137,9 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
 def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas(WORKBENCH.employee.position)}
+    all_schemas = {
+        schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas(WORKBENCH.employee.position)
+    }
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
@@ -213,7 +215,7 @@ def handle_rfid_event(event_string: str) -> None:
         return
 
     try:
-        employee: Employee = employee_wrapper.get_employee_by_card_id(event_string)
+        employee: Employee = EmployeeWrapper.get_employee_by_card_id(event_string)
     except EmployeeNotFoundError as e:
         messenger.warning(translation("NoEmployee"))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
