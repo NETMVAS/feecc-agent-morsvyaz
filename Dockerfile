@@ -17,8 +17,8 @@ WORKDIR /src
 COPY --from=requirements-stage /tmp/requirements.txt /src/requirements.txt
 RUN apt-get update && apt-get install libcups2-dev -y && apt-get install -y ffmpeg
 RUN pip install --no-cache-dir --upgrade -r /src/requirements.txt
-COPY ./src /src
+COPY . /src
 COPY --from=requirements-stage /tmp/version.txt /src/version.txt
 HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=12 \
     CMD curl --fail http://localhost:5000/docs || exit 1
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
+ENTRYPOINT ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "5000"]
