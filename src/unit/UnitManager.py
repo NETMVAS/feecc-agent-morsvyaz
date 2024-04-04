@@ -25,6 +25,8 @@ from src.feecc_workbench.utils import TIMESTAMP_FORMAT, timestamp
 
 class UnitManager:
     """UnitManager class manages unit instances in the database."""
+    collection = "unitData"
+    database = BaseMongoDbWrapper
 
     def __init__(
         self,
@@ -33,8 +35,6 @@ class UnitManager:
         components_units: list[Unit] = None,
         status: UnitStatus | str = UnitStatus.production,
     ) -> None:
-        self.collection = "unitData"
-        self.database = BaseMongoDbWrapper
         if unit_id:
             self.unit_id = unit_id
         else:
@@ -62,6 +62,7 @@ class UnitManager:
         BaseUnitWrapper.unit_update_single_field(self.unit_id, "components_units", cur_components)
 
     @lru_cache(maxsize=4)
+    @property
     def _get_cur_unit(self) -> Unit:
         if self.unit_id is None:
             raise ValueError("Unit id not found.")
@@ -167,15 +168,7 @@ class UnitManager:
         self._set_components_units(component)
         component.featured_in_int_id = self._get_cur_unit().internal_id
         logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
-        messenger.success(
-            translation("Component")
-            + " "
-            + component.model_name
-            + " "
-            + translation("AssignedToUnit")
-            + " "
-            + self.model_name
-        )
+        messenger.success(f"{translation("Component")} {component.model_name} {translation("AssignedToUnit")} {self.model_name}")
 
     def start_operation(self, employee: Employee, additional_info: AdditionalInfo | None = None) -> None:
         """begin the provided operation and save data about it"""
@@ -253,3 +246,6 @@ class UnitManager:
             metrics.register_complete_unit(None, self)
 
         self.employee = None
+
+
+        
