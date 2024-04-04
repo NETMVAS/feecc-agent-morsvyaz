@@ -17,7 +17,7 @@ from src.database.database import BaseMongoDbWrapper
 from src.feecc_workbench.Messenger import MessageLevels, message_generator, messenger
 from src.database.models import GenericResponse
 from src.feecc_workbench.utils import check_service_connectivity
-from src.feecc_workbench.WorkBench import WorkBench
+from src.feecc_workbench.WorkBench import Workbench
 
 # apply logging configuration
 logger.configure(handlers=HANDLERS)
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    await WorkBench().shutdown()
+    await Workbench.shutdown()
     BaseMongoDbWrapper.close_connection()
 
 

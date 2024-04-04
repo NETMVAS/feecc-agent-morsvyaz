@@ -10,9 +10,8 @@ from src.employee.employee_wrapper import EmployeeWrapper
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.translation import translation
 from src.feecc_workbench.exceptions import StateForbiddenError, EmployeeNotFoundError
-from src.feecc_workbench.WorkBench import WorkBench
+from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 
-WORKBENCH = WorkBench()
 
 router = APIRouter(
     prefix="/employee",
@@ -72,7 +71,7 @@ def log_in_employee(
 
 
 @router.post("/handle-rfid-event", response_model=mdl.GenericResponse)
-async def handle_rfid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:
+async def handle_rfid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
     try:
         if event.name != "rfid_reader":
             raise KeyError(f"Unknown sender: {event.name}")
