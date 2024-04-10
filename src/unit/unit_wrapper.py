@@ -9,19 +9,18 @@ from src.feecc_workbench.Types import Document
 from src.feecc_workbench.utils import time_execution
 from src.feecc_workbench.exceptions import UnitNotFoundError
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
-from .Unit import Unit
-from .unit_utils import UnitStatus
+from src.unit.unit_utils import Unit, UnitStatus
 
 
-
-class UnitWrapper:
+class _UnitWrapper:
     collection = "unitData"
 
     @time_execution
     def push_unit(self, unit: Unit, include_components: bool = True) -> None:
         """Upload or update data about the unit into the DB"""
-        if unit.components_units and include_components:
-            for component in unit.components_units:
+        if unit.components_ids and include_components:
+            components_units = self.get_components_units(unit.components_ids)
+            for component in components_units:
                 self.push_unit(component)
         if unit.biography:
             ProdStageWrapper.bulk_push_production_stages(unit.biography)
@@ -35,6 +34,14 @@ class UnitWrapper:
             BaseMongoDbWrapper.insert(self.collection, unit_dict)
 
     @time_execution
+    def get_unit_by_uuid(self, uuid: str) -> Unit:
+        filters = {"uuid": uuid}
+        unit = BaseMongoDbWrapper.find_one(collection=self.collection, filters=filters)
+        if unit is None:
+            raise ValueError(f"No unit with {uuid=} was found.")
+        return Unit(**unit)
+
+    @time_execution
     def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
         """Updates single field in unit collection's document."""
         filters = {"internal_id": unit_internal_id}
@@ -44,7 +51,7 @@ class UnitWrapper:
 
     @time_execution
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
-        """Returns """
+        """Returns unit given internal_id"""
         pipeline = [  # noqa: CCR001,ECE001
             {"$match": {"internal_id": unit_internal_id}},
             {
@@ -81,11 +88,11 @@ class UnitWrapper:
         """Creates and returns Unit class instance from raw data."""
         # get nested component units
         components_internal_ids = unit_dict.get("components_internal_ids", [])
-        components_units = []
+        components_ids = []
 
         for component_internal_id in components_internal_ids:
             component_unit = self.get_unit_by_internal_id(component_internal_id)
-            components_units.append(component_unit)
+            components_ids.append(component_unit.uuid)
 
         # get biography objects instead of dicts
         stage_dicts = unit_dict.get("prod_stage_dicts", [])
@@ -103,7 +110,7 @@ class UnitWrapper:
             internal_id=unit_dict.get("internal_id"),
             is_in_db=True,
             biography=biography or None,
-            components_units=components_units or None,
+            components_ids=components_ids or [],
             featured_in_int_id=unit_dict.get("featured_in_int_id"),
             passport_ipfs_cid=unit_dict.get("passport_ipfs_cid"),
             txn_hash=unit_dict.get("txn_hash"),
@@ -140,7 +147,9 @@ class UnitWrapper:
             }
             for entry in result
         ]
-    
+
+    def get_components_units(self, components_ids: list[str]) -> list[Unit]:
+        return [self.get_unit_by_uuid(component) for component in components_ids]
 
 
-BaseUnitWrapper = UnitWrapper()
+UnitWrapper = _UnitWrapper()
