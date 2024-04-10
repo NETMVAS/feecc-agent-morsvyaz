@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ..unit.Unit import Unit
 
 
-class Metrics():
+class Metrics:
     def __init__(self) -> None:
         self._metrics: dict[str, Summary] = {}
         export_version()

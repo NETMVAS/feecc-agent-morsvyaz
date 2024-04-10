@@ -5,7 +5,7 @@ from src.database.database import BaseMongoDbWrapper
 from src.database.models import ProductionSchema
 
 
-class ProdSchemaWrapper:
+class _ProdSchemaWrapper:
     collection = "productionSchemas"
 
     @time_execution
@@ -28,4 +28,4 @@ class ProdSchemaWrapper:
         return ProductionSchema(**target_schema)
 
 
-ProdSchemaWrapper = ProdSchemaWrapper()
+ProdSchemaWrapper = _ProdSchemaWrapper()
