@@ -92,7 +92,7 @@ class UnitManager:
     @property
     def next_pending_operation(self) -> ProductionStage | None:
         """get next pending operation if any"""
-        return next((operation for operation in self._get_cur_unit.biography if not operation.completed), None)
+        return next((operation for operation in self._get_cur_unit.operation_stages if not operation.completed), None)
     
     @property
     def total_assembly_time(self) -> dt.timedelta:
@@ -110,7 +110,7 @@ class UnitManager:
             )
             return end_time - start_time
 
-        return reduce(add, (stage_len(stage) for stage in self._get_cur_unit.biography)) if self._get_cur_unit.biography else dt.timedelta(0)
+        return reduce(add, (stage_len(stage) for stage in self._get_cur_unit.operation_stages)) if self._get_cur_unit.operation_stages else dt.timedelta(0)
     
     @no_type_check
     def assigned_components(self) -> dict[str, str | None] | None:
@@ -186,7 +186,7 @@ class UnitManager:
         operation.session_start_time = timestamp()
         operation.additional_info = additional_info
         operation.employee_name = employee.passport_code
-        self._get_cur_unit.biography[operation.number] = operation
+        self._get_cur_unit.operation_stages[operation.number] = operation
         logger.debug(f"Started production stage {operation.name} for unit {self.unit_id}")
 
     def _duplicate_current_operation(self) -> None:
@@ -199,12 +199,12 @@ class UnitManager:
             number=target_pos,
             schema_stage_id=cur_stage.schema_stage_id,
         )
-        updated_bio = self._get_cur_unit.biography.insert(target_pos, dup_operation)
+        updated_bio = self._get_cur_unit.operation_stages.insert(target_pos, dup_operation)
 
         for i in range(target_pos + 1, len(updated_bio)):
             updated_bio[i].number += 1
 
-        UnitWrapper.unit_update_single_field(self.unit_id, "biography", updated_bio)
+        UnitWrapper.unit_update_single_field(self.unit_id, "operation_stages", updated_bio)
 
     async def end_operation(
         self,
@@ -218,7 +218,7 @@ class UnitManager:
         as well as session end timestamp
         """
         operation = self.next_pending_operation
-        bio = self._get_cur_unit.biography
+        bio = self._get_cur_unit.operation_stages
 
         if operation is None:
             raise ValueError("No pending operations found")

@@ -22,8 +22,8 @@ class _UnitWrapper:
             components_units = self.get_components_units(unit.components_ids)
             for component in components_units:
                 self.push_unit(component)
-        if unit.biography:
-            ProdStageWrapper.bulk_push_production_stages(unit.biography)
+        if unit.operation_stages:
+            ProdStageWrapper.bulk_push_production_stages(unit.operation_stages)
         unit_dict = _get_unit_dict_data(unit)
 
         if unit.is_in_db:
@@ -96,12 +96,12 @@ class _UnitWrapper:
 
         # get biography objects instead of dicts
         stage_dicts = unit_dict.get("prod_stage_dicts", [])
-        biography = []
+        operation_stages = []
 
         for stage_dict in stage_dicts:
             production_stage = ProductionStage(**stage_dict)
             production_stage.is_in_db = True
-            biography.append(production_stage)
+            operation_stages.append(production_stage)
 
         # construct a Unit object from the document data
         return Unit(
@@ -109,7 +109,7 @@ class _UnitWrapper:
             uuid=unit_dict.get("uuid"),
             internal_id=unit_dict.get("internal_id"),
             is_in_db=True,
-            biography=biography or None,
+            operation_stages=operation_stages or [],
             components_ids=components_ids or [],
             featured_in_int_id=unit_dict.get("featured_in_int_id"),
             passport_ipfs_cid=unit_dict.get("passport_ipfs_cid"),

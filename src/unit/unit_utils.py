@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def biography_factory(schema_id: str, parent_unit_uuid: str) -> list[ProductionStage]:
-    biography = []
+    operation_stages = []
     production_schema = ProdSchemaWrapper.get_schema_by_id(schema_id)
     if production_schema.production_stages is not None:
         for i, stage in enumerate(production_schema.production_stages):
@@ -28,9 +28,9 @@ def biography_factory(schema_id: str, parent_unit_uuid: str) -> list[ProductionS
                 number=i,
                 schema_stage_id=stage.stage_id,
             )
-            biography.append(operation)
+            operation_stages.append(operation)
 
-    return biography
+    return operation_stages
 
 
 class UnitStatus(enum.Enum):
@@ -75,6 +75,7 @@ class Unit(BaseModel):
     components_ids: list[str] = []
     featured_in_int_id: str | None = None
     employee: Employee | None = None
+    operation_stages: list[ProductionStage] = []
     is_in_db: bool = False
     creation_time: dt.datetime = dt.datetime.now()
     detail: AdditionalDetail | None = None
@@ -94,6 +95,7 @@ class Unit(BaseModel):
 
         # self._component_slots: dict[str, Unit | None] = slots
 
-        self.operation_stages = biography_factory(self.schema_id, self.uuid)
+        if not self.operation_stages:
+            self.operation_stages = biography_factory(self.schema_id, self.uuid)
 
         return super().model_post_init(__context)
