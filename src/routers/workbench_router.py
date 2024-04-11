@@ -57,7 +57,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().model_dump()
+            yield get_workbench_status_data().model_dump_json()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()

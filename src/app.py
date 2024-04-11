@@ -9,9 +9,7 @@ from loguru import logger
 from sse_starlette import EventSourceResponse
 from contextlib import asynccontextmanager
 
-import src.routers.employee_router as employee_router
-import src.routers.unit_router as unit_router
-import src.routers.workbench_router as workbench_router
+from src.routers import employee_router, unit_router, workbench_router
 from src._logging import HANDLERS
 from src.database.database import BaseMongoDbWrapper
 from src.feecc_workbench.Messenger import MessageLevels, message_generator, messenger
@@ -40,9 +38,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Feecc Workbench daemon", lifespan=lifespan)
 
 # include routers
-app.include_router(employee_router.router)
-app.include_router(unit_router.router)
-app.include_router(workbench_router.router)
+app.include_router(employee_router)
+app.include_router(unit_router)
+app.include_router(workbench_router)
 
 # set up CORS
 app.add_middleware(
