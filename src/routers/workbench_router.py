@@ -16,10 +16,10 @@ from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.states import State
 from src.feecc_workbench.translation import translation
 from src.unit.Unit import Unit
-from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
+from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT
+from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 from src.config import CONFIG
 
-WORKBENCH = WorkBench()
 
 router = APIRouter(
     prefix="/workbench",
@@ -182,61 +182,36 @@ async def get_schema(
     )
 
 
-async def handle_barcode_event(event_string: str) -> None:
+@router.post("/handle-barcode-event", response_model=mdl.GenericResponse)
+async def handle_barcode_event(event: mdl.HidEvent) -> mdl.GenericResponse:
     """Handle HID event produced by the barcode reader"""
-    if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
-        await WORKBENCH.end_operation()
-        return
-
-    unit = await get_unit_by_internal_id(event_string)
-
-    match WORKBENCH.state:
-        case State.AUTHORIZED_IDLING_STATE:
-            WORKBENCH.assign_unit(unit)
-        case State.UNIT_ASSIGNED_IDLING_STATE:
-            if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
-                messenger.info(translation("UnitOnWorkbench"))
-                return
-            WORKBENCH.remove_unit()
-            WORKBENCH.assign_unit(unit)
-        case State.GATHER_COMPONENTS_STATE:
-            await WORKBENCH.assign_component_to_unit(unit)
-        case _:
-            logger.error(f"Received input {event_string}. Ignoring event since no one is authorized.")
-
-
-def handle_rfid_event(event_string: str) -> None:
-    """Handle HID event produced by the RFID reader"""
-    if not CONFIG.workbench.login:
-        return
-
-    if WORKBENCH.employee is not None:
-        WORKBENCH.log_out()
-        return
-
     try:
-        employee: Employee = EmployeeWrapper.get_employee_by_card_id(event_string)
-    except EmployeeNotFoundError as e:
-        messenger.warning(translation("NoEmployee"))
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        if event.name != "barcode_reader":
+            raise KeyError(f"Unknown sender: {event.name}")
 
-    WORKBENCH.log_in(employee)
+        logger.debug(f"Handling BARCODE event. String: {event.string}")
 
+        if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
+            await WORKBENCH.end_operation()
+            return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
 
-@router.post("/hid-event", response_model=mdl.GenericResponse)
-async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:  # noqa: B008
-    """Parse the event dict JSON"""
-    try:
-        match event.name:
-            case "rfid_reader":
-                logger.debug(f"Handling RFID event. String: {event.string}")
-                await handle_rfid_event(event.string)
-            case "barcode_reader":
-                logger.debug(f"Handling barcode event. String: {event.string}")
-                await handle_barcode_event(event.string)
+        unit = get_unit_by_internal_id(event.string)
+
+        match WORKBENCH.state:
+            case State.AUTHORIZED_IDLING_STATE:
+                WORKBENCH.assign_unit(unit)
+            case State.UNIT_ASSIGNED_IDLING_STATE:
+                if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
+                    messenger.info(translation("UnitOnWorkbench"))
+                    return mdl.GenericResponse(
+                        status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected"
+                    )
+                WORKBENCH.remove_unit()
+                WORKBENCH.assign_unit(unit)
+            case State.GATHER_COMPONENTS_STATE:
+                await WORKBENCH.assign_component_to_unit(unit)
             case _:
-                raise KeyError(f"Unknown sender: {event.name}")
-
+                logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
 
     except Exception as e:

@@ -7,9 +7,8 @@ from src.database import models as mdl
 from src.feecc_workbench.exceptions import StateForbiddenError
 from src.feecc_workbench.states import State
 from src.unit.Unit import Unit
-from src.feecc_workbench.WorkBench import WorkBench
+from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 
-WORKBENCH = WorkBench()
 
 router = APIRouter(
     prefix="/unit",

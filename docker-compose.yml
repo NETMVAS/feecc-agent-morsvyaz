@@ -22,19 +22,17 @@ services:
       CAMERA__FFMPEG_COMMAND: "Sample"
       WORKBENCH__NUMBER: 1  # Workbench number
       WORKBENCH__LOGIN: false # True if the login function is needed
-      WORKBENCH__DUMMY_EMPLOYEE: "000 000 Operator 000" # 
+      WORKBENCH__DUMMY_EMPLOYEE: "000 000 Operator 000" #
       BUSINESS_LOGIC__START_URI: "Sample" # URI for starting the operator or dispattcher process
       BUSINESS_LOGIC__MANUAL_INPUT_URI: "Sample" # URI for manual input endpoint in business logic
       BUSINESS_LOGIC__STOP_URI: "Sample" # URI for stopping the operator or dispattcher process
-      HID_DEVICES__RFID_READER: "Sample"  # RFID reader device name
-      HID_DEVICES__BARCODE_READER: "Sample"  # Barcode reader device name
     build:
       context: ./
       dockerfile: Dockerfile
     volumes:
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
-      - "./unit-passports/:/src/unit-passports/"
+      - "./unit-certificates/:/src/unit-certificates/"
       - "./workbench.log:/src/workbench.log"
       - "./rootCA.pem:/src/rootCA.pem:ro"
       - "./workbench.pem:/src/workbench.pem:ro"
