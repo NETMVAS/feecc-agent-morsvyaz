@@ -48,18 +48,18 @@ class UnitManager:
         ) -> str:
         """Creates an empty unit instance in the database"""
         unit = Unit(status=status, schema_id=schema.schema_id, operation_name=operation_name, components_ids=[component.uuid for component in components_units])
-        self.database.insert(self.collection, unit.model_dump())
+        UnitWrapper.push_unit(unit)
         return unit.uuid
     
     def _set_component_slots(self, schema_id: str, component: Unit) -> None:
         """Update the _component_slots field"""
         field_name = f"_component_slots.{schema_id}"
         field_val = component
-        UnitWrapper.unit_update_single_field(self.unit_id, field_name, field_val)
+        UnitWrapper.update_by_uuid(self.unit_id, field_name, field_val)
 
     def _set_components_units(self, component: Unit) -> None:
         cur_components = self._get_cur_unit.components_units.append(component)
-        UnitWrapper.unit_update_single_field(self.unit_id, "components_units", cur_components)
+        UnitWrapper.update_by_uuid(self.unit_id, "components_units", cur_components)
 
     def get_unit_by_uuid(self, unit_id: str):
         return UnitWrapper.get_unit_by_uuid(unit_id)
@@ -70,6 +70,10 @@ class UnitManager:
         if self.unit_id is None:
             raise ValueError("Unit id not found.")
         return UnitWrapper.get_unit_by_uuid(self.unit_id)
+
+    @property
+    def schema(self) -> ProductionSchema:
+        return ProdSchemaWrapper.get_schema_by_id(self._get_cur_unit.schema_id)
 
     @property
     def components_schema_ids(self) -> list[str]:
@@ -184,7 +188,7 @@ class UnitManager:
         operation = self.next_pending_operation
         assert operation is not None, f"Unit {self.unit_id} has no pending operations ({self._get_cur_unit.status=})"
         operation.session_start_time = timestamp()
-        operation.additional_info = additional_info
+        operation.stage_data = additional_info
         operation.employee_name = employee.passport_code
         self._get_cur_unit.operation_stages[operation.number] = operation
         logger.debug(f"Started production stage {operation.name} for unit {self.unit_id}")
@@ -197,14 +201,13 @@ class UnitManager:
             name=cur_stage.name,
             parent_unit_uuid=cur_stage.parent_unit_uuid,
             number=target_pos,
-            schema_stage_id=cur_stage.schema_stage_id,
         )
         updated_bio = self._get_cur_unit.operation_stages.insert(target_pos, dup_operation)
 
         for i in range(target_pos + 1, len(updated_bio)):
             updated_bio[i].number += 1
 
-        UnitWrapper.unit_update_single_field(self.unit_id, "operation_stages", updated_bio)
+        UnitWrapper.update_by_uuid(self.unit_id, "operation_stages", updated_bio)
 
     async def end_operation(
         self,
@@ -232,22 +235,21 @@ class UnitManager:
             operation.ended_prematurely = True
 
         if video_hashes:
-            operation.video_hashes = video_hashes
+            UnitWrapper.update_by_uuid(self.unit_id, "certificate_txn_hash", video_hashes)
 
-        if operation.additional_info is not None:
-            operation.additional_info = {
-                **operation.additional_info,
+        if operation.stage_data is not None:
+            operation.stage_data = {
+                **operation.stage_data,
                 **(additional_info or {}),
                 "detail": self._get_cur_unit.detail.to_json(),
             }
 
         operation.completed = True
-        UnitWrapper.unit_update_single_field(self.unit_id, "")
         bio[operation.number] = operation
 
         if all(stage.completed for stage in bio):
             prev_status = self._get_cur_unit.status
-            UnitWrapper.unit_update_single_field(self.unit_id, "status", UnitStatus.built)
+            UnitWrapper.update_by_uuid(self.unit_id, "status", UnitStatus.built)
             logger.info(
                 f"Unit has no more pending production stages. Unit status changed: {prev_status.value} -> "
                 f"{UnitStatus.built.value}"

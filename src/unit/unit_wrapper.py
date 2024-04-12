@@ -43,11 +43,19 @@ class _UnitWrapper:
 
     @time_execution
     def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
-        """Updates single field in unit collection's document."""
+        """Updates single field in unit collection's document by internal id."""
         filters = {"internal_id": unit_internal_id}
         update = {"$set": {field_name: field_val}}
         BaseMongoDbWrapper.update(self.collection, update, filters)
         logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
+
+    @time_execution
+    def update_by_uuid(self, unit_id: str, field_name: str, field_val: Any) -> None:
+        filters = {"uuid": unit_id}
+        update = {"$set": {field_name: field_val}}
+        BaseMongoDbWrapper.update(self.collection, update, filters)
+        logger.debug(f"Unit {unit_id} field '{field_name}' has been set to '{field_val}'")
+
 
     @time_execution
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
@@ -112,8 +120,8 @@ class _UnitWrapper:
             operation_stages=operation_stages or [],
             components_ids=components_ids or [],
             featured_in_int_id=unit_dict.get("featured_in_int_id"),
-            passport_ipfs_cid=unit_dict.get("passport_ipfs_cid"),
-            txn_hash=unit_dict.get("txn_hash"),
+            passport_ipfs_cid=unit_dict.get("certificate_ipfs_cid"),
+            certificate_txn_hash=unit_dict.get("certificate_txn_hash"),
             serial_number=unit_dict.get("serial_number"),
             creation_time=unit_dict.get("creation_time"),
             status=unit_dict.get("status", None),

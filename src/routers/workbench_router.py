@@ -15,7 +15,7 @@ from src.feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNee
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.states import State
 from src.feecc_workbench.translation import translation
-from src.unit.Unit import Unit
+from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from src.config import CONFIG
 

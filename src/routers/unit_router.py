@@ -6,7 +6,7 @@ from src.dependencies import get_revision_pending_units, get_schema_by_id, get_u
 from src.database import models as mdl
 from src.feecc_workbench.exceptions import StateForbiddenError
 from src.feecc_workbench.states import State
-from src.unit.Unit import Unit
+from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import WorkBench
 
 WORKBENCH = WorkBench()
@@ -49,7 +49,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
                 stage_name=stage.name,
                 stage_schema_entry_id=stage.schema_stage_id,
             )
-            for stage in unit.biography
+            for stage in unit.operation_stages
             if stage.completed
         ],
         unit_biography_pending=[
@@ -57,7 +57,7 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
                 stage_name=stage.name,
                 stage_schema_entry_id=stage.schema_stage_id,
             )
-            for stage in unit.biography
+            for stage in unit.operation_stages
             if not stage.completed
         ],
         unit_components=unit.components_schema_ids or None,

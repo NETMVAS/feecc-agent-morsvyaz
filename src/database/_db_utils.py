@@ -4,7 +4,7 @@ import sys
 from loguru import logger
 from pymongo import MongoClient
 
-from ..unit.Unit import Unit
+from src.unit.unit_utils import Unit
 
 
 def _get_database_client(mongo_connection_uri: str) -> MongoClient:
@@ -24,11 +24,11 @@ def _get_database_client(mongo_connection_uri: str) -> MongoClient:
 
 def _get_unit_dict_data(unit: Unit) -> dict[str, str | bool | None | list[str] | dt.datetime]:
     return {
-        "schema_id": unit.schema.schema_id,
+        "schema_id": unit.schema_id,
         "uuid": unit.uuid,
         "internal_id": unit.internal_id,
         "certificate_ipfs_cid": unit.certificate_ipfs_cid,
-        "txn_hash": unit.txn_hash,
+        "certificate_txn_hash": unit.certificate_txn_hash,
         "serial_number": unit.serial_number,
         "components_internal_ids": unit.components_internal_ids,
         "featured_in_int_id": unit.featured_in_int_id,

@@ -12,7 +12,8 @@ from src.employee.Employee import Employee
 from src.feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.translation import translation
-from src.unit.Unit import Unit
+from src.unit.UnitManager import UnitManager
+from src.unit.unit_utils import Unit
 from src.unit.unit_utils import UnitStatus
 from src.feecc_workbench.utils import is_a_ean13_barcode
 

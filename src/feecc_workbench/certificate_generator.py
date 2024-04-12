@@ -19,13 +19,8 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
         translation("BuildEndTime"): prod_stage.session_end_time,
     }
 
-    if prod_stage.video_hashes is not None:
-        stage[translation("BuildVideoHashes")] = [
-            f"https://gateway.ipfs.io/ipfs/{cid}" for cid in prod_stage.video_hashes
-        ]
-
-    if prod_stage.additional_info:
-        stage[translation("BuildAdditionalInfo")] = prod_stage.additional_info
+    if prod_stage.stage_data:
+        stage[translation("BuildAdditionalInfo")] = prod_stage.stage_data
 
     return stage
 
@@ -58,8 +53,13 @@ def _get_certificate_dict(unit: Unit) -> dict[str, Any]:
     except Exception as e:
         logger.error(str(e))
 
-    if unit.biography:
-        certificate_dict[translation("UnitBiography")] = [_construct_stage_dict(stage) for stage in unit.biography]
+    if unit.operation_stages:
+        certificate_dict[translation("UnitBiography")] = [_construct_stage_dict(stage) for stage in unit.operation_stages]
+
+    if unit.certificate_txn_hash is not None:
+        certificate_dict[translation("BuildVideoHashes")] = [
+            f"https://gateway.ipfs.io/ipfs/{cid}" for cid in unit.certificate_txn_hash
+        ]
 
     if unit.components_ids:
         components_units = UnitWrapper.get_components_units(unit.components_ids)
@@ -68,9 +68,6 @@ def _get_certificate_dict(unit: Unit) -> dict[str, Any]:
 
     if unit.serial_number:
         certificate_dict[translation("UnitSerialNumber")] = unit.serial_number
-
-    if unit.detail:
-        certificate_dict[translation("BuildDetails")] = unit.detail
 
     return certificate_dict
 
