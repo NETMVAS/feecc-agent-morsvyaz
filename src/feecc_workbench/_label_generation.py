@@ -83,7 +83,7 @@ def create_seal_tag() -> pathlib.Path:
     seal_tag_draw = ImageDraw.Draw(seal_tag_image)
 
     # specify fonts
-    font_path = "media/helvetica-cyrillic-bold.ttf"
+    font_path = "../media/helvetica-cyrillic-bold.ttf"
     font_size: int = 52
     font = ImageFont.truetype(font=font_path, size=font_size)
 

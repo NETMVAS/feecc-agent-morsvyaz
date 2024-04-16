@@ -2,14 +2,13 @@ from loguru import logger
 from typing import Any
 
 from src.database.database import BaseMongoDbWrapper
-from src.database._db_utils import _get_unit_dict_data
 from src.prod_stage.ProductionStage import ProductionStage
 from src.prod_stage.prod_stage_wrapper import ProdStageWrapper
 from src.feecc_workbench.Types import Document
 from src.feecc_workbench.utils import time_execution
 from src.feecc_workbench.exceptions import UnitNotFoundError
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
-from src.unit.unit_utils import Unit, UnitStatus
+from src.unit.unit_utils import Unit, UnitStatus, _get_unit_dict_data
 
 
 class _UnitWrapper:

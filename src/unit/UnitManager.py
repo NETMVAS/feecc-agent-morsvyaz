@@ -58,7 +58,7 @@ class UnitManager:
         UnitWrapper.update_by_uuid(self.unit_id, field_name, field_val)
 
     def _set_components_units(self, component: Unit) -> None:
-        cur_components = self._get_cur_unit.components_units.append(component)
+        cur_components = self.components_units.append(component)
         UnitWrapper.update_by_uuid(self.unit_id, "components_units", cur_components)
 
     def get_unit_by_uuid(self, unit_id: str):
@@ -83,11 +83,15 @@ class UnitManager:
 
     @property
     def components_internal_ids(self) -> list[str]:
-        return [c.internal_id for c in self._get_cur_unit.components_units]
+        return [c.internal_id for c in self.components_units]
 
     @property
     def model_name(self) -> str:
         return self._get_cur_unit.unit_name
+
+    @property
+    def components_units(self) -> list[Unit]:
+        return UnitWrapper.get_components_units(self._get_cur_unit.components_ids)
 
     @property
     def components_filled(self) -> bool:
@@ -119,7 +123,7 @@ class UnitManager:
     @no_type_check
     def assigned_components(self) -> dict[str, str | None] | None:
         """get a mapping for all the currently assigned components VS the desired components"""
-        assigned_components = {component.schema_id: component.internal_id for component in self._get_cur_unit.components_units}
+        assigned_components = {component.schema_id: component.internal_id for component in self.components_units}
 
         for component_name in self._get_cur_unit.components_schema_ids:
             if component_name not in assigned_components:

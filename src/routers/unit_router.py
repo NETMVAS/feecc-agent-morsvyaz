@@ -60,8 +60,8 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
             for stage in unit.operation_stages
             if not stage.completed
         ],
-        unit_components=unit.components_schema_ids or None,
-        schema_id=unit.schema.schema_id,
+        unit_components=unit.components_ids or None,
+        schema_id=unit.schema_id,
     )
 
 
