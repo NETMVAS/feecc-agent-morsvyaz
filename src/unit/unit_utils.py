@@ -101,7 +101,7 @@ class Unit(BaseModel):
 
     def model_post_init(self, __context: enum.Any) -> None:
         self.schema_id = self.schema.schema_id
-        if not self.schema.production_stages and self.status is UnitStatus.production:
+        if not self.schema.schema_stages and self.status is UnitStatus.production:
             self.status = UnitStatus.built
 
         if self.components_units:

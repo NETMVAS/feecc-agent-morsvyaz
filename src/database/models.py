@@ -122,7 +122,7 @@ class ProductionSchema(BaseModel):
     schema_id: str = Field(default_factory=lambda: uuid4().hex)
     schema_name: str
     schema_print_name: str | None = None
-    production_stages: list[ProductionSchemaStage]
+    schema_stages: list[ProductionSchemaStage]
     components_schema_ids: list[str] | None = None
     parent_schema_id: str | None = None
     schema_type: str | None = None
