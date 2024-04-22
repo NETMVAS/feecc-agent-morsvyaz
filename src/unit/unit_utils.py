@@ -2,15 +2,20 @@ from __future__ import annotations
 
 import enum
 import datetime as dt
+
 from pydantic import BaseModel
 from uuid import uuid4
+from typing import TYPE_CHECKING
 
 from src.prod_stage.ProductionStage import ProductionStage
-from src.feecc_workbench._label_generation import Barcode
+from src.feecc_workbench._label_generation import Barcode, save_barcode
 from src.employee.Employee import Employee
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
-from src.unit.unit_wrapper import UnitWrapper
 from src.database.models import ProductionSchema
+
+
+if TYPE_CHECKING:
+    from src.unit.unit_wrapper import UnitWrapper
 
 
 def biography_factory(schema_id: str, parent_unit_uuid: str) -> list[ProductionStage]:
@@ -72,12 +77,14 @@ def _get_unit_dict_data(unit: Unit) -> dict[str, str | bool | None | list[str] |
 
 
 class Unit(BaseModel):
+    class Config:
+        arbitrary_types_allowed=True
+
     status: UnitStatus
     schema_id: str  # The id of the schema used in production
     uuid: str = uuid4().hex
     operation_name: str  # The name of the operation (simple, complex etc)
     barcode: Barcode = Barcode(str(int(uuid, 16))[:12])
-    internal_id: str = str(barcode.barcode.get_fullcode())
     schema: ProductionSchema | None = None  # Used for initialization
     components_units: list[Unit] | None = None
     certificate_ipfs_cid: str | None = None
@@ -107,6 +114,9 @@ class Unit(BaseModel):
             slots = {schema_id: None for schema_id in (self.schema.required_components_schema_ids or [])}
 
         self._component_slots: dict[str, Unit | None] = slots
+
+        self.internal_id: str = str(self.barcode.barcode.get_fullcode())
+        save_barcode(self.barcode)
 
         if not self.operation_stages:
             self.operation_stages = biography_factory(self.schema_id, self.uuid)

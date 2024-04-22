@@ -8,7 +8,7 @@ from src.employee.Employee import Employee
 from src.feecc_workbench.exceptions import StateForbiddenError
 from src.feecc_workbench.WorkBench import WorkBench
 
-WORKBENCH = WorkBench()
+WORKBENCH = WorkBench
 
 router = APIRouter(
     prefix="/employee",

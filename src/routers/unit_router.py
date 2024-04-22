@@ -9,7 +9,7 @@ from src.feecc_workbench.states import State
 from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import WorkBench
 
-WORKBENCH = WorkBench()
+WORKBENCH = WorkBench
 
 router = APIRouter(
     prefix="/unit",

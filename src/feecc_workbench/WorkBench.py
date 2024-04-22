@@ -31,7 +31,7 @@ from src.unit.UnitManager import UnitManager
 STATE_SWITCH_EVENT = asyncio.Event()
 
 
-class WorkBench:
+class _WorkBench:
     """
     Work bench is a union of an Employee, working at it and Camera attached.
     It provides highly abstract interface for interaction with them
@@ -379,3 +379,6 @@ class WorkBench:
         message = "Workbench shutdown sequence complete"
         logger.info(message)
         messenger.success(translation("FinishServer"))
+
+
+WorkBench = _WorkBench()

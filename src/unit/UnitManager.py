@@ -182,8 +182,8 @@ class UnitManager:
         component.featured_in_int_id = self._get_cur_unit.internal_id
         logger.info(f"Component {component.model_name} has been assigned to a composite Unit {self.model_name}")
         messenger.success(
-            f"{translation("Component")} \
-{component.model_name} {translation("AssignedToUnit")} \
+            f"{translation('Component')} \
+{component.model_name} {translation('AssignedToUnit')} \
 {self.model_name}"
         )
 

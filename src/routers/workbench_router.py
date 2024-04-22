@@ -19,7 +19,7 @@ from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from src.config import CONFIG
 
-WORKBENCH = WorkBench()
+WORKBENCH = WorkBench
 
 router = APIRouter(
     prefix="/workbench",
@@ -152,7 +152,7 @@ def get_schemas() -> mdl.SchemasList:
         handled_schemas.add(schema.schema_id)
         return mdl.SchemaListEntry(
             schema_id=schema.schema_id,
-            schema_name=schema.unit_name,
+            schema_name=schema.schema_name,
             included_schemas=included_schemas,
         )
 

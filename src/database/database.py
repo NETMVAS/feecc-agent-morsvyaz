@@ -26,6 +26,9 @@ class _BaseMongoDbWrapper:
         self._client.close()
         logger.info("MongoDB connection closed")
 
+    def create_index(self, collection: str, index_name: str) -> None:
+        self._database[collection].create_index(index_name)
+
     def insert(self, collection: str, entity: dict[str, Any]) -> None:
         """Inserts the entity in the specified collection."""
         self._database[collection].insert_one(entity)

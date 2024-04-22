@@ -1,1 +1,3 @@
 workbench.log
+.mypy_cache
+__pycache__

@@ -116,18 +116,18 @@ class Barcode:
         self.barcode: barcode.EAN13 = barcode.get("ean13", self.unit_code, writer=ImageWriter())
         self.basename: str = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
         self.filename: str = f"{self.basename}.png"
-        self.save_barcode(self.barcode)
 
-    def save_barcode(self, ean_code: barcode.EAN13) -> str:
-        """Method that saves the barcode image"""
-        dir_ = pathlib.Path(self.filename).parent
-        if not dir_.is_dir():
-            dir_.mkdir(parents=True)
-        barcode_path = str(
-            ean_code.save(self.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
-        )
-        with Image.open(barcode_path) as img:
-            img = _resize_to_paper_aspect_ratio(img)
-            img.save(barcode_path)
 
-        return barcode_path
+def save_barcode(barcode: Barcode) -> str:
+    """Method that saves the barcode image"""
+    dir_ = pathlib.Path(barcode.filename).parent
+    if not dir_.is_dir():
+        dir_.mkdir(parents=True)
+    barcode_path = str(
+        barcode.ean_code.save(barcode.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
+    )
+    with Image.open(barcode_path) as img:
+        img = _resize_to_paper_aspect_ratio(img)
+        img.save(barcode_path)
+
+    return barcode_path
