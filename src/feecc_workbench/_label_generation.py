@@ -124,7 +124,7 @@ def save_barcode(barcode: Barcode) -> str:
     if not dir_.is_dir():
         dir_.mkdir(parents=True)
     barcode_path = str(
-        barcode.ean_code.save(barcode.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
+        barcode.barcode.save(barcode.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
     )
     with Image.open(barcode_path) as img:
         img = _resize_to_paper_aspect_ratio(img)

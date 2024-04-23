@@ -57,7 +57,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().model_dump()
+            yield get_workbench_status_data().model_dump_json()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -145,7 +145,7 @@ def get_schemas() -> mdl.SchemasList:
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
         included_schemas: list[mdl.SchemaListEntry] | None = (
-            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
+            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.components_schema_ids]
             if schema.is_composite
             else None
         )

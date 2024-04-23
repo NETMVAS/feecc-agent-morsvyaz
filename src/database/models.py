@@ -122,15 +122,16 @@ class ProductionSchema(BaseModel):
     schema_id: str = Field(default_factory=lambda: uuid4().hex)
     schema_name: str
     schema_print_name: str | None = None
-    production_stages: list[ProductionSchemaStage]
+    schema_stages: list[ProductionSchemaStage]
     components_schema_ids: list[str] | None = None
     parent_schema_id: str | None = None
     schema_type: str | None = None
     erp_metadata: dict[str, str] | None = None
+    allowed_positions: list[str] | None = None
 
     @property
     def is_composite(self) -> bool:
-        return self.required_components_schema_ids is not None
+        return self.components_schema_ids is not None
 
     @property
     def is_a_component(self) -> bool:

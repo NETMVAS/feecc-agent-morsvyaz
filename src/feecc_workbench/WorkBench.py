@@ -72,7 +72,7 @@ class _WorkBench:
             message = "Cannot create a new unit unless workbench has state AuthorizedIdling"
             messenger.error(translation("AuthorizedState"))
             raise StateForbiddenError(message)
-        unit = Unit(schema)
+        unit = Unit(schema=schema)
         if CONFIG.printer.print_barcode and CONFIG.printer.enable:
             await self._print_unit_barcode(unit)
         UnitWrapper.push_unit(unit)

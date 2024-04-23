@@ -79,7 +79,7 @@ class UnitManager:
     def components_schema_ids(self) -> list[str]:
         schema_id = self._get_cur_unit.schema_id
         schema = ProdSchemaWrapper.get_schema_by_id(schema_id)
-        return schema.required_components_schema_ids or []
+        return schema.components_schema_ids or []
 
     @property
     def components_internal_ids(self) -> list[str]:

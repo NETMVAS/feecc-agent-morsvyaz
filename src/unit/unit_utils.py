@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 
 def biography_factory(schema_id: str, parent_unit_uuid: str) -> list[ProductionStage]:
     operation_stages = []
-    production_schema = ProdSchemaWrapper.get_schema_by_id(schema_id)
-    if production_schema.production_stages is not None:
-        for i, stage in enumerate(production_schema.production_stages):
+    production_schema: ProductionSchema = ProdSchemaWrapper.get_schema_by_id(schema_id)
+    if production_schema.schema_stages is not None:
+        for i, stage in enumerate(production_schema.schema_stages):
             operation = ProductionStage(
                 name=stage.name,
                 parent_unit_uuid=parent_unit_uuid,
@@ -80,11 +80,12 @@ class Unit(BaseModel):
     class Config:
         arbitrary_types_allowed=True
 
-    status: UnitStatus
-    schema_id: str  # The id of the schema used in production
+    status: UnitStatus | str = UnitStatus.production
+    schema_id: str | None = None  # The id of the schema used in production 
     uuid: str = uuid4().hex
-    operation_name: str  # The name of the operation (simple, complex etc)
+    operation_name: str | None = None # The name of the operation (simple, complex etc)
     barcode: Barcode = Barcode(str(int(uuid, 16))[:12])
+    internal_id: str | None = None
     schema: ProductionSchema | None = None  # Used for initialization
     components_units: list[Unit] | None = None
     certificate_ipfs_cid: str | None = None
@@ -100,23 +101,23 @@ class Unit(BaseModel):
     _component_slots: dict[str, Unit | None] | None = None
 
     def model_post_init(self, __context: enum.Any) -> None:
+        self.internal_id: str = str(self.barcode.barcode.get_fullcode())
+        save_barcode(self.barcode)
+
         self.schema_id = self.schema.schema_id
-        if not self.schema.production_stages and self.status is UnitStatus.production:
+        if not self.schema.schema_stages and self.status is UnitStatus.production:
             self.status = UnitStatus.built
 
         if self.components_units:
             self.components_ids = [component.uuid for component in self.components_units]
             slots: dict[str, Unit | None] = {u.schema_id: u for u in self.components_units}
             assert all(
-                k in (self.schema.required_components_schema_ids or []) for k in slots
+                k in (self.schema.components_schema_ids or []) for k in slots
             ), "Provided components are not a part of the unit schema"
         else:
-            slots = {schema_id: None for schema_id in (self.schema.required_components_schema_ids or [])}
+            slots = {schema_id: None for schema_id in (self.schema.components_schema_ids or [])}
 
         self._component_slots: dict[str, Unit | None] = slots
-
-        self.internal_id: str = str(self.barcode.barcode.get_fullcode())
-        save_barcode(self.barcode)
 
         if not self.operation_stages:
             self.operation_stages = biography_factory(self.schema_id, self.uuid)
