@@ -188,20 +188,17 @@ class _WorkBench:
             raise AssertionError(message)
 
         if manual_input is not None:
+            logger.debug(manual_input)
             response = requests.post(url=CONFIG.business_logic.manual_input_uri, json=manual_input.model_dump())
 
         else:
             response = requests.post(url=CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
             if response.status_code == 504:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
-
+        # logger.debug(f"{response.status_code=}; {response.json()}")
         if response.status_code != 200:
-            try:
-                detail = response.json()["detail"]
-            except:
-                detail = ""
-            messenger.error(f"Something went wrong starting the process: {detail}")
-            raise Exception("Could not start business-logic process.")
+            messenger.error(f"Something went wrong starting the process:")
+            raise Exception(f"Could not start business-logic process.")
 
         self.unit.start_operation(self.employee, additional_info)
         self.switch_state(State.PRODUCTION_STAGE_ONGOING_STATE)
@@ -241,7 +238,7 @@ class _WorkBench:
             data = response.status_code
 
         if response.status_code != 200:
-            messenger(f"Could not end the operation: {data}")
+            messenger.error(f"Could not end the operation: {data}")
             raise Exception(data)
         else:
             self.unit.passport_ipfs_cid = data["ipfs_cid"]
