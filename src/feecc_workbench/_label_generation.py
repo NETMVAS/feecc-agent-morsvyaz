@@ -1,8 +1,11 @@
 import pathlib
 import time
+import os
 from datetime import datetime as dt
-import barcode
+import barcode as bcode
 from barcode.writer import ImageWriter
+from pydantic import BaseModel
+from typing import Any
 
 import qrcode
 from loguru import logger
@@ -110,12 +113,20 @@ def create_seal_tag() -> pathlib.Path:
     return seal_tag_path
 
 
-class Barcode:
-    def __init__(self, unit_code: str) -> None:
-        self.unit_code: str = unit_code
-        self.barcode: barcode.EAN13 = barcode.get("ean13", self.unit_code, writer=ImageWriter())
-        self.basename: str = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
-        self.filename: str = f"{self.basename}.png"
+class Barcode(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+        
+    unit_code: str 
+    barcode: bcode.EAN13 | None = None
+    basename: str | None = None
+    filename: str | None = None
+    def model_post_init(self, __context: Any) -> None:
+        if self.barcode is None:
+            self.barcode = bcode.get("ean13", self.unit_code, writer=ImageWriter())
+            self.basename = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
+            self.filename = f"{self.basename}.png"
+        return super().model_post_init(__context)
 
 
 def save_barcode(barcode: Barcode) -> str:
@@ -126,8 +137,9 @@ def save_barcode(barcode: Barcode) -> str:
     barcode_path = str(
         barcode.barcode.save(barcode.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
     )
-    with Image.open(barcode_path) as img:
-        img = _resize_to_paper_aspect_ratio(img)
-        img.save(barcode_path)
+    if os.path.exists(barcode_path):
+        with Image.open(barcode_path) as img:
+            img = _resize_to_paper_aspect_ratio(img)
+            img.save(barcode_path)
 
     return barcode_path

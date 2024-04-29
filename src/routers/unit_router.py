@@ -43,19 +43,17 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         status_code=status.HTTP_200_OK,
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
-        unit_status=unit.status.value,
-        unit_biography_completed=[
+        unit_status=unit.status,
+        unit_operation_stages_completed=[
             mdl.BiographyStage(
-                stage_name=stage.name,
-                stage_schema_entry_id=stage.schema_stage_id,
+                stage_name=stage.name
             )
             for stage in unit.operation_stages
             if stage.completed
         ],
-        unit_biography_pending=[
+        unit_operation_stages_pending=[
             mdl.BiographyStage(
-                stage_name=stage.name,
-                stage_schema_entry_id=stage.schema_stage_id,
+                stage_name=stage.name
             )
             for stage in unit.operation_stages
             if not stage.completed

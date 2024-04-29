@@ -74,6 +74,18 @@ class UnitManager:
     @property
     def schema(self) -> ProductionSchema:
         return ProdSchemaWrapper.get_schema_by_id(self._get_cur_unit.schema_id)
+    
+    @property
+    def internal_id(self) -> str:
+        return self._get_cur_unit.internal_id
+    
+    @property
+    def status(self) -> UnitStatus | str:
+        return self._get_cur_unit.status
+    
+    @property
+    def operation_stages(self) -> list[ProductionStage]:
+        return self._get_cur_unit.operation_stages
 
     @property
     def components_schema_ids(self) -> list[str]:
@@ -125,7 +137,7 @@ class UnitManager:
         """get a mapping for all the currently assigned components VS the desired components"""
         assigned_components = {component.schema_id: component.internal_id for component in self.components_units}
 
-        for component_name in self._get_cur_unit.components_schema_ids:
+        for component_name in self.components_schema_ids:
             if component_name not in assigned_components:
                 assigned_components[component_name] = None
 
@@ -255,8 +267,8 @@ class UnitManager:
             prev_status = self._get_cur_unit.status
             UnitWrapper.update_by_uuid(self.unit_id, "status", UnitStatus.built)
             logger.info(
-                f"Unit has no more pending production stages. Unit status changed: {prev_status.value} -> "
-                f"{UnitStatus.built.value}"
+                f"Unit has no more pending production stages. Unit status changed: {prev_status} -> "
+                f"{UnitStatus.built}"
             )
             metrics.register_complete_unit(None, self)
 

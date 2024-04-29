@@ -137,7 +137,7 @@ class _WorkBench:
             try:
                 unit = get_first_unit_matching_status(unit, *allowed)
             except AssertionError as e:
-                message = f"Can only assign unit with status: {', '.join(s.value for s in allowed)}. Unit status is {unit.status.value}. Forbidden."
+                message = f"Can only assign unit with status: {', '.join(s for s in allowed)}. Unit status is {unit.status}. Forbidden."
                 messenger.warning(translation("CompletedAssembly"))
                 raise AssertionError(message) from e
 
@@ -153,7 +153,7 @@ class _WorkBench:
         logger.info(message)
         messenger.success(translation("UnitInternalID") + " " + unit.internal_id + " " + translation("OnWorkbench"))
 
-        if not unit.components_filled:
+        if not self.unit.components_filled:
             logger.info(
                 f"Unit {unit.internal_id} is a composition with unsatisfied component requirements. Entering component gathering state."
             )

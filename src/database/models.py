@@ -91,13 +91,12 @@ class UnitOutPending(GenericResponse):
 
 class BiographyStage(BaseModel):
     stage_name: str
-    stage_schema_entry_id: str
 
 
 class UnitInfo(UnitOut):
     unit_status: str
-    unit_biography_completed: list[BiographyStage]
-    unit_biography_pending: list[BiographyStage]
+    unit_operation_stages_completed: list[BiographyStage]
+    unit_operation_stages_pending: list[BiographyStage]
     unit_components: list[str] | None = None
     schema_id: str
 

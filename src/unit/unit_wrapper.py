@@ -3,12 +3,11 @@ from typing import Any
 
 from src.database.database import BaseMongoDbWrapper
 from src.prod_stage.ProductionStage import ProductionStage
-from src.prod_stage.prod_stage_wrapper import ProdStageWrapper
 from src.feecc_workbench.Types import Document
 from src.feecc_workbench.utils import time_execution
 from src.feecc_workbench.exceptions import UnitNotFoundError
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
-from src.unit.unit_utils import Unit, UnitStatus, _get_unit_dict_data
+from src.unit.unit_utils import Unit, UnitStatus
 
 
 class _UnitWrapper:
@@ -21,9 +20,7 @@ class _UnitWrapper:
             components_units = self.get_components_units(unit.components_ids)
             for component in components_units:
                 self.push_unit(component)
-        if unit.operation_stages:
-            ProdStageWrapper.bulk_push_production_stages(unit.operation_stages)
-        unit_dict = _get_unit_dict_data(unit)
+        unit_dict = unit.model_dump(exclude={'barcode'})
 
         if unit.is_in_db:
             filters = {"uuid": unit.uuid}
@@ -101,7 +98,7 @@ class _UnitWrapper:
             component_unit = self.get_unit_by_internal_id(component_internal_id)
             components_ids.append(component_unit.uuid)
 
-        # get biography objects instead of dicts
+        # get operation_stages objects instead of dicts
         stage_dicts = unit_dict.get("prod_stage_dicts", [])
         operation_stages = []
 
@@ -130,7 +127,7 @@ class _UnitWrapper:
     def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
         """Return's units' ids and names filtered by status."""
         pipeline = [  # noqa: CCR001,ECE001
-            {"$match": {"status": status.value}},
+            {"$match": {"status": status}},
             {
                 "$lookup": {
                     "from": "productionSchemas",

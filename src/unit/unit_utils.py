@@ -6,6 +6,7 @@ import datetime as dt
 from pydantic import BaseModel
 from uuid import uuid4
 from typing import TYPE_CHECKING
+from loguru import logger
 
 from src.prod_stage.ProductionStage import ProductionStage
 from src.feecc_workbench._label_generation import Barcode, save_barcode
@@ -33,7 +34,7 @@ def biography_factory(schema_id: str, parent_unit_uuid: str) -> list[ProductionS
     return operation_stages
 
 
-class UnitStatus(enum.Enum):
+class UnitStatus(str, enum.Enum):
     """supported Unit status descriptors"""
 
     production = "production"
@@ -61,30 +62,12 @@ def get_first_unit_matching_status(unit: Unit, *target_statuses: UnitStatus) -> 
     raise AssertionError("Unit features no components that are in allowed states")
 
 
-def _get_unit_dict_data(unit: Unit) -> dict[str, str | bool | None | list[str] | dt.datetime]:
-    return {
-        "schema_id": unit.schema_id,
-        "uuid": unit.uuid,
-        "internal_id": unit.internal_id,
-        "certificate_ipfs_cid": unit.certificate_ipfs_cid,
-        "certificate_txn_hash": unit.certificate_txn_hash,
-        "serial_number": unit.serial_number,
-        "components_internal_ids": unit.components_internal_ids,
-        "featured_in_int_id": unit.featured_in_int_id,
-        "creation_time": unit.creation_time,
-        "status": unit.status.value,
-    }
-
-
 class Unit(BaseModel):
-    class Config:
-        arbitrary_types_allowed=True
-
     status: UnitStatus | str = UnitStatus.production
     schema_id: str | None = None  # The id of the schema used in production 
     uuid: str = uuid4().hex
     operation_name: str | None = None # The name of the operation (simple, complex etc)
-    barcode: Barcode = Barcode(str(int(uuid, 16))[:12])
+    barcode: Barcode | None = None
     internal_id: str | None = None
     schema: ProductionSchema | None = None  # Used for initialization
     components_units: list[Unit] | None = None
@@ -101,23 +84,34 @@ class Unit(BaseModel):
     _component_slots: dict[str, Unit | None] | None = None
 
     def model_post_init(self, __context: enum.Any) -> None:
-        self.internal_id: str = str(self.barcode.barcode.get_fullcode())
+        self.barcode = Barcode(unit_code=str(int(self.uuid, 16))[:12])
         save_barcode(self.barcode)
 
-        self.schema_id = self.schema.schema_id
-        if not self.schema.schema_stages and self.status is UnitStatus.production:
-            self.status = UnitStatus.built
+        if self.internal_id is None:
+            self.internal_id: str = str(self.barcode.barcode.get_fullcode())
 
-        if self.components_units:
-            self.components_ids = [component.uuid for component in self.components_units]
-            slots: dict[str, Unit | None] = {u.schema_id: u for u in self.components_units}
-            assert all(
-                k in (self.schema.components_schema_ids or []) for k in slots
-            ), "Provided components are not a part of the unit schema"
+        if self.schema_id is None:
+            self.schema_id = self.schema.schema_id
         else:
-            slots = {schema_id: None for schema_id in (self.schema.components_schema_ids or [])}
+            if self.schema is None:
+                self.schema = ProdSchemaWrapper.get_schema_by_id(self.schema_id)
 
-        self._component_slots: dict[str, Unit | None] = slots
+        if self.schema is not None:
+            if not self.schema.schema_stages and self.status is UnitStatus.production:
+                self.status = UnitStatus.built
+
+            if self._component_slots is None:
+                if self.components_units is not None:
+                    self.components_ids = [component.uuid for component in self.components_units]
+                    slots: dict[str, Unit | None] = {u.schema_id: u for u in self.components_units}
+                    assert all(
+                        k in (self.schema.components_schema_ids or []) for k in slots
+                    ), "Provided components are not a part of the unit schema"
+                else:
+                    slots = {schema_id: None for schema_id in (self.schema.components_schema_ids or [])}
+
+                self._component_slots: dict[str, Unit | None] = slots
+
 
         if not self.operation_stages:
             self.operation_stages = biography_factory(self.schema_id, self.uuid)
