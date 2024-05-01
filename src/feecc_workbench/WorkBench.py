@@ -200,15 +200,11 @@ class _WorkBench:
 
         else:
             response = requests.post(url=CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
-            if response.status_code == 304:
+            if response.status_code == 504:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
 
         if response.status_code != 200:
-            try:
-                detail = response.json()["detail"]
-            except:
-                detail = ""
-            messenger.error(f"Something went wrong starting the process: {detail}")
+            messenger.error("Something went wrong starting the process:")
             raise Exception("Could not start business-logic process.")
 
         self.unit.start_operation(self.employee, additional_info)

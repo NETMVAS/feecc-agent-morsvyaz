@@ -87,6 +87,9 @@ class Unit(BaseModel):
         self.barcode = Barcode(unit_code=str(int(self.uuid, 16))[:12])
         save_barcode(self.barcode)
 
+        if self.operation_name is None:
+            self.operation_name = self.schema.schema_name
+
         if self.internal_id is None:
             self.internal_id: str = str(self.barcode.barcode.get_fullcode())
 
