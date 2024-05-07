@@ -21,13 +21,11 @@ services:
       CAMERA__ENABLE: false  # Whether to enable Cameraman or not
       CAMERA__FFMPEG_COMMAND: "Sample"
       WORKBENCH__NUMBER: 1  # Workbench number
-      WORKBENCH__LOGIN: false # True if the login function is needed
-      WORKBENCH__DUMMY_EMPLOYEE: "000 000 Operator 000" # 
-      BUSINESS_LOGIC__START_URI: "http://business-logic:5001/operator/start" # URI for starting the operator or dispattcher process
-      BUSINESS_LOGIC__MANUAL_INPUT_URI: "http://business-logic:5001/operator/manual-input" # URI for manual input endpoint in business logic
-      BUSINESS_LOGIC__STOP_URI: "http://business-logic:5001/operator/stop" # URI for stopping the operator or dispattcher process
-      HID_DEVICES__RFID_READER: "Sample"  # RFID reader device name
-      HID_DEVICES__BARCODE_READER: "Sample"  # Barcode reader device name
+      WORKBENCH__LOGIN: true # True if the login function is needed
+      WORKBENCH__DUMMY_EMPLOYEE: "000 000 Operator 000" #
+      BUSINESS_LOGIC__START_URI: "Sample" # URI for starting the operator or dispattcher process
+      BUSINESS_LOGIC__MANUAL_INPUT_URI: "Sample" # URI for manual input endpoint in business logic
+      BUSINESS_LOGIC__STOP_URI: "Sample" # URI for stopping the operator or dispattcher process
     build:
       context: ./
       dockerfile: Dockerfile

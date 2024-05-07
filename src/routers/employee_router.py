@@ -2,13 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from starlette import status
 
-from src.dependencies import get_employee_by_card_id, get_employee_by_username
+from src.config import CONFIG
+from src.dependencies import get_employee_by_card_id, get_employee_by_username, identify_sender
 from src.database import models as mdl
 from src.employee.Employee import Employee
-from src.feecc_workbench.exceptions import StateForbiddenError
-from src.feecc_workbench.WorkBench import WorkBench
+from src.employee.employee_wrapper import EmployeeWrapper
+from src.feecc_workbench.Messenger import messenger
+from src.feecc_workbench.translation import translation
+from src.feecc_workbench.exceptions import StateForbiddenError, EmployeeNotFoundError
+from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 
-WORKBENCH = WorkBench
 
 router = APIRouter(
     prefix="/employee",
@@ -64,6 +67,35 @@ def log_in_employee(
         )
 
     except StateForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
+
+
+@router.post("/handle-rfid-event", response_model=mdl.GenericResponse)
+async def handle_rfid_event(event: mdl.HidEvent) -> mdl.GenericResponse:
+    try:
+        if event.name != "rfid_reader":
+            raise KeyError(f"Unknown sender: {event.name}")
+
+        logger.debug(f"Handling RFID event. String: {event.string}")
+
+        if not CONFIG.workbench.login:
+            return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
+
+        if WORKBENCH.employee is not None:
+            WORKBENCH.log_out()
+            return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
+
+        try:
+            employee: Employee = EmployeeWrapper.get_employee_by_card_id(card_id=event.string)
+        except EmployeeNotFoundError as e:
+            messenger.warning(translation("NoEmployee"))
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+        WORKBENCH.log_in(employee)
+        return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
+
+    except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
 
 

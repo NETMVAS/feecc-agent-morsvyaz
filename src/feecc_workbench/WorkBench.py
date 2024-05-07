@@ -196,13 +196,14 @@ class _WorkBench:
             raise AssertionError(message)
 
         if manual_input is not None:
+            logger.debug(manual_input)
             response = requests.post(url=CONFIG.business_logic.manual_input_uri, json=manual_input.model_dump())
 
         else:
             response = requests.post(url=CONFIG.business_logic.start_uri, json=self.unit.schema.model_dump())
             if response.status_code == 504:
                 raise ManualInputNeeded(response.json())  # pass business-logic detail to frontend
-
+        # logger.debug(f"{response.status_code=}; {response.json()}")
         if response.status_code != 200:
             messenger.error("Something went wrong starting the process:")
             raise Exception("Could not start business-logic process.")
@@ -249,8 +250,8 @@ class _WorkBench:
             logger.error(message)
 
         if response.status_code != 200:
-            messenger(f"Could not end the operation: {response}")
-            raise Exception(response)
+            messenger.error(f"Could not end the operation: {data}")
+            raise Exception(data)
         else:
             cid = data.pop("ipfs_cid")
             UnitWrapper.update_by_uuid(self.unit.unit_id, "certificate_ipfs_cid", cid)
@@ -377,4 +378,5 @@ class _WorkBench:
         messenger.success(translation("FinishServer"))
 
 
-WorkBench = _WorkBench()
+
+Workbench = _WorkBench()

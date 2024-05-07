@@ -17,7 +17,7 @@ WORKDIR /src
 COPY --from=requirements-stage /tmp/requirements.txt /src/requirements.txt
 RUN apt-get update && apt-get install libcups2-dev -y && apt-get install -y ffmpeg
 RUN pip install --no-cache-dir --upgrade -r /src/requirements.txt
-COPY . .
+COPY . /src
 COPY --from=requirements-stage /tmp/version.txt /src/version.txt
 HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=12 \
     CMD curl --fail http://localhost:5000/docs || exit 1

@@ -45,11 +45,6 @@ class BusinessLogic(BaseModel):
     stop_uri: str
 
 
-class HidDevices(BaseModel):
-    rfid_reader: str
-    barcode_reader: str
-
-
 class _Settings(BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__")
 
@@ -62,7 +57,6 @@ class _Settings(BaseSettings):
     camera: Camera
     workbench: Workbench
     business_logic: BusinessLogic
-    hid_devices: HidDevices
 
 
 CONFIG = _Settings()
