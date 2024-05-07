@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.results import BulkWriteResult
 
-from ._db_utils import _get_database_client
+from src.database._db_utils import _get_database_client
 from src.config import CONFIG
 from src.feecc_workbench.Types import Document
 
@@ -26,6 +26,9 @@ class _BaseMongoDbWrapper:
         self._client.close()
         logger.info("MongoDB connection closed")
 
+    def create_index(self, collection: str, index_name: str) -> None:
+        self._database[collection].create_index(index_name)
+
     def insert(self, collection: str, entity: dict[str, Any]) -> None:
         """Inserts the entity in the specified collection."""
         self._database[collection].insert_one(entity)
@@ -33,8 +36,8 @@ class _BaseMongoDbWrapper:
     def find(self, collection: str, filters: dict[str, Any] = {}, **kwargs) -> list[Document]:
         """Returns the list of all items if filter is not specified. Otherwise returns the whole collection."""
         return list(self._database[collection].find(filter=filters, **kwargs))
-    
-    def find_one(self, collection: str, filters: dict[str, Any], **kwargs) -> Document | None:
+
+    def find_one(self, collection: str, filters: dict[str, Any], **kwargs) -> dict[str, Any] | None:
         return self._database[collection].find_one(filter=filters, **kwargs)
 
     def update(self, collection: str, update: dict[str, Any], filters: dict[str, Any]) -> None:

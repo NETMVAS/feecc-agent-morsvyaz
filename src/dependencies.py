@@ -5,15 +5,15 @@ from loguru import logger
 
 from src.database import models
 from src.config import CONFIG
+from src.unit.unit_utils import Unit, UnitStatus
 from src.unit.unit_wrapper import UnitWrapper
+
 from src.employee.employee_wrapper import EmployeeWrapper
-from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from src.employee.Employee import Employee
+from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from src.feecc_workbench.exceptions import EmployeeNotFoundError, UnitNotFoundError
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.translation import translation
-from src.unit.Unit import Unit
-from src.unit.unit_utils import UnitStatus
 from src.feecc_workbench.utils import is_a_ean13_barcode
 
 

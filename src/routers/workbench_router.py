@@ -20,7 +20,6 @@ from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT
 from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 from src.config import CONFIG
 
-
 router = APIRouter(
     prefix="/workbench",
     tags=["workbench"],
@@ -35,8 +34,8 @@ def get_workbench_status_data() -> mdl.WorkbenchOut:
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
         operation_ongoing=WORKBENCH.state.value == State.PRODUCTION_STAGE_ONGOING_STATE.value,
         unit_internal_id=unit.internal_id if unit else None,
-        unit_status=unit.status.value if unit else None,
-        unit_biography=[stage.name for stage in unit.biography] if unit else None,
+        unit_status=unit.status if unit else None,
+        unit_biography=[stage.name for stage in unit.operation_stages] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
     )
 
@@ -119,10 +118,10 @@ async def start_operation(
 
 
 @router.post("/end-operation", response_model=mdl.GenericResponse)
-async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -> mdl.GenericResponse:
+async def end_operation(workbench_data: mdl.OperationStageData) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        await WORKBENCH.end_operation(workbench_data.additional_info, workbench_data.premature_ending)
+        await WORKBENCH.end_operation(workbench_data.stage_data, workbench_data.premature_ending)
         unit = WORKBENCH.unit
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
@@ -145,14 +144,14 @@ def get_schemas() -> mdl.SchemasList:
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
         included_schemas: list[mdl.SchemaListEntry] | None = (
-            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
+            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.components_schema_ids]
             if schema.is_composite
             else None
         )
         handled_schemas.add(schema.schema_id)
         return mdl.SchemaListEntry(
             schema_id=schema.schema_id,
-            schema_name=schema.unit_name,
+            schema_name=schema.schema_name,
             included_schemas=included_schemas,
         )
 

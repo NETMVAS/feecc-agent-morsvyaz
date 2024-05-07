@@ -57,7 +57,7 @@ async def _print_image_task(file_path: Path) -> None:
 def _annotate_image(image: Image, text: str) -> Image:
     """add an annotation to the bottom of the image"""
     # wrap the message
-    font_path = "media/helvetica-cyrillic-bold.ttf"
+    font_path = "../media/helvetica-cyrillic-bold.ttf"
     assert os.path.exists(font_path), f"Cannot open font at {font_path=}. No such file."
     font: FreeTypeFont = ImageFont.truetype(font_path, 35)
     avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))

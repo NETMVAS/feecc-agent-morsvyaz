@@ -10,8 +10,8 @@ from sse_starlette import EventSourceResponse
 from contextlib import asynccontextmanager
 
 from src.routers import employee_router, unit_router, workbench_router
-from src._logging import HANDLERS
 from src.database.database import BaseMongoDbWrapper
+from src._logging import HANDLERS
 from src.feecc_workbench.Messenger import MessageLevels, message_generator, messenger
 from src.database.models import GenericResponse
 from src.feecc_workbench.utils import check_service_connectivity

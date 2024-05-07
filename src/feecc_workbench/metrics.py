@@ -8,12 +8,13 @@ from aioprometheus.collectors import Summary
 
 from ..employee.Employee import Employee
 from .utils import export_version
+from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 
 if TYPE_CHECKING:
-    from ..unit.Unit import Unit
+    from src.unit.unit_utils import Unit
 
 
-class Metrics():
+class Metrics:
     def __init__(self) -> None:
         self._metrics: dict[str, Summary] = {}
         export_version()
@@ -55,41 +56,45 @@ class Metrics():
 
     def register_create_unit(self, employee: Employee | None, unit: Unit) -> None:
         """Register create_unit event"""
+        unit_name = ProdSchemaWrapper.get_schema_by_id(unit.schema_id).schema_name
         labels = {
             "event_type": "create_unit",
             "employee_name": employee.name if employee else "Unknown",
             "unit_id": unit.internal_id,
-            "unit_type": unit.schema.unit_name,
+            "unit_type": unit_name,
         }
         self.register(name="production_metrics", description=None, labels=labels)
 
     def register_complete_unit(self, employee: Employee | None, unit: Unit) -> None:
         """Register complete_unit event"""
+        unit_name = ProdSchemaWrapper.get_schema_by_id(unit.schema_id).unit_name
         labels = {
             "event_type": "complete_unit",
             "employee_name": employee.name if employee else "Unknown",
             "unit_id": unit.internal_id,
-            "unit_type": unit.schema.unit_name,
+            "unit_type": unit_name,
         }
         self.register(name="production_metrics", description=None, labels=labels)
 
     def register_complete_operation(self, employee: Employee | None, unit: Unit) -> None:
         """Register complete_operation event"""
+        unit_name = ProdSchemaWrapper.get_schema_by_id(unit.schema_id).unit_name
         labels = {
             "event_type": "complete_operation",
             "employee_name": employee.name if employee else "Unknown",
             "unit_id": unit.internal_id,
-            "unit_type": unit.schema.unit_name,
+            "unit_type": unit_name,
         }
         self.register(name="production_metrics", description=None, labels=labels)
 
     def register_generate_passport(self, employee: Employee | None, unit: Unit) -> None:
         """Register generate_passport event"""
+        unit_name = ProdSchemaWrapper.get_schema_by_id(unit.schema_id).unit_name
         labels = {
             "event_type": "generate_passport",
             "employee_name": employee.name if employee else "Unknown",
             "unit_id": unit.internal_id,
-            "unit_type": unit.schema.unit_name,
+            "unit_type": unit_name,
         }
         self.register(name="production_metrics", description=None, labels=labels)
 
