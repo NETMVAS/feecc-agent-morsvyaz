@@ -91,13 +91,12 @@ class UnitOutPending(GenericResponse):
 
 class BiographyStage(BaseModel):
     stage_name: str
-    stage_schema_entry_id: str
 
 
 class UnitInfo(UnitOut):
     unit_status: str
-    unit_biography_completed: list[BiographyStage]
-    unit_biography_pending: list[BiographyStage]
+    unit_operation_stages_completed: list[BiographyStage]
+    unit_operation_stages_pending: list[BiographyStage]
     unit_components: list[str] | None = None
     schema_id: str
 
@@ -111,7 +110,6 @@ class HidEvent(BaseModel):
 
 class ProductionSchemaStage(BaseModel):
     name: str
-    stage_id: str
     type: str | None = None  # noqa: A003
     description: str | None = None
     equipment: list[str] | None = None
@@ -121,10 +119,10 @@ class ProductionSchemaStage(BaseModel):
 
 class ProductionSchema(BaseModel):
     schema_id: str = Field(default_factory=lambda: uuid4().hex)
-    unit_name: str
-    unit_short_name: str | None = None
-    production_stages: list[ProductionSchemaStage]
-    required_components_schema_ids: list[str] | None = None
+    schema_name: str
+    schema_print_name: str | None = None
+    schema_stages: list[ProductionSchemaStage]
+    components_schema_ids: list[str] | None = None
     parent_schema_id: str | None = None
     schema_type: str | None = None
     erp_metadata: dict[str, str] | None = None
@@ -132,7 +130,7 @@ class ProductionSchema(BaseModel):
 
     @property
     def is_composite(self) -> bool:
-        return self.required_components_schema_ids is not None
+        return self.components_schema_ids is not None
 
     @property
     def is_a_component(self) -> bool:
@@ -140,9 +138,9 @@ class ProductionSchema(BaseModel):
 
     @property
     def print_name(self) -> str:
-        if self.unit_short_name is None:
-            return self.unit_name
-        return self.unit_short_name
+        if self.schema_print_name is None:
+            return self.schema_name
+        return self.schema_print_name
 
     def is_allowed(self, position: str) -> bool:
         if not self.allowed_positions:

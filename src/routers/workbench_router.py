@@ -15,11 +15,11 @@ from src.feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNee
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.states import State
 from src.feecc_workbench.translation import translation
-from src.unit.Unit import Unit
+from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
 from src.config import CONFIG
 
-WORKBENCH = WorkBench()
+WORKBENCH = WorkBench
 
 router = APIRouter(
     prefix="/workbench",
@@ -35,8 +35,8 @@ def get_workbench_status_data() -> mdl.WorkbenchOut:
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
         operation_ongoing=WORKBENCH.state.value == State.PRODUCTION_STAGE_ONGOING_STATE.value,
         unit_internal_id=unit.internal_id if unit else None,
-        unit_status=unit.status.value if unit else None,
-        unit_biography=[stage.name for stage in unit.biography] if unit else None,
+        unit_status=unit.status if unit else None,
+        unit_biography=[stage.name for stage in unit.operation_stages] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
     )
 
@@ -57,7 +57,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().model_dump()
+            yield get_workbench_status_data().model_dump_json()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -111,7 +111,7 @@ async def start_operation(
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
     except ManualInputNeeded as e:
-        return JSONResponse(status_code=status.HTTP_304_NOT_MODIFIED, content=e.args)
+        return JSONResponse(status_code=status.HTTP_504_GATEWAY_TIMEOUT, content=e.args)
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
@@ -137,20 +137,22 @@ async def end_operation(workbench_data: mdl.OperationStageData) -> mdl.GenericRe
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
 def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas(WORKBENCH.employee.position)}
+    all_schemas = {
+        schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas(WORKBENCH.employee.position)
+    }
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
         included_schemas: list[mdl.SchemaListEntry] | None = (
-            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
+            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.components_schema_ids]
             if schema.is_composite
             else None
         )
         handled_schemas.add(schema.schema_id)
         return mdl.SchemaListEntry(
             schema_id=schema.schema_id,
-            schema_name=schema.unit_name,
+            schema_name=schema.schema_name,
             included_schemas=included_schemas,
         )
 
