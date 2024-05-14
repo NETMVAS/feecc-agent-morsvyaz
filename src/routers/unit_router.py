@@ -6,7 +6,7 @@ from src.dependencies import get_revision_pending_units, get_schema_by_id, get_u
 from src.database import models as mdl
 from src.feecc_workbench.exceptions import StateForbiddenError
 from src.feecc_workbench.states import State
-from src.unit.Unit import Unit
+from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 
 router = APIRouter(

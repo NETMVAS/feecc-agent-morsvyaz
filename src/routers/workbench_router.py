@@ -15,7 +15,7 @@ from src.feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNee
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.states import State
 from src.feecc_workbench.translation import translation
-from src.unit.Unit import Unit
+from src.unit.unit_utils import Unit
 from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT
 from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 from src.config import CONFIG
@@ -200,7 +200,7 @@ async def handle_barcode_event(event: mdl.HidEvent) -> mdl.GenericResponse:
             case State.AUTHORIZED_IDLING_STATE:
                 WORKBENCH.assign_unit(unit)
             case State.UNIT_ASSIGNED_IDLING_STATE:
-                if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
+                if WORKBENCH.unit is not None and WORKBENCH.unit.unit_id == unit.uuid:
                     messenger.info(translation("UnitOnWorkbench"))
                     return mdl.GenericResponse(
                         status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected"
