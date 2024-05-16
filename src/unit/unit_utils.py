@@ -73,7 +73,7 @@ class Unit(BaseModel):
     components_units: list[Unit] | None = None
     certificate_ipfs_cid: str | None = None
     certificate_ipfs_link: str | None = None
-    certificate_txn_hash: str | None = None
+    certificate_txn_hash: list[str] | None = None
     serial_number: str | None = None
     components_ids: list[str] = []
     featured_in_int_id: str | None = None

@@ -78,7 +78,7 @@ class Metrics:
 
     def register_complete_operation(self, employee: Employee | None, unit: Unit) -> None:
         """Register complete_operation event"""
-        unit_name = ProdSchemaWrapper.get_schema_by_id(unit.schema_id).unit_name
+        unit_name = ProdSchemaWrapper.get_schema_by_id(unit.schema_id).schema_name
         labels = {
             "event_type": "complete_operation",
             "employee_name": employee.name if employee else "Unknown",

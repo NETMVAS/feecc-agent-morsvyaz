@@ -242,7 +242,7 @@ class UnitManager:
         if operation is None:
             raise ValueError("No pending operations found")
 
-        logger.info(f"Ending production stage {operation.name} on unit {self.uuid}")
+        logger.info(f"Ending production stage {operation.name} on unit {self.unit_id}")
         operation.session_end_time = override_timestamp or timestamp()
 
         if premature:
