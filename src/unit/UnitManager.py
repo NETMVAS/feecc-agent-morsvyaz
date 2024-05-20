@@ -5,15 +5,14 @@ import datetime as dt
 from functools import reduce
 from operator import add
 from typing import no_type_check
-from uuid import uuid4
 from loguru import logger
-from functools import lru_cache
+from dataclasses import asdict
 
 from src.unit.unit_wrapper import UnitWrapper
 from src.employee.Employee import Employee
 from src.feecc_workbench.Messenger import messenger
 from src.feecc_workbench.metrics import metrics
-from src.database.models import ProductionSchema, AdditionalDetail
+from src.database.models import ProductionSchema
 from src.prod_stage.ProductionStage import ProductionStage
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from src.feecc_workbench.translation import translation
@@ -206,7 +205,9 @@ class UnitManager:
         operation.session_start_time = timestamp()
         operation.stage_data = additional_info
         operation.employee_name = employee.passport_code
-        self._get_cur_unit.operation_stages[operation.number] = operation
+        operation_stages = self._get_cur_unit.operation_stages
+        operation_stages[operation.number] = operation
+        UnitWrapper.update_by_uuid(self.unit_id, "operation_stages", [asdict(stage) for stage in operation_stages])
         logger.debug(f"Started production stage {operation.name} for unit {self.unit_id}")
 
     def _duplicate_current_operation(self) -> None:
@@ -257,11 +258,11 @@ class UnitManager:
             operation.stage_data = {
                 **operation.stage_data,
                 **(additional_info or {}),
-                "detail": self._get_cur_unit.detail.to_json(),
             }
 
         operation.completed = True
         bio[operation.number] = operation
+        UnitWrapper.update_by_uuid(self.unit_id, "operation_stages", [asdict(stage) for stage in bio])
 
         if all(stage.completed for stage in bio):
             prev_status = self._get_cur_unit.status
@@ -270,7 +271,7 @@ class UnitManager:
                 f"Unit has no more pending production stages. Unit status changed: {prev_status} -> "
                 f"{UnitStatus.built}"
             )
-            metrics.register_complete_unit(None, self)
+            metrics.register_complete_unit(None, self._get_cur_unit)
 
         self.employee = None
 

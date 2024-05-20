@@ -13,7 +13,6 @@ pwd_context = CryptContext(schemes=["bcrypt"])
 class _EmployeeWrapper:
     collection = "employeeData"
 
-    @time_execution
     def get_employee_by_card_id(self, card_id: str) -> Employee:
         """find the employee with the provided RFID card id"""
         filters = {"rfid_card_id": card_id}
@@ -27,7 +26,6 @@ class _EmployeeWrapper:
 
         return Employee(**employee_data)
 
-    @time_execution
     def get_employee_by_username(self, username: str, password: str) -> Employee:
         """find the employee with the provided RFID card id"""
         filters = {"username": username}

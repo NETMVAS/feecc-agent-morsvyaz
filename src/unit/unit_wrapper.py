@@ -13,7 +13,6 @@ from src.unit.unit_utils import Unit, UnitStatus
 class _UnitWrapper:
     collection = "unitData"
 
-    @time_execution
     def push_unit(self, unit: Unit, include_components: bool = True) -> None:
         """Upload or update data about the unit into the DB"""
         if unit.components_ids and include_components:
@@ -29,7 +28,6 @@ class _UnitWrapper:
         else:
             BaseMongoDbWrapper.insert(self.collection, unit_dict)
 
-    @time_execution
     def get_unit_by_uuid(self, uuid: str) -> Unit:
         filters = {"uuid": uuid}
         unit = BaseMongoDbWrapper.find_one(collection=self.collection, filters=filters)
@@ -37,7 +35,6 @@ class _UnitWrapper:
             raise ValueError(f"No unit with {uuid=} was found.")
         return Unit(**unit)
 
-    @time_execution
     def unit_update_single_field(self, unit_internal_id: str, field_name: str, field_val: Any) -> None:
         """Updates single field in unit collection's document by internal id."""
         filters = {"internal_id": unit_internal_id}
@@ -45,7 +42,6 @@ class _UnitWrapper:
         BaseMongoDbWrapper.update(self.collection, update, filters)
         logger.debug(f"Unit {unit_internal_id} field '{field_name}' has been set to '{field_val}'")
 
-    @time_execution
     def update_by_uuid(self, unit_id: str, field_name: str, field_val: Any) -> None:
         filters = {"uuid": unit_id}
         update = {"$set": {field_name: field_val}}
@@ -53,7 +49,6 @@ class _UnitWrapper:
         logger.debug(f"Unit {unit_id} field '{field_name}' has been set to '{field_val}'")
 
 
-    @time_execution
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
         """Returns unit given internal_id"""
         pipeline = [  # noqa: CCR001,ECE001
@@ -123,7 +118,6 @@ class _UnitWrapper:
             status=unit_dict.get("status", None),
         )
 
-    @time_execution
     def get_unit_ids_and_names_by_status(self, status: UnitStatus) -> list[dict[str, str]]:
         """Return's units' ids and names filtered by status."""
         pipeline = [  # noqa: CCR001,ECE001
