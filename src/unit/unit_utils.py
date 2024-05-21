@@ -119,7 +119,4 @@ class Unit(BaseModel):
         if not self.operation_stages:
             self.operation_stages = biography_factory(self.schema_id, self.uuid)
 
-        self.schema = None
-        self.components_units = None
-
         return super().model_post_init(__context)

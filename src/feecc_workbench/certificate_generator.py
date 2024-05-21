@@ -45,7 +45,7 @@ def _get_certificate_dict(unit: Unit) -> dict[str, Any]:
     """
     certificate_dict: dict[str, Any] = {
         translation("UnitID"): unit.uuid,
-        translation("UnitName"): unit.model_name,
+        translation("UnitName"): unit.schema.schema_name,
     }
 
     try:
