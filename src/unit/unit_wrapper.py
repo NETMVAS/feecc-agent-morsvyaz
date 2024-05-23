@@ -19,13 +19,15 @@ class _UnitWrapper:
             components_units = self.get_components_units(unit.components_ids)
             for component in components_units:
                 self.push_unit(component)
-        unit_dict = unit.model_dump(exclude={'barcode'})
 
         if unit.is_in_db:
+            unit_dict = unit.model_dump(exclude="total_assembly_time")
             filters = {"uuid": unit.uuid}
             update = {"$set": unit_dict}
             BaseMongoDbWrapper.update(self.collection, update, filters)
         else:
+            unit.is_in_db = True
+            unit_dict = unit.model_dump(exclude="total_assembly_time")
             BaseMongoDbWrapper.insert(self.collection, unit_dict)
 
     def get_unit_by_uuid(self, uuid: str) -> Unit:

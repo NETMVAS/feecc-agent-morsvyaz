@@ -114,6 +114,14 @@ class UnitManager:
         return next((operation for operation in self._get_cur_unit.operation_stages if not operation.completed), None)
     
     @property
+    def components_ids(self) -> list[str]:
+        return self._get_cur_unit.components_ids
+    
+    @property
+    def certificate_txn_hash(self) -> list[str]:
+        return self._get_cur_unit.certificate_txn_hash
+
+    @property
     def total_assembly_time(self) -> dt.timedelta:
         """calculate total time spent during all production stages"""
 
@@ -262,6 +270,7 @@ class UnitManager:
 
         operation.completed = True
         bio[operation.number] = operation
+        logger.error(f"Operation has ended: {asdict(operation)}")
         UnitWrapper.update_by_uuid(self.unit_id, "operation_stages", [asdict(stage) for stage in bio])
 
         if all(stage.completed for stage in bio):

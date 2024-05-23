@@ -28,10 +28,7 @@ def _construct_stage_dict(prod_stage: ProductionStage) -> dict[str, Any]:
 def _get_total_assembly_time(unit: Unit) -> dt.timedelta:
     """Calculate total assembly time of the unit and all its components recursively"""
     own_time: dt.timedelta = unit.total_assembly_time
-    if unit.components_ids:
-        components_units = UnitWrapper.get_components_units(unit.components_ids)
-
-    for component in components_units:
+    for component in unit.components_units:
         component_time = _get_total_assembly_time(component)
         own_time += component_time
 

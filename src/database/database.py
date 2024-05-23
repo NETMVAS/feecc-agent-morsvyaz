@@ -38,11 +38,11 @@ class _BaseMongoDbWrapper:
         return list(self._database[collection].find(filter=filters, **kwargs))
 
     def find_one(self, collection: str, filters: dict[str, Any], **kwargs) -> dict[str, Any] | None:
-        return self._database[collection].find_one(filter=filters, **kwargs)
+        return self._database[collection].find_one(filter=filters, sort={"_id": -1}, **kwargs)
 
     def update(self, collection: str, update: dict[str, Any], filters: dict[str, Any]) -> None:
         """Updates the specified document's fields."""
-        self._database[collection].find_one_and_update(filter=filters, update=update)
+        self._database[collection].find_one_and_update(filter=filters, update=update, sort={"_id": -1})
 
     def delete(self, collection: str, filters: dict[str, Any]) -> None:
         """Deletes filtered results and returns it's number."""

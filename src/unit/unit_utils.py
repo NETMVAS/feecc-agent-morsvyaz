@@ -3,13 +3,16 @@ from __future__ import annotations
 import enum
 import datetime as dt
 
-from pydantic import BaseModel
+import barcode as bcode
+from pydantic import BaseModel, Field, field_serializer, computed_field
 from uuid import uuid4
 from typing import TYPE_CHECKING
-from loguru import logger
+from functools import reduce
+from operator import add
 
 from src.prod_stage.ProductionStage import ProductionStage
 from src.feecc_workbench._label_generation import Barcode, save_barcode
+from src.feecc_workbench.utils import TIMESTAMP_FORMAT
 from src.employee.Employee import Employee
 from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
 from src.database.models import ProductionSchema
@@ -65,7 +68,7 @@ def get_first_unit_matching_status(unit: Unit, *target_statuses: UnitStatus) -> 
 class Unit(BaseModel):
     status: UnitStatus | str = UnitStatus.production
     schema_id: str | None = None  # The id of the schema used in production 
-    uuid: str = uuid4().hex
+    uuid: str = Field(default_factory=lambda: uuid4().hex)
     operation_name: str | None = None # The name of the operation (simple, complex etc)
     barcode: Barcode | None = None
     internal_id: str | None = None
@@ -84,8 +87,9 @@ class Unit(BaseModel):
     _component_slots: dict[str, Unit | None] | None = None
 
     def model_post_init(self, __context: enum.Any) -> None:
-        self.barcode = Barcode(unit_code=str(int(self.uuid, 16))[:12])
-        save_barcode(self.barcode)
+        if self.barcode is None:
+            self.barcode = Barcode(unit_code=str(int(self.uuid, 16))[:12])
+            save_barcode(self.barcode)
 
         if self.operation_name is None:
             self.operation_name = self.schema.schema_name
@@ -120,3 +124,28 @@ class Unit(BaseModel):
             self.operation_stages = biography_factory(self.schema_id, self.uuid)
 
         return super().model_post_init(__context)
+    
+    @field_serializer('barcode')
+    def serialize_barcode(self, barcode: Barcode, _info):
+        barcode.barcode = None
+        return barcode.model_dump()
+    
+    @computed_field
+    @property
+    def total_assembly_time(self) -> dt.timedelta:
+        """calculate total time spent during all production stages"""
+
+        def stage_len(stage: ProductionStage) -> dt.timedelta:
+            if stage.session_start_time is None:
+                return dt.timedelta(0)
+
+            start_time: dt.datetime = dt.datetime.strptime(stage.session_start_time, TIMESTAMP_FORMAT)
+            end_time: dt.datetime = (
+                dt.datetime.strptime(stage.session_end_time, TIMESTAMP_FORMAT)
+                if stage.session_end_time is not None
+                else dt.datetime.now()
+            )
+            return end_time - start_time
+
+        return reduce(add, (stage_len(stage) for stage in self.operation_stages)) if self.operation_stages else dt.timedelta(0).total_seconds()
+    

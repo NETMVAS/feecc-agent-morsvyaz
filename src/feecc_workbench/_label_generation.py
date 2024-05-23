@@ -124,8 +124,9 @@ class Barcode(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         if self.barcode is None:
             self.barcode = bcode.get("ean13", self.unit_code, writer=ImageWriter())
-            self.basename = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
-            self.filename = f"{self.basename}.png"
+            if self.basename is None and self.filename is None:
+                self.basename = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
+                self.filename = f"{self.basename}.png"
         return super().model_post_init(__context)
 
 
