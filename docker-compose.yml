@@ -18,8 +18,6 @@ services:
       PRINTER__PRINT_QR_ONLY_FOR_COMPOSITE: false  # Whether to enable QR code printing for non-composite units or note or not
       PRINTER__PRINT_SECURITY_TAG: false  # Whether to enable printing security tags or not
       PRINTER__SECURITY_TAG_ADD_TIMESTAMP: false  # Whether to enable timestamps on security tags or not
-      CAMERA__ENABLE: false  # Whether to enable Cameraman or not
-      CAMERA__FFMPEG_COMMAND: "Sample"
       WORKBENCH__NUMBER: 1  # Workbench number
       WORKBENCH__LOGIN: true # True if the login function is needed
       WORKBENCH__DUMMY_EMPLOYEE: "000 000 Operator 000" #

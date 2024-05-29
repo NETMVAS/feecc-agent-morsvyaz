@@ -28,11 +28,6 @@ class Printer(BaseModel):
     security_tag_add_timestamp: bool
 
 
-class Camera(BaseModel):
-    enable: bool
-    ffmpeg_command: str
-
-
 class Workbench(BaseModel):
     number: int
     login: bool
@@ -54,7 +49,6 @@ class _Settings(BaseSettings):
     robonomics: RobonomicsNetwork
     ipfs_gateway: IPFSGateway
     printer: Printer
-    camera: Camera
     workbench: Workbench
     business_logic: BusinessLogic
 
