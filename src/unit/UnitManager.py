@@ -270,7 +270,6 @@ class UnitManager:
 
         operation.completed = True
         bio[operation.number] = operation
-        logger.error(f"Operation has ended: {asdict(operation)}")
         UnitWrapper.update_by_uuid(self.unit_id, "operation_stages", [asdict(stage) for stage in bio])
 
         if all(stage.completed for stage in bio):

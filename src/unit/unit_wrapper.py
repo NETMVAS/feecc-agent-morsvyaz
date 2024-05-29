@@ -52,38 +52,45 @@ class _UnitWrapper:
 
 
     def get_unit_by_internal_id(self, unit_internal_id: str) -> Unit:
-        """Returns unit given internal_id"""
-        pipeline = [  # noqa: CCR001,ECE001
-            {"$match": {"internal_id": unit_internal_id}},
-            {
-                "$lookup": {
-                    "from": "productionStagesData",
-                    "let": {"parent_uuid": "$uuid"},
-                    "pipeline": [
-                        {"$match": {"$expr": {"$eq": ["$parent_unit_uuid", "$$parent_uuid"]}}},
-                        {"$project": {"_id": 0}},
-                        {"$sort": {"number": 1}},
-                    ],
-                    "as": "prod_stage_dicts",
-                }
-            },
-            {"$project": {"_id": 0}},
-        ]
+        # """Returns unit given internal_id"""
+        # pipeline = [  # noqa: CCR001,ECE001
+        #     {"$match": {"internal_id": unit_internal_id}},
+        #     {
+        #         "$lookup": {
+        #             "from": "productionStagesData",
+        #             "let": {"parent_uuid": "$uuid"},
+        #             "pipeline": [
+        #                 {"$match": {"$expr": {"$eq": ["$parent_unit_uuid", "$$parent_uuid"]}}},
+        #                 {"$project": {"_id": 0}},
+        #                 {"$sort": {"number": 1}},
+        #             ],
+        #             "as": "prod_stage_dicts",
+        #         }
+        #     },
+        #     {"$project": {"_id": 0}},
+        # ]
 
-        try:
-            result: list[Document] = BaseMongoDbWrapper.aggregate(self.collection, pipeline)
-        except Exception as e:
-            logger.error(e)
-            raise e
+        # try:
+        #     result: list[Document] = BaseMongoDbWrapper.aggregate(self.collection, pipeline)
+        # except Exception as e:
+        #     logger.error(e)
+        #     raise e
 
-        if not result:
+        # if not result:
+        #     message = f"Unit with internal id {unit_internal_id} not found"
+        #     logger.warning(message)
+        #     raise UnitNotFoundError(message)
+
+        # unit_dict: Document = result[0]
+        # return self._get_unit_from_raw_db_data(unit_dict)
+
+        filters = {"internal_id": unit_internal_id}
+        unit = BaseMongoDbWrapper.find_one(collection=self.collection, filters=filters, projection={"_id": 0})
+        if not unit:
             message = f"Unit with internal id {unit_internal_id} not found"
             logger.warning(message)
             raise UnitNotFoundError(message)
-
-        unit_dict: Document = result[0]
-
-        return self._get_unit_from_raw_db_data(unit_dict)
+        return Unit(**unit)
 
     def _get_unit_from_raw_db_data(self, unit_dict: Document) -> Unit:
         """Creates and returns Unit class instance from raw data."""
