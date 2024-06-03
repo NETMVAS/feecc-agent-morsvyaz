@@ -1,6 +1,5 @@
 import datetime as dt
 from dataclasses import dataclass, field
-from uuid import uuid4
 
 from src.feecc_workbench.Types import AdditionalInfo
 

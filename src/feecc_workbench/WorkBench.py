@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import asdict
 import pathlib
 from pathlib import Path
 import requests
@@ -254,8 +255,15 @@ class _WorkBench:
             raise Exception(data)
         else:
             cid = data.pop("ipfs_cid")
-            UnitWrapper.update_by_uuid(self.unit.unit_id, "certificate_ipfs_cid", cid)
-            ipfs_hashes.append(cid)
+            operation_stages = self.unit.operation_stages
+            operation = self.unit.next_pending_operation
+            operation.stage_data.update({"ipfs_cid": cid})
+            operation_stages[operation.number] = operation
+            UnitWrapper.update_by_uuid(self.unit.unit_id, "operation_stages", [asdict(stage) for stage in operation_stages])
+
+            link = data.pop("ipfs_link")
+            if data:
+                stage_data.update(data)
 
         await self.unit.end_operation(
             video_hashes=ipfs_hashes,
@@ -284,14 +292,13 @@ class _WorkBench:
         """Print passport QR-code tag for the unit"""
         assert self.employee is not None
         assert self.unit is not None
-        self.unit.passport_short_url = url
         qrcode_path = create_qr(url)
         try:
             if self.unit.schema.parent_schema_id is None:
-                annotation = f"{self.unit.model_name} (ID: {self.unit._get_cur_unit.internal_id})."
+                annotation = f"{self.unit._get_cur_unit.operation_name} (ID: {self.unit.internal_id})."
             else:
-                parent_schema = self.unit.schema.parent_schema_id
-                annotation = f"{parent_schema.unit_name}. {self.unit._get_cur_unit.model_name} (ID: {self.unit._get_cur_unit.internal_id})."
+                parent_schema = ProdSchemaWrapper.get_schema_by_id(self.unit.schema.parent_schema_id)
+                annotation = f"{parent_schema.schema_name}. {self.unit._get_cur_unit.operation_name} (ID: {self.unit.internal_id})."
 
             await print_image(
                 qrcode_path,
@@ -319,7 +326,7 @@ class _WorkBench:
 
         # Generate and save passport YAML file
         passport_file_path: Path = await construct_unit_certificate(self.unit._get_cur_unit)
-
+        
         # Determine if QR-code has to be printed -> short link is needed right now
         print_qr = CONFIG.printer.print_qr and (
             not CONFIG.printer.print_qr_only_for_composite
@@ -329,7 +336,8 @@ class _WorkBench:
 
         # Publish passport YAML file into IPFS
         if CONFIG.ipfs_gateway.enable:
-            cid, link = self.unit._get_cur_unit.certificate_ipfs_cid, self.unit._get_cur_unit.certificate_ipfs_link
+            cid, link = await publish_file(rfid_card_id=self.employee.rfid_card_id, file_path=passport_file_path)
+            UnitWrapper.update_by_uuid(self.unit.unit_id, "certificate_ipfs_cid", cid)
 
             # Generate a QR-code pointing to the unit's passport and print it
             if print_qr:
