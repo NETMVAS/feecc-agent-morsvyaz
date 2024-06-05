@@ -2,14 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from starlette import status
 
-from dependencies import get_revision_pending_units, get_schema_by_id, get_unit_by_internal_id
-from feecc_workbench import models as mdl
-from feecc_workbench.exceptions import StateForbiddenError
-from feecc_workbench.states import State
-from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import WorkBench
-
-WORKBENCH = WorkBench()
+from src.dependencies import get_revision_pending_units, get_schema_by_id, get_unit_by_internal_id
+from src.database import models as mdl
+from src.feecc_workbench.exceptions import StateForbiddenError
+from src.feecc_workbench.states import State
+from src.unit.unit_utils import Unit
+from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
 
 router = APIRouter(
     prefix="/unit",
@@ -21,6 +19,8 @@ router = APIRouter(
 async def create_unit(schema: mdl.ProductionSchema = Depends(get_schema_by_id)) -> mdl.UnitOut:  # noqa: B008
     """handle new Unit creation"""
     try:
+        if not schema.is_allowed(WORKBENCH.employee.position):
+            raise ValueError("schema is not allowed")
         unit: Unit = await WORKBENCH.create_new_unit(schema)
         logger.info(f"Initialized new unit with internal ID {unit.internal_id}")
         return mdl.UnitOut(
@@ -41,25 +41,23 @@ def get_unit_data(unit: Unit = Depends(get_unit_by_internal_id)) -> mdl.UnitInfo
         status_code=status.HTTP_200_OK,
         detail="Unit data retrieved successfully",
         unit_internal_id=unit.internal_id,
-        unit_status=unit.status.value,
-        unit_biography_completed=[
+        unit_status=unit.status,
+        unit_operation_stages_completed=[
             mdl.BiographyStage(
-                stage_name=stage.name,
-                stage_schema_entry_id=stage.schema_stage_id,
+                stage_name=stage.name
             )
-            for stage in unit.biography
+            for stage in unit.operation_stages
             if stage.completed
         ],
-        unit_biography_pending=[
+        unit_operation_stages_pending=[
             mdl.BiographyStage(
-                stage_name=stage.name,
-                stage_schema_entry_id=stage.schema_stage_id,
+                stage_name=stage.name
             )
-            for stage in unit.biography
+            for stage in unit.operation_stages
             if not stage.completed
         ],
-        unit_components=unit.components_schema_ids or None,
-        schema_id=unit.schema.schema_id,
+        unit_components=unit.components_ids or None,
+        schema_id=unit.schema_id,
     )
 
 

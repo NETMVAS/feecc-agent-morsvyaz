@@ -1,7 +1,7 @@
 from copy import copy
 from typing import Any
 
-from .metrics import Metrics
+from .metrics import metrics
 
 
 class TrackedException(Exception):  # noqa: N818
@@ -13,7 +13,7 @@ class TrackedException(Exception):  # noqa: N818
         labels = copy(self._labels)
         if args:
             labels["message"] = args[0]
-        Metrics().register(
+        metrics.register(
             name=self.__class__.__name__,
             description=self.__class__.__doc__,
             labels=labels,
@@ -35,3 +35,7 @@ class StateForbiddenError(TrackedException):
 
 class RobonomicsError(TrackedException):
     """Raised when Robonmics transactions fail"""
+
+
+class ManualInputNeeded(Exception):
+    """Raised when manual input from employee is needed"""

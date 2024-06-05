@@ -4,7 +4,7 @@ import os
 import httpx
 from loguru import logger
 
-from .config import CONFIG
+from ..config import CONFIG
 from .Messenger import messenger
 from .translation import translation
 from .utils import async_time_execution, get_headers, service_is_up
@@ -20,7 +20,7 @@ async def publish_file(rfid_card_id: str, file_path: pathlib.Path) -> tuple[str,
 
     if not service_is_up(IPFS_GATEWAY_ADDRESS):
         message = "IPFS gateway is not available"
-        messenger.error(translation('IPFSunavailable'))
+        messenger.error(translation("IPFSunavailable"))
         raise ConnectionError(message)
 
     file_path = pathlib.Path(file_path)
@@ -37,7 +37,7 @@ async def publish_file(rfid_card_id: str, file_path: pathlib.Path) -> tuple[str,
             response = await client.post(url="/by-path", headers=headers, json=json)
 
     if response.is_error:
-        messenger.error(translation('ErrorIPFS') +" "+ response.json().get('detail', ''))
+        messenger.error(translation("ErrorIPFS") + " " + response.json().get("detail", ""))
         raise httpx.RequestError(response.json().get("detail", ""))
 
     assert int(response.json().get("status", 500)) == 200, response.json()

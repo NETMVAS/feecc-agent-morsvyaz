@@ -7,27 +7,40 @@ from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sse_starlette import EventSourceResponse
+from contextlib import asynccontextmanager
 
-import _employee_router
-import _unit_router
-import _workbench_router
-from _logging import HANDLERS
-from feecc_workbench.database import MongoDbWrapper
-from feecc_workbench.Messenger import MessageLevels, message_generator, messenger
-from feecc_workbench.models import GenericResponse
-from feecc_workbench.utils import check_service_connectivity
-from feecc_workbench.WorkBench import WorkBench
+from src.routers import employee_router, unit_router, workbench_router
+from src.database.database import BaseMongoDbWrapper
+from src._logging import HANDLERS
+from src.feecc_workbench.Messenger import MessageLevels, message_generator, messenger
+from src.database.models import GenericResponse
+from src.feecc_workbench.utils import check_service_connectivity
+from src.feecc_workbench.WorkBench import Workbench
 
 # apply logging configuration
 logger.configure(handlers=HANDLERS)
 
+
+# create lifespan function for startup and shutdown events
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    check_service_connectivity()
+    app_version = os.getenv("VERSION", "Unknown")
+    logger.info(f"Runtime app version: {app_version}")
+
+    yield
+
+    await Workbench.shutdown()
+    BaseMongoDbWrapper.close_connection()
+
+
 # create app
-app = FastAPI(title="Feecc Workbench daemon")
+app = FastAPI(title="Feecc Workbench daemon", lifespan=lifespan)
 
 # include routers
-app.include_router(_employee_router.router)
-app.include_router(_unit_router.router)
-app.include_router(_workbench_router.router)
+app.include_router(employee_router)
+app.include_router(unit_router)
+app.include_router(workbench_router)
 
 # set up CORS
 app.add_middleware(
@@ -41,20 +54,6 @@ app.add_middleware(
 # Enable Prometheus metrics
 app.add_middleware(MetricsMiddleware)
 app.add_route("/metrics", metrics)
-
-
-@app.on_event("startup")
-def startup_event() -> None:
-    check_service_connectivity()
-    MongoDbWrapper()
-    app_version = os.getenv("VERSION", "Unknown")
-    logger.info(f"Runtime app version: {app_version}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    await WorkBench().shutdown()
-    MongoDbWrapper().close_connection()
 
 
 @app.get("/notifications", tags=["notifications"])

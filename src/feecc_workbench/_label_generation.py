@@ -1,14 +1,17 @@
 import pathlib
 import time
+import os
 from datetime import datetime as dt
-import barcode
+import barcode as bcode
 from barcode.writer import ImageWriter
+from pydantic import BaseModel
+from typing import Any
 
 import qrcode
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 
-from .config import CONFIG
+from ..config import CONFIG
 from .translation import translation
 from .utils import time_execution
 
@@ -83,13 +86,13 @@ def create_seal_tag() -> pathlib.Path:
     seal_tag_draw = ImageDraw.Draw(seal_tag_image)
 
     # specify fonts
-    font_path = "media/helvetica-cyrillic-bold.ttf"
+    font_path = "../media/helvetica-cyrillic-bold.ttf"
     font_size: int = 52
     font = ImageFont.truetype(font=font_path, size=font_size)
 
     # add text to the image
     upper_field: int = 30
-    text = translation('SEALED')
+    text = translation("SEALED")
     main_txt_w, main_txt_h = seal_tag_draw.textsize(text, font)
     x: int = int((image_width - main_txt_w) / 2)
     seal_tag_draw.text(xy=(x, upper_field), text=text, fill=BLACK, font=font, align="center")
@@ -110,22 +113,34 @@ def create_seal_tag() -> pathlib.Path:
     return seal_tag_path
 
 
-class Barcode:
-    def __init__(self, unit_code: str) -> None:
-        self.unit_code: str = unit_code
-        self.barcode: barcode.EAN13 = barcode.get("ean13", self.unit_code, writer=ImageWriter())
-        self.basename: str = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
-        self.filename: str = f"{self.basename}.png"
-        self.save_barcode(self.barcode)
+class Barcode(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+        
+    unit_code: str 
+    barcode: bcode.EAN13 | None = None
+    basename: str | None = None
+    filename: str | None = None
+    def model_post_init(self, __context: Any) -> None:
+        if self.barcode is None:
+            self.barcode = bcode.get("ean13", self.unit_code, writer=ImageWriter())
+            if self.basename is None and self.filename is None:
+                self.basename = f"output/barcode/{self.barcode.get_fullcode()}_barcode"
+                self.filename = f"{self.basename}.png"
+        return super().model_post_init(__context)
 
-    def save_barcode(self, ean_code: barcode.EAN13) -> str:
-        """Method that saves the barcode image"""
-        dir_ = pathlib.Path(self.filename).parent
-        if not dir_.is_dir():
-            dir_.mkdir(parents=True)
-        barcode_path = str(ean_code.save(self.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1}))
+
+def save_barcode(barcode: Barcode) -> str:
+    """Method that saves the barcode image"""
+    dir_ = pathlib.Path(barcode.filename).parent
+    if not dir_.is_dir():
+        dir_.mkdir(parents=True)
+    barcode_path = str(
+        barcode.barcode.save(barcode.basename, {"module_height": 12, "text_distance": 3, "font_size": 8, "quiet_zone": 1})
+    )
+    if os.path.exists(barcode_path):
         with Image.open(barcode_path) as img:
             img = _resize_to_paper_aspect_ratio(img)
             img.save(barcode_path)
 
-        return barcode_path
+    return barcode_path

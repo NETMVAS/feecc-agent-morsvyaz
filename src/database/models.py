@@ -1,10 +1,12 @@
+import json
+
 from time import time
 from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from .states import State
+from src.feecc_workbench.states import State
 
 
 class GenericResponse(BaseModel):
@@ -12,12 +14,23 @@ class GenericResponse(BaseModel):
     detail: str | None
 
 
+class OperatorStartResponse(GenericResponse):
+    """Return 304 to front to ask for manual input"""
+
+    license_plate: bool = False
+
+
+class ManualInput(BaseModel):
+    license_plate: str | None = None
+    weight: str | None = None
+
+
 class WorkbenchExtraDetails(BaseModel):
     additional_info: dict[str, str]
 
 
-class WorkbenchExtraDetailsWithoutStage(BaseModel):
-    additional_info: dict[str, str] | None = None
+class OperationStageData(BaseModel):
+    stage_data: dict[str, Any] | None = None
     premature_ending: bool = False
 
 
@@ -28,6 +41,15 @@ class EmployeeModel(BaseModel):
 
 class EmployeeWCardModel(EmployeeModel):
     rfid_card_id: str | None
+    username: str | None
+
+
+class AdditionalDetail:
+    def __init__(self, **kwargs) -> None:
+        self.__dict__.update(kwargs)
+
+    def to_json(self):
+        return json.dumps(self.__dict__)
 
 
 class WorkbenchOut(BaseModel):
@@ -49,6 +71,11 @@ class EmployeeID(BaseModel):
     employee_rfid_card_no: str
 
 
+class EmployeeCreds(BaseModel):
+    employee_username: str
+    employee_password: str
+
+
 class UnitOut(GenericResponse):
     unit_internal_id: str | None
 
@@ -64,13 +91,12 @@ class UnitOutPending(GenericResponse):
 
 class BiographyStage(BaseModel):
     stage_name: str
-    stage_schema_entry_id: str
 
 
 class UnitInfo(UnitOut):
     unit_status: str
-    unit_biography_completed: list[BiographyStage]
-    unit_biography_pending: list[BiographyStage]
+    unit_operation_stages_completed: list[BiographyStage]
+    unit_operation_stages_pending: list[BiographyStage]
     unit_components: list[str] | None = None
     schema_id: str
 
@@ -84,7 +110,6 @@ class HidEvent(BaseModel):
 
 class ProductionSchemaStage(BaseModel):
     name: str
-    stage_id: str
     type: str | None = None  # noqa: A003
     description: str | None = None
     equipment: list[str] | None = None
@@ -94,16 +119,18 @@ class ProductionSchemaStage(BaseModel):
 
 class ProductionSchema(BaseModel):
     schema_id: str = Field(default_factory=lambda: uuid4().hex)
-    unit_name: str
-    unit_short_name: str | None = None
-    production_stages: list[ProductionSchemaStage] | None = None
-    required_components_schema_ids: list[str] | None = None
+    schema_name: str
+    schema_print_name: str | None = None
+    schema_stages: list[ProductionSchemaStage]
+    components_schema_ids: list[str] | None = None
     parent_schema_id: str | None = None
     schema_type: str | None = None
+    erp_metadata: dict[str, str] | None = None
+    allowed_positions: list[str] | None = None
 
     @property
     def is_composite(self) -> bool:
-        return self.required_components_schema_ids is not None
+        return self.components_schema_ids is not None
 
     @property
     def is_a_component(self) -> bool:
@@ -111,9 +138,16 @@ class ProductionSchema(BaseModel):
 
     @property
     def print_name(self) -> str:
-        if self.unit_short_name is None:
-            return self.unit_name
-        return self.unit_short_name
+        if self.schema_print_name is None:
+            return self.schema_name
+        return self.schema_print_name
+
+    def is_allowed(self, position: str) -> bool:
+        if not self.allowed_positions:
+            return True
+        if position in self.allowed_positions:
+            return True
+        return False
 
 
 class ProductionSchemaResponse(GenericResponse):

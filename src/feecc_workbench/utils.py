@@ -10,7 +10,7 @@ from typing import Any
 from loguru import logger
 from yarl import URL
 
-from .config import CONFIG
+from ..config import CONFIG
 
 TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M:%S"
 
@@ -73,9 +73,7 @@ def service_is_up(service_endpoint: str | URL) -> bool:  # noqa: CAC001
 
 def check_service_connectivity() -> None:  # noqa: CAC001,CCR001
     """check if all requsted external services are reachable"""
-    services = (
-        (CONFIG.ipfs_gateway.enable, CONFIG.ipfs_gateway.ipfs_server_uri),
-    )
+    services = ((CONFIG.ipfs_gateway.enable, CONFIG.ipfs_gateway.ipfs_server_uri),)
     failed_cnt, checked_cnt = 0, 0
 
     for _, service_endpoint in filter(lambda s: s[0], services):

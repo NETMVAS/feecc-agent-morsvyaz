@@ -9,7 +9,7 @@ from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageFont import FreeTypeFont
 
-from .config import CONFIG
+from ..config import CONFIG
 from .Messenger import messenger
 from .translation import translation
 from .utils import async_time_execution
@@ -51,13 +51,13 @@ async def _print_image_task(file_path: Path) -> None:
         logger.info(f"Printed image '{file_path=}', {print_id=}")
     except Exception as e:
         logger.error(f"Print task failed: {e}")
-        messenger.error(translation('PrintError'))
+        messenger.error(translation("PrintError"))
 
 
 def _annotate_image(image: Image, text: str) -> Image:
     """add an annotation to the bottom of the image"""
     # wrap the message
-    font_path = "media/helvetica-cyrillic-bold.ttf"
+    font_path = "src/media/helvetica-cyrillic-bold.ttf"
     assert os.path.exists(font_path), f"Cannot open font at {font_path=}. No such file."
     font: FreeTypeFont = ImageFont.truetype(font_path, 35)
     avg_char_width: float = mean((font.getsize(char)[0] for char in ascii_letters))

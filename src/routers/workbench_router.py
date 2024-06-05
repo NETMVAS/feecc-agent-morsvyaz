@@ -2,21 +2,23 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from loguru import logger
 from sse_starlette.sse import EventSourceResponse
 
-from dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
-from feecc_workbench import models as mdl
-from feecc_workbench.database import MongoDbWrapper
-from feecc_workbench.Employee import Employee
-from feecc_workbench.exceptions import EmployeeNotFoundError
-from feecc_workbench.Messenger import messenger
-from feecc_workbench.states import State
-from feecc_workbench.translation import translation
-from feecc_workbench.Unit import Unit
-from feecc_workbench.WorkBench import STATE_SWITCH_EVENT, WorkBench
-
-WORKBENCH = WorkBench()
+from src.dependencies import get_schema_by_id, get_unit_by_internal_id, identify_sender
+from src.database import models as mdl
+from src.prod_schema.prod_schema_wrapper import ProdSchemaWrapper
+from src.employee.employee_wrapper import EmployeeWrapper
+from src.employee.Employee import Employee
+from src.feecc_workbench.exceptions import EmployeeNotFoundError, ManualInputNeeded
+from src.feecc_workbench.Messenger import messenger
+from src.feecc_workbench.states import State
+from src.feecc_workbench.translation import translation
+from src.unit.unit_utils import Unit
+from src.feecc_workbench.WorkBench import STATE_SWITCH_EVENT
+from src.feecc_workbench.WorkBench import Workbench as WORKBENCH
+from src.config import CONFIG
 
 router = APIRouter(
     prefix="/workbench",
@@ -32,8 +34,8 @@ def get_workbench_status_data() -> mdl.WorkbenchOut:
         employee=WORKBENCH.employee.data if WORKBENCH.employee else None,
         operation_ongoing=WORKBENCH.state.value == State.PRODUCTION_STAGE_ONGOING_STATE.value,
         unit_internal_id=unit.internal_id if unit else None,
-        unit_status=unit.status.value if unit else None,
-        unit_biography=[stage.name for stage in unit.biography] if unit else None,
+        unit_status=unit.status if unit else None,
+        unit_biography=[stage.name for stage in unit.operation_stages] if unit else None,
         unit_components=unit.assigned_components() if unit else None,
     )
 
@@ -54,7 +56,7 @@ async def state_update_generator(event: asyncio.Event) -> AsyncGenerator[str, No
 
     try:
         while True:
-            yield get_workbench_status_data().json()
+            yield get_workbench_status_data().model_dump_json()
             logger.debug("State notification sent to the SSE client")
             event.clear()
             await event.wait()
@@ -96,16 +98,19 @@ def remove_unit() -> mdl.GenericResponse:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
 
-@router.post("/start-operation", response_model=mdl.GenericResponse)
-async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.GenericResponse:
+@router.post("/start-operation")
+async def start_operation(
+    workbench_details: mdl.WorkbenchExtraDetails, manual_input: mdl.ManualInput | None = None
+) -> mdl.GenericResponse:
     """handle start recording operation on a Unit"""
     try:
-        await WORKBENCH.start_operation(workbench_details.additional_info)
+        await WORKBENCH.start_operation(workbench_details.additional_info, manual_input)
         unit = WORKBENCH.unit
         message: str = f"Started operation '{unit.next_pending_operation.name}' on Unit {unit.internal_id}"
         logger.info(message)
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail=message)
-
+    except ManualInputNeeded as e:
+        return JSONResponse(status_code=status.HTTP_504_GATEWAY_TIMEOUT, content=e.args)
     except Exception as e:
         message = f"Couldn't handle request. An error occurred: {e}"
         logger.error(message)
@@ -113,10 +118,10 @@ async def start_operation(workbench_details: mdl.WorkbenchExtraDetails) -> mdl.G
 
 
 @router.post("/end-operation", response_model=mdl.GenericResponse)
-async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -> mdl.GenericResponse:
+async def end_operation(workbench_data: mdl.OperationStageData) -> mdl.GenericResponse:
     """handle end recording operation on a Unit"""
     try:
-        await WORKBENCH.end_operation(workbench_data.additional_info, workbench_data.premature_ending)
+        await WORKBENCH.end_operation(workbench_data.stage_data, workbench_data.premature_ending)
         unit = WORKBENCH.unit
         message: str = f"Ended current operation on unit {unit.internal_id}"
         logger.info(message)
@@ -129,22 +134,24 @@ async def end_operation(workbench_data: mdl.WorkbenchExtraDetailsWithoutStage) -
 
 
 @router.get("/production-schemas/names", response_model=mdl.SchemasList)
-async def get_schemas() -> mdl.SchemasList:
+def get_schemas() -> mdl.SchemasList:
     """get all available schemas"""
-    all_schemas = {schema.schema_id: schema for schema in await MongoDbWrapper().get_all_schemas()}
+    all_schemas = {
+        schema.schema_id: schema for schema in ProdSchemaWrapper.get_all_schemas(WORKBENCH.employee.position)
+    }
     handled_schemas = set()
 
     def get_schema_list_entry(schema: mdl.ProductionSchema) -> mdl.SchemaListEntry:
         nonlocal all_schemas, handled_schemas
         included_schemas: list[mdl.SchemaListEntry] | None = (
-            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.required_components_schema_ids]
+            [get_schema_list_entry(all_schemas[s_id]) for s_id in schema.components_schema_ids]
             if schema.is_composite
             else None
         )
         handled_schemas.add(schema.schema_id)
         return mdl.SchemaListEntry(
             schema_id=schema.schema_id,
-            schema_name=schema.unit_name,
+            schema_name=schema.schema_name,
             included_schemas=included_schemas,
         )
 
@@ -174,58 +181,36 @@ async def get_schema(
     )
 
 
-async def handle_barcode_event(event_string: str) -> None:
+@router.post("/handle-barcode-event", response_model=mdl.GenericResponse)
+async def handle_barcode_event(event: mdl.HidEvent) -> mdl.GenericResponse:
     """Handle HID event produced by the barcode reader"""
-    if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
-        await WORKBENCH.end_operation()
-        return
-
-    unit = await get_unit_by_internal_id(event_string)
-
-    match WORKBENCH.state:
-        case State.AUTHORIZED_IDLING_STATE:
-            WORKBENCH.assign_unit(unit)
-        case State.UNIT_ASSIGNED_IDLING_STATE:
-            if WORKBENCH.unit is not None and WORKBENCH.unit.uuid == unit.uuid:
-                messenger.info(translation('UnitOnWorkbench'))
-                return
-            WORKBENCH.remove_unit()
-            WORKBENCH.assign_unit(unit)
-        case State.GATHER_COMPONENTS_STATE:
-            await WORKBENCH.assign_component_to_unit(unit)
-        case _:
-            logger.error(f"Received input {event_string}. Ignoring event since no one is authorized.")
-
-
-async def handle_rfid_event(event_string: str) -> None:
-    """Handle HID event produced by the RFID reader"""
-    if WORKBENCH.employee is not None:
-        WORKBENCH.log_out()
-        return
-
     try:
-        employee: Employee = await MongoDbWrapper().get_employee_by_card_id(event_string)
-    except EmployeeNotFoundError as e:
-        messenger.warning(translation('NoEmployee'))
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        if event.name != "barcode_reader":
+            raise KeyError(f"Unknown sender: {event.name}")
 
-    WORKBENCH.log_in(employee)
+        logger.debug(f"Handling BARCODE event. String: {event.string}")
 
+        if WORKBENCH.state == State.PRODUCTION_STAGE_ONGOING_STATE:
+            await WORKBENCH.end_operation()
+            return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
 
-@router.post("/hid-event", response_model=mdl.GenericResponse)
-async def handle_hid_event(event: mdl.HidEvent = Depends(identify_sender)) -> mdl.GenericResponse:  # noqa: B008
-    """Parse the event dict JSON"""
-    try:
-        match event.name:
-            case "rfid_reader":
-                logger.debug(f"Handling RFID event. String: {event.string}")
-                await handle_rfid_event(event.string)
-            case "barcode_reader":
-                logger.debug(f"Handling barcode event. String: {event.string}")
-                await handle_barcode_event(event.string)
+        unit = get_unit_by_internal_id(event.string)
+
+        match WORKBENCH.state:
+            case State.AUTHORIZED_IDLING_STATE:
+                WORKBENCH.assign_unit(unit)
+            case State.UNIT_ASSIGNED_IDLING_STATE:
+                if WORKBENCH.unit is not None and WORKBENCH.unit.unit_id == unit.uuid:
+                    messenger.info(translation("UnitOnWorkbench"))
+                    return mdl.GenericResponse(
+                        status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected"
+                    )
+                WORKBENCH.remove_unit()
+                WORKBENCH.assign_unit(unit)
+            case State.GATHER_COMPONENTS_STATE:
+                await WORKBENCH.assign_component_to_unit(unit)
             case _:
-                raise KeyError(f"Unknown sender: {event.name}")
-
+                logger.error(f"Received input {event.string}. Ignoring event since no one is authorized.")
         return mdl.GenericResponse(status_code=status.HTTP_200_OK, detail="Hid event has been handled as expected")
 
     except Exception as e:
